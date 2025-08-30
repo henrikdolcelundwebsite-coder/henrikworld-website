@@ -37,6 +37,29 @@
       word-break: break-word;
     }
 
+    /* Red button */
+    .cta-button {
+      display: block;
+      margin: 2rem auto 0 auto; /* horizontally center, spacing from top */
+      background-color: #ff4d4d; /* red */
+      color: white;
+      border: 3px solid #444; /* thick dark gray border */
+      border-radius: 8px; /* slightly rounded edges */
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .cta-button:hover {
+      transform: scale(1.1); /* grow slightly on hover */
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .cta-button:active {
+      transform: scale(1.05); /* slightly smaller on click */
+    }
+
     /* Footer */
     footer {
       text-align: center;
@@ -56,6 +79,11 @@
         font-size: 1.2rem;
       }
 
+      .cta-button {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+      }
+
       footer {
         font-size: 0.8rem;
       }
@@ -67,8 +95,12 @@
     <h1>🌍Henrik World</h1>
   </header>
 
+  <!-- Red button centered horizontally -->
+  <button class="cta-button">Click Me</button>
+
   <footer>
     &copy; 2025 henrikworld.com. All rights reserved.
   </footer>
 </body>
 </html>
+
