@@ -1,119 +1,289 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Henrik World | Homepage</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Favicon -->
-  <link rel="icon" href="images/favicon.png" type="image/png">
+<!-- SEO Meta Tags -->
+<title>Henrik World | Play Fun Games Online</title>
+<meta name="description" content="Henrik World – Play Tic Tac Toe, Game 2, and other fun online games. Join the community and enjoy interactive games for free!">
+<meta name="keywords" content="Henrik World, online games, play games, Tic Tac Toe, fun games, free games">
+<meta name="author" content="Henrik World">
 
-  <style>
-    /* Body */
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f0f0f0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
+<!-- Open Graph / Social Preview -->
+<meta property="og:title" content="Henrik World | Play Fun Games Online">
+<meta property="og:description" content="Henrik World – Play Tic Tac Toe, Game 2, and other fun online games. Join the community and enjoy interactive games for free!">
+<meta property="og:image" content="images/game1picture.jpg">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://henrikworld.com">
 
-    /* Top bar */
-    header {
-      background: #fff;
-      padding: 1rem 2rem;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
+<!-- Favicon -->
+<link rel="icon" href="images/favicon.png" type="image/png">
 
-    header h1 {
-      margin: 0;
-      font-size: 1.5rem;
-      color: #222;
-      word-break: break-word;
-    }
+<style>
+/* === Fade-in animation for buttons === */
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 
-    /* Red button as link */
-    .cta-button {
-      display: block;
-      margin: 2rem auto 0 auto;
-      background-color: #ff4d4d;
-      color: white;
-      border: 3px solid #444;
-      border-radius: 8px;
-      padding: 0.6rem 1.2rem;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      text-decoration: none; /* remove underline */
-      text-align: center;
-      touch-action: manipulation;
-      width: fit-content;
-    }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f0f0f0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
 
-    /* Desktop hover */
-    .cta-button:hover {
-      transform: scale(1.1);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
+header {
+  background: #fff;
+  padding: 1rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-    /* Mobile tap + focus */
-    .cta-button:active,
-    .cta-button:focus {
-      transform: scale(1.1);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
-      outline: none;
-    }
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #222;
+  margin-right: auto;
+}
 
-    /* Smooth spring-back after tap */
-    .cta-button:active {
-      transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
-    }
+.user-menu {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  margin-left: 1rem;
+}
 
-    /* Footer */
-    footer {
-      text-align: center;
-      font-size: 0.9rem;
-      color: #555;
-      margin: 2rem 1rem;
-      word-break: break-word;
-    }
+#usernameDisplay.logged-in,
+#usernameDisplay.logged-out { 
+  font-weight: bold;
+  font-size: 1.3rem;
+  color: #333;
+}
 
-    /* Responsive adjustments */
-    @media (max-width: 600px) {
-      header {
-        padding: 0.8rem 1rem;
-      }
+.dropdown {
+  display: none;
+  position: absolute;
+  top: 3.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 0.3rem 0;
+  width: 80px;
+  text-align: center;
+}
 
-      header h1 {
-        font-size: 1.2rem;
-      }
+.dropdown button {
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  color: #333;
+  padding: 0.2rem 0;
+  width: 100%;
+  cursor: pointer;
+}
 
-      .cta-button {
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-      }
+.dropdown button:hover {
+  text-decoration: none;
+}
 
-      footer {
-        font-size: 0.8rem;
-      }
-    }
-  </style>
+/* Game buttons */
+.cta-button {
+  display: block;
+  margin: 1rem auto 0 auto;
+  border-radius: 16px;
+  border: 4px solid #333;
+  width: 500px;
+  height: 400px;
+  cursor: pointer;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  box-sizing: border-box;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.cta-button::before {
+  content: '';
+  position: absolute;
+  top:0; left:0;
+  width:100%; height:100%;
+  border-radius:16px;
+  background-color: rgba(255,255,255,0.2);
+  transition: background-color 0.2s ease;
+}
+
+.cta-button:hover::before {
+  background-color: rgba(255,255,255,0.0);
+}
+
+.cta-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.game1-btn { 
+  background-image: url('images/game1picture.jpg'); 
+  animation: fadeInUp 0.8s ease forwards;
+  animation-delay: 0.2s;
+  background-position: center;
+  background-size: cover;
+}
+
+.game2-btn { 
+  background-image: url('images/game2picture.jpg'); 
+  animation: fadeInUp 0.8s ease forwards;
+  animation-delay: 0.6s;
+  background-position: center;
+  background-size: cover;
+}
+
+footer {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #555;
+  margin: 2rem 1rem;
+}
+
+/* Loading overlay */
+#loadingOverlay {
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background: rgba(255,255,255,0.5);
+  display: flex;
+  justify-content:center;
+  align-items:center;
+  z-index: 999;
+  display:none;
+}
+
+.spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #1e90ff;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .cta-button {
+    width: 90%;
+    height: 250px;
+    border-radius: 12px;
+  }
+}
+@media (max-width: 400px) {
+  header h1 { font-size: 1.2rem; }
+  #usernameDisplay { font-size: 1.1rem; }
+}
+
+</style>
 </head>
 <body>
-  <header>
-    <h1>🌍Henrik World</h1>
-  </header>
 
-  <!-- Red button linking to game1.html -->
-  <a href="game1.html" class="cta-button">Play Game 1</a>
+<header>
+  <h1>🌍Henrik World</h1>
+  <div class="user-menu" id="userMenu">
+    <span id="usernameDisplay">Log in</span>
+    <div class="dropdown" id="dropdownMenu">
+      <button id="logoutBtn">Log out</button>
+    </div>
+  </div>
+</header>
 
-  <footer>
-    &copy; 2025 henrikworld.com. All rights reserved.
-  </footer>
+<!-- Game buttons (hidden if not logged in) -->
+<div id="gamesContainer">
+  <a href="game1.html" class="cta-button game1-btn" alt="Tic Tac Toe Game"></a>
+  <a href="game2.html" class="cta-button game2-btn" alt="Game 2"></a>
+</div>
+
+<footer>
+  &copy; 2025 henrikworld.com. All rights reserved.
+</footer>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
+
+<script>
+const loggedInUser = localStorage.getItem('loggedInUser');
+
+const usernameDisplay = document.getElementById('usernameDisplay');
+const dropdownMenu = document.getElementById('dropdownMenu');
+const logoutBtn = document.getElementById('logoutBtn');
+const loadingOverlay = document.getElementById('loadingOverlay');
+const gamesContainer = document.getElementById('gamesContainer'); // container for games
+
+if (loggedInUser) {
+  usernameDisplay.textContent = loggedInUser;
+  usernameDisplay.classList.add('logged-in');
+  gamesContainer.style.display = "block"; // show games
+  usernameDisplay.onclick = () => {
+    dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+  };
+
+  logoutBtn.onclick = () => {
+    loadingOverlay.style.display = 'flex';
+    setTimeout(() => {
+      localStorage.removeItem('loggedInUser');
+      window.location.href = 'login.html';
+    }, 500);
+  };
+
+  document.addEventListener('click', function(event) {
+    if (!document.getElementById('userMenu').contains(event.target)) {
+      dropdownMenu.style.display = 'none';
+    }
+  });
+
+} else {
+  usernameDisplay.textContent = "Log in";
+  usernameDisplay.classList.add('logged-out');
+  gamesContainer.style.display = "none"; // hide games
+  usernameDisplay.onclick = () => {
+    loadingOverlay.style.display = 'flex';
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 300);
+  };
+}
+
+// Loading overlay for game buttons
+document.querySelectorAll('.cta-button').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    loadingOverlay.style.display = 'flex';
+    const link = btn.getAttribute('href');
+    setTimeout(() => {
+      window.location.href = link;
+    }, 500);
+  });
+});
+</script>
+
 </body>
 </html>

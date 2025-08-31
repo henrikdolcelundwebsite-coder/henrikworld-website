@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Henrik World | Chess AI</title>
+<link rel="icon" href="images/favicon.png" type="image/png">
+<style>
+body { margin:0; font-family:Arial,sans-serif; background:#f0f0f0; display:flex; flex-direction:column; min-height:100vh;}
+header {background:#fff; padding:1rem 2rem; position:sticky; top:0; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 8px rgba(0,0,0,.1);}
+header h1{margin:0; font-size:1.5rem;}
+header .header-right{display:flex; align-items:center; gap:1rem;}
+header span.home-emoji{cursor:pointer; font-size:1.5rem;}
+#gameTimer {background:#fff; padding:1rem 2rem; border-radius:12px; margin:1rem auto; max-width:600px; text-align:center; box-shadow:0 4px 8px rgba(0,0,0,.1); font-weight:bold;}
+main{flex:1; display:flex; justify-content:center; align-items:flex-start; padding:2rem 1rem;}
+.board-wrap{display:grid; grid-template-columns:2fr 1fr; gap:1.2rem; max-width:900px; width:100%;}
+@media(max-width:700px){.board-wrap{grid-template-columns:1fr;}}
+.card{background:#fff; border-radius:12px; padding:1rem; box-shadow:0 4px 8px rgba(0,0,0,.1);}
+#chessboard{display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr); gap:2px; max-width:600px; width:100%; margin:0 auto;}
+.cell{aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none;}
+.cell img{width:95%; height:95%;}
+.white{background:#eee;}
+.black{background:#999;}
+.selected{outline:3px solid #1e90ff;} /* changed selection outline to blue */
+.sidebar .card{margin-bottom:1rem;}
+.settings label{display:block; margin-top:0.6rem; font-weight:bold;}
+.settings select{width:100%; padding:0.4rem; border-radius:6px; margin-top:0.2rem;}
+
+/* === Buttons: White background with Blue border === */
+.btn {
+  background-color: #fff;
+  color: #1e90ff;
+  border: 3px solid #1e90ff;
+  border-radius: 8px;
+  padding: 0.8rem 1.5rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.btn:hover {
+  background-color: #e6f0ff;
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.btn:active {
+  transform: scale(1.02);
+  background-color: #cce0ff;
+}
+
+footer{text-align:center; color:#555; margin:2rem 1rem;}
+#gameOverlay {
+  position: fixed; top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.7);
+  color:#fff; display:flex;
+  justify-content:center; align-items:center;
+  font-size:3rem; font-weight:bold;
+  z-index:999; display:none; text-align:center;
+}
+.turn-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 8px rgba(0,0,0,.1);
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌍 Henrik World</h1>
+  <div class="header-right">
+    <span class="home-emoji" onclick="location.href='index.html'">🏠</span>
+  </div>
+</header>
+
+<div id="gameTimer">⏱ Time: 00:00</div>
+
+<main>
+  <div class="board-wrap">
+    <div class="card">
+      <div id="chessboard"></div>
+    </div>
+    <div class="sidebar">
+      <div class="card settings">
+        <h3>⚙️ Settings</h3>
+        <label for="difficulty">Difficulty</label>
+        <select id="difficulty">
+          <option value="easy" selected>Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+        <label for="first">Who goes first?</label>
+        <select id="first">
+          <option value="player" selected>Player</option>
+          <option value="ai">AI</option>
+        </select>
+        <button id="btnStart" class="btn">▶️ Start Game</button>
+        <button id="btnReset" class="btn">🔄 Reset Board</button>
+      </div>
+
+      <!-- Turn indicator card -->
+      <div class="card turn-card">
+        Next Turn: <span id="turnIndicatorCard">🧑 Player</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>&copy; 2025 henrikworld.com. All rights reserved;</footer>
+
+<div id="gameOverlay">GAME OVER</div>
+
+<script>
+// Chess AI JavaScript (unchanged)
+const chessboard = document.getElementById('chessboard');
+const diffSelect = document.getElementById('difficulty');
+const firstSelect = document.getElementById('first');
+const gameTimer = document.getElementById('gameTimer');
+const gameOverlay = document.getElementById('gameOverlay');
+const turnIndicatorCard = document.getElementById('turnIndicatorCard');
+
+let board = new Array(64).fill(0);
+let turn='player', selected=null, difficulty='easy';
+let secondsElapsed=0, timerInterval=null;
+
+const pieceMap = {
+  "1": "white-pawn.png","2": "white-rook.png","3": "white-knight.png",
+  "4": "white-bishop.png","5": "white-queen.png","6": "white-king.png",
+  "-1": "black-pawn.png","-2": "black-rook.png","-3": "black-knight.png",
+  "-4": "black-bishop.png","-5": "black-queen.png","-6": "black-king.png"
+};
+
+const startingBoard=[
+  -2,-3,-4,-5,-6,-4,-3,-2,
+  -1,-1,-1,-1,-1,-1,-1,-1,
+   0,0,0,0,0,0,0,0,
+   0,0,0,0,0,0,0,0,
+   0,0,0,0,0,0,0,0,
+   0,0,0,0,0,0,0,0,
+   1,1,1,1,1,1,1,1,
+   2,3,4,5,6,4,3,2
+];
+
+function createBoard(){
+  chessboard.innerHTML='';
+  for(let i=0;i<64;i++){
+    const cell=document.createElement('div');
+    cell.classList.add((Math.floor(i/8)+i)%2===0?'white':'black','cell');
+    cell.dataset.idx=i;
+    cell.onclick=()=>cellClick(i);
+    chessboard.appendChild(cell);
+  }
+}
+
+function renderBoard(){
+  const cells=document.querySelectorAll('.cell');
+  for(let i=0;i<64;i++){
+    const piece = board[i];
+    cells[i].innerHTML = piece===0 ? '' : `<img src="images/game2/${pieceMap[piece.toString()]}" style="width:95%;height:95%;">`;
+    cells[i].classList.remove('selected');
+    if(selected===i) cells[i].classList.add('selected');
+  }
+}
+
+function showOverlay(message){ gameOverlay.textContent=message; gameOverlay.style.display='flex'; }
+function hideOverlay(){ gameOverlay.style.display='none'; }
+
+function startTimer(){
+  clearInterval(timerInterval);
+  secondsElapsed=0;
+  updateTimer();
+  timerInterval=setInterval(()=>{ secondsElapsed++; updateTimer(); },1000);
+}
+function stopTimer(){ clearInterval(timerInterval); }
+function updateTimer(){
+  const minutes=String(Math.floor(secondsElapsed/60)).padStart(2,'0');
+  const seconds=String(secondsElapsed%60).padStart(2,'0');
+  gameTimer.textContent=`⏱ Time: ${minutes}:${seconds}`;
+}
+
+// Chess logic functions (pawn, rook, knight, bishop, queen, king moves)
+function getRow(i){ return Math.floor(i/8); }
+function getCol(i){ return i%8; }
+function isEmpty(i){ return board[i]===0; }
+function isOpponent(i,isWhite){ return board[i]!==0 && Math.sign(board[i])!== (isWhite?1:-1); }
+function getPawnMoves(idx,isWhite){ const moves=[], row=getRow(idx), col=getCol(idx), dir=isWhite?-1:1; const oneStep = idx + dir*8; if(oneStep>=0 && oneStep<64 && isEmpty(oneStep)) moves.push(oneStep); if((isWhite && row===6 || !isWhite && row===1) && isEmpty(oneStep) && isEmpty(idx+dir*16)) moves.push(idx+dir*16); if(col>0 && oneStep-1>=0 && isOpponent(oneStep-1,isWhite)) moves.push(oneStep-1); if(col<7 && oneStep+1<64 && isOpponent(oneStep+1,isWhite)) moves.push(oneStep+1); return moves;}
+function getRookMoves(idx,isWhite){ const moves=[], row=getRow(idx), col=getCol(idx); const directions=[[-1,0],[1,0],[0,-1],[0,1]]; directions.forEach(([dr,dc])=>{ let r=row+dr,c=col+dc; while(r>=0 && r<8 && c>=0 && c<8){ const newIdx=r*8+c; if(isEmpty(newIdx)) moves.push(newIdx); else{ if(isOpponent(newIdx,isWhite)) moves.push(newIdx); break; } r+=dr;c+=dc; } }); return moves;}
+function getKnightMoves(idx,isWhite){ const moves=[], row=getRow(idx), col=getCol(idx); const offsets=[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]; offsets.forEach(([dr,dc])=>{ const r=row+dr, c=col+dc; if(r>=0&&r<8 && c>=0&&c<8){ const newIdx=r*8+c; if(isEmpty(newIdx) || isOpponent(newIdx,isWhite)) moves.push(newIdx); } }); return moves;}
+function getBishopMoves(idx,isWhite){ const moves=[], row=getRow(idx), col=getCol(idx); const directions=[[-1,-1],[-1,1],[1,-1],[1,1]]; directions.forEach(([dr,dc])=>{ let r=row+dr,c=col+dc; while(r>=0 && r<8 && c>=0 && c<8){ const newIdx=r*8+c; if(isEmpty(newIdx)) moves.push(newIdx); else{ if(isOpponent(newIdx,isWhite)) moves.push(newIdx); break; } r+=dr;c+=dc; } }); return moves;}
+function getQueenMoves(idx,isWhite){ return getRookMoves(idx,isWhite).concat(getBishopMoves(idx,isWhite)); }
+function getKingMoves(idx,isWhite){ const moves=[], row=getRow(idx), col=getCol(idx); const offsets=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]; offsets.forEach(([dr,dc])=>{ const r=row+dr, c=col+dc; if(r>=0&&r<8 && c>=0&&c<8){ const newIdx=r*8+c; if(isEmpty(newIdx) || isOpponent(newIdx,isWhite)) moves.push(newIdx); } }); return moves;}
+function rawValidMoves(idx){ const piece=board[idx]; if(piece===1) return getPawnMoves(idx,true); if(piece===-1) return getPawnMoves(idx,false); if(piece===2) return getRookMoves(idx,true); if(piece===-2) return getRookMoves(idx,false); if(piece===3) return getKnightMoves(idx,true); if(piece===-3) return getKnightMoves(idx,false); if(piece===4) return getBishopMoves(idx,true); if(piece===-4) return getBishopMoves(idx,false); if(piece===5) return getQueenMoves(idx,true); if(piece===-5) return getQueenMoves(idx,false); if(piece===6) return getKingMoves(idx,true); if(piece===-6) return getKingMoves(idx,false); return [];}
+function isKingInCheck(isWhite){ const king=board.findIndex(p=>p=== (isWhite?6:-6)); if(king===-1) return false; for(let i=0;i<64;i++){ const piece=board[i]; if(piece===0) continue; if(Math.sign(piece)!==(isWhite?1:-1)){ const moves=rawValidMoves(i); if(moves.includes(king)) return true; } } return false;}
+function filterLegalMoves(idx,moves){ const piece=board[idx]; const isWhite=piece>0; return moves.filter(dest=>{ const backup=board.slice(); board[dest]=board[idx]; board[idx]=0; const inCheck=isKingInCheck(isWhite); board=backup; return !inCheck; });}
+function getValidMoves(idx){ return filterLegalMoves(idx,rawValidMoves(idx));}
+function isCheckmate(isWhite){ for(let i=0;i<64;i++){ if(Math.sign(board[i])=== (isWhite?1:-1) && getValidMoves(i).length>0) return false; } return isKingInCheck(isWhite);}
+function isStalemate(isWhite){ for(let i=0;i<64;i++){ if(Math.sign(board[i])=== (isWhite?1:-1) && getValidMoves(i).length>0) return false; } return !isKingInCheck(isWhite);}
+
+// Player move
+function cellClick(i){
+  if(turn==='ai' || gameOverlay.style.display==='flex') return;
+  const piece=board[i];
+  if(selected===null){ if(piece>0){ selected=i; renderBoard(); } return;}
+  const valid=getValidMoves(selected);
+  if(valid.includes(i)){
+    board[i]=board[selected]; board[selected]=0; selected=null; renderBoard();
+    if(isCheckmate(false)){ showOverlay("You Lost!"); return; }
+    else if(isStalemate(false)){ showOverlay("Stalemate!"); return; }
+    turn='ai'; updateTurnIndicator(); aiMove();
+  } else { selected=null; renderBoard(); }
+}
+
+// AI move
+function aiMove(){
+  setTimeout(()=>{
+    const aiPieces=[]; for(let i=0;i<64;i++) if(board[i]<0) aiPieces.push(i);
+    let moves=[];
+    aiPieces.forEach(p=> getValidMoves(p).forEach(dest=>moves.push([p,dest])));
+    if(moves.length===0){ turn='player'; updateTurnIndicator(); return;}
+    const pieceValue={1:10,2:50,3:30,4:30,5:90,6:1000};
+    const scoredMoves=moves.map(([from,to])=>{
+      let score=0;
+      const target=board[to]; if(target>0) score+=pieceValue[target]||10;
+      const backup=board.slice(); board[to]=board[from]; board[from]=0;
+      if(isKingInCheck(true)) score+=500; board=backup;
+      return {...{from,to},score};
+    });
+    scoredMoves.sort((a,b)=>b.score-a.score);
+    const move=scoredMoves[0];
+    board[move.to]=board[move.from]; board[move.from]=0; renderBoard();
+    if(isCheckmate(true)){ showOverlay("You Won!"); return; }
+    else if(isStalemate(true)){ showOverlay("Stalemate!"); return; }
+    turn='player'; updateTurnIndicator();
+  },400);
+}
+
+function updateTurnIndicator(){ turnIndicatorCard.textContent=turn==='player'?'🧑 Player':'🤖 AI'; }
+
+// Buttons
+document.getElementById('btnStart').onclick=()=>{
+  hideOverlay();
+  board=startingBoard.slice(); renderBoard();
+  difficulty=diffSelect.value;
+  turn=(firstSelect.value==='player')?'player':'ai';
+  selected=null;
+  updateTurnIndicator();
+  startTimer();
+  if(turn==='ai') aiMove();
+};
+
+document.getElementById('btnReset').onclick=()=>{
+  hideOverlay();
+  board=new Array(64).fill(0); renderBoard();
+  turn='player'; updateTurnIndicator();
+  stopTimer(); selected=null;
+};
+
+// Init
+createBoard(); renderBoard(); updateTurnIndicator();
+</script>
+</body>
+</html>

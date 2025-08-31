@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Henrik World | Login</title>
+<link rel="icon" href="images/favicon.png" type="image/png">
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .login-container {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    text-align: center;
+    position: relative;
+  }
+
+  .login-container h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: #222;
+  }
+
+  .login-container input {
+    width: calc(100% - 2rem);
+    max-width: 100%;
+    padding: 0.8rem;
+    margin: 0.5rem 0 1rem 0;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
+
+  .btn {
+    background: linear-gradient(-45deg, #1e90ff, #00ff99, #1e90ff, #00ff99);
+    background-size: 400% 400%;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.8rem 1.5rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    width: calc(100% - 2rem);
+    max-width: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+    animation: gradientMove 6s ease infinite;
+  }
+
+  .btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+  .btn:active {
+    transform: scale(1.02);
+  }
+
+  @keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .login-footer {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #555;
+  }
+
+  .login-footer a {
+    color: #1e90ff;
+    text-decoration: none;
+  }
+  .login-footer a:hover {
+    text-decoration: underline;
+  }
+
+  /* Loading overlay */
+  #loadingOverlay {
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background: rgba(255,255,255,0.5);
+    display: flex;
+    justify-content:center;
+    align-items:center;
+    z-index: 999;
+    display:none;
+  }
+
+  .spinner {
+    border: 6px solid #f3f3f3;
+    border-top: 6px solid #1e90ff;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+  }
+
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <h2>🌍 Henrik World</h2>
+  <input type="text" id="username" placeholder="Username" />
+  <input type="password" id="password" placeholder="Password" />
+  <button class="btn" id="loginBtn">Login</button>
+
+  <div class="login-footer">
+    <p>Don't have an account? <a href="register.html">Register</a></p>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
+
+<script>
+  // Accounts table
+  const accounts = [
+    { username: "Henrik", password: "Green898" }
+  ];
+
+  const loginBtn = document.getElementById('loginBtn');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+
+  loginBtn.onclick = () => {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    if (!username || !password) {
+      alert('Please enter both username and password.');
+      return;
+    }
+
+    const account = accounts.find(acc => acc.username === username && acc.password === password);
+    if (!account) {
+      alert('Invalid username or password.');
+      return;
+    }
+
+    // Show loading overlay
+    loadingOverlay.style.display = 'flex';
+    setTimeout(() => {
+      localStorage.setItem('loggedInUser', account.username);
+      window.location.href = 'index.html';
+    }, 2000);
+  };
+</script>
+
+</body>
+</html>
