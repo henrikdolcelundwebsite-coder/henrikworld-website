@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Henrik World | Game 1 — Tic Tac Toe</title>
+  <link rel="icon" href="images/favicon.png" type="image/png" />
+
+  <style>
+    /* === Base Site Style === */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      color: #222;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* === Header === */
+    header {
+      background: #fff;
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 4px 8px rgba(0,0,0,.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      word-break: break-word;
+    }
+    header span.home-emoji {
+      cursor: pointer;
+      font-size: 1.5rem;
+    }
+
+    /* === Main Layout === */
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2rem 1rem;
+    }
+    .board-wrap {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.2rem;
+      max-width: 900px;
+      width: 100%;
+    }
+    @media (max-width: 700px) {
+      .board-wrap { grid-template-columns: 1fr; }
+    }
+
+    /* === Card === */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 4px 8px rgba(0,0,0,.1);
+    }
+    .sidebar .card { margin-bottom: 1rem; }
+
+    /* === Button === */
+    .btn {
+      background-color: #ff4d4d;
+      color: #fff;
+      border: 3px solid #444;
+      border-radius: 8px;
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn:hover { transform: scale(1.1); box-shadow: 0 4px 8px rgba(0,0,0,.2); }
+    .btn:active { transform: scale(1.05); }
+
+    /* === Grid === */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+    }
+    .cell {
+      aspect-ratio: 1/1;
+      background: #fff;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      font-size: 2.5rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .cell.filled { cursor: default; background: #f9f9f9; }
+    .cell.win { background: #d4fbd4; border-color: #4caf50; }
+
+    /* === Score & Settings === */
+    .scoreboard { text-align: left; } 
+    .scoreboard div { margin: 0.5rem 0; }
+    .settings label {
+      display: block;
+      margin-top: 0.6rem;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+    .settings select {
+      width: 100%;
+      margin-top: 0.2rem;
+      padding: 0.4rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 0.9rem;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #555;
+      margin: 2rem 1rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header like index.html with clickable emoji -->
+  <header>
+    <h1>🌍 Henrik World</h1>
+    <span class="home-emoji" onclick="location.href='index.html'">🏠</span>
+  </header>
+
+  <main>
+    <div class="board-wrap">
+      <!-- Game Board -->
+      <div class="card">
+        <div id="grid" class="grid">
+          <button class="cell" data-idx="0"></button>
+          <button class="cell" data-idx="1"></button>
+          <button class="cell" data-idx="2"></button>
+          <button class="cell" data-idx="3"></button>
+          <button class="cell" data-idx="4"></button>
+          <button class="cell" data-idx="5"></button>
+          <button class="cell" data-idx="6"></button>
+          <button class="cell" data-idx="7"></button>
+          <button class="cell" data-idx="8"></button>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="card scoreboard">
+          <h3>📊 Score</h3>
+          <div>🤵 Player: <span id="scorePlayer">0</span></div>
+          <div>⚖️ Draws: <span id="scoreDraw">0</span></div>
+          <div>🤖 AI: <span id="scoreAI">0</span></div>
+        </div>
+
+        <div class="card settings">
+          <h3>⚙️ Settings</h3>
+          <label for="difficulty">Difficulty</label>
+          <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="unbeatable" selected>Unbeatable</option>
+          </select>
+
+          <label for="first">Who goes first?</label>
+          <select id="first">
+            <option value="player" selected>Player</option>
+            <option value="ai">AI</option>
+          </select>
+
+          <button id="btnStart" class="btn" style="margin-top:1rem;">▶️ Start New Game</button>
+          <button id="btnReset" class="btn" style="margin-top:0.5rem;">🔄 Reset Score</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 henrikworld.com. All rights reserved.
+  </footer>
+
+  <script>
+    const cells = Array.from(document.querySelectorAll('.cell'));
+    const scorePlayerEl = document.getElementById('scorePlayer');
+    const scoreDrawEl = document.getElementById('scoreDraw');
+    const scoreAIEl = document.getElementById('scoreAI');
+    const diffSelect = document.getElementById('difficulty');
+    const firstSelect = document.getElementById('first');
+
+    let board = Array(9).fill('');
+    let human = 'X', ai = 'O', turn = 'X', gameOver = false;
+    let score = {player:0, draw:0, ai:0};
+    const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+    function winner(b){
+      for(const [a,b2,c] of lines){
+        if(b[a] && b[a]===b[b2] && b[a]===b[c]) return {mark:b[a], line:[a,b2,c]};
+      }
+      if(b.every(v=>v)) return {draw:true};
+      return null;
+    }
+
+    function render(){
+      cells.forEach((c,i)=>{ c.textContent=board[i]; c.className='cell'+(board[i]?' filled':''); });
+    }
+
+    function aiMove(){
+      let idx;
+      if(diffSelect.value==="easy"){
+        const empty = board.map((v,i)=>v?null:i).filter(v=>v!==null);
+        idx = empty[Math.floor(Math.random()*empty.length)];
+      }else{
+        idx = bestMove();
+      }
+      move(idx, ai);
+    }
+
+    function bestMove(){
+      let bestScore=-Infinity, moveIdx;
+      for(let i=0;i<9;i++){
+        if(!board[i]){
+          board[i]=ai;
+          let score=minimax(board,0,false);
+          board[i]='';
+          if(score>bestScore){bestScore=score;moveIdx=i;}
+        }
+      }
+      return moveIdx;
+    }
+
+    function minimax(b, depth, isMax){
+      const w = winner(b);
+      if(w){
+        if(w.mark===ai) return 10-depth;
+        if(w.mark===human) return depth-10;
+        return 0;
+      }
+      if(isMax){
+        let best=-Infinity;
+        for(let i=0;i<9;i++){
+          if(!b[i]){
+            b[i]=ai;
+            best=Math.max(best,minimax(b,depth+1,false));
+            b[i]='';
+          }
+        }
+        return best;
+      }else{
+        let best=Infinity;
+        for(let i=0;i<9;i++){
+          if(!b[i]){
+            b[i]=human;
+            best=Math.min(best,minimax(b,depth+1,true));
+            b[i]='';
+          }
+        }
+        return best;
+      }
+    }
+
+    function move(i, mark){
+      if(board[i] || gameOver) return;
+      board[i]=mark;
+      render();
+      const w = winner(board);
+      if(w){
+        gameOver = true;
+        if(w.mark){
+          if(w.mark===human){ score.player++; }
+          else { score.ai++; }
+          w.line.forEach(j=>cells[j].classList.add('win'));
+        }else{
+          score.draw++;
+        }
+        updateScore();
+        return;
+      }
+      turn = (mark==='X'?'O':'X');
+      if(turn===ai) setTimeout(aiMove,400);
+    }
+
+    function updateScore(){
+      scorePlayerEl.textContent=score.player;
+      scoreDrawEl.textContent=score.draw;
+      scoreAIEl.textContent=score.ai;
+    }
+
+    // Events
+    cells.forEach((c,i)=>c.onclick=()=>{ if(turn===human && !gameOver) move(i,human); });
+    document.getElementById('btnStart').onclick=()=>{
+      board=Array(9).fill(''); gameOver=false;
+      render();
+      turn = (firstSelect.value==='player')?human:ai;
+      if(turn===ai) setTimeout(aiMove,400);
+    };
+    document.getElementById('btnReset').onclick=()=>{
+      score={player:0,draw:0,ai:0}; updateScore();
+    };
+
+    render(); updateScore();
+  </script>
+</body>
+</html>
+
