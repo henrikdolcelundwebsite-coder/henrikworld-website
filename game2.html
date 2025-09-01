@@ -19,8 +19,8 @@
   #chessboard{display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr); gap:2px; max-width:600px; width:100%; margin:0 auto;}
   .cell{aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none;}
   .cell img{width:95%; height:95%;}
-  .white{background:#eee;}
-  .black{background:#999;}
+  .white{background:#f0d9b5;}   /* light brown */
+  .black{background:#b58863;}   /* dark brown */
   .selected{outline:3px solid #1e90ff;}
   .sidebar .card{margin-bottom:1rem;}
   .settings label{display:block; margin-top:0.6rem; font-weight:bold;}
@@ -124,13 +124,13 @@ const btnReset = document.getElementById('btnReset');
 
 /* ---------- Game state ---------- */
 let board = new Array(64).fill(0);
-let turn = 'player';        // 'player' (white) or 'ai' (black)
+let turn = 'player';
 let selected = null;
 let difficulty = 'easy';
 let secondsElapsed = 0;
 let timerInterval = null;
 
-/* piece -> filename mapping (make sure images exist) */
+/* piece -> filename mapping */
 const pieceMap = {
   "1": "white-pawn.png","2": "white-rook.png","3": "white-knight.png",
   "4": "white-bishop.png","5": "white-queen.png","6": "white-king.png",
@@ -138,7 +138,7 @@ const pieceMap = {
   "-4": "black-bishop.png","-5": "black-queen.png","-6": "black-king.png"
 };
 
-/* starting board: positive = white, negative = black */
+/* starting board */
 const startingBoard = [
   -2,-3,-4,-5,-6,-4,-3,-2,
   -1,-1,-1,-1,-1,-1,-1,-1,
@@ -155,7 +155,6 @@ function createBoard(){
   chessboard.innerHTML = '';
   for(let i=0;i<64;i++){
     const cell = document.createElement('div');
-    // alternate colors: (row + col) % 2
     const row = Math.floor(i/8);
     const col = i % 8;
     cell.classList.add(((row + col) % 2 === 0) ? 'white' : 'black', 'cell');
@@ -179,9 +178,7 @@ function showOverlay(message){
   gameOverlay.textContent = message;
   gameOverlay.style.display = 'flex';
 }
-function hideOverlay(){
-  gameOverlay.style.display = 'none';
-}
+function hideOverlay(){ gameOverlay.style.display = 'none'; }
 
 function startTimer(){
   clearInterval(timerInterval);
@@ -195,7 +192,6 @@ function updateTimer(){
   const seconds = String(secondsElapsed % 60).padStart(2,'0');
   gameTimer.textContent = `⏱ Time: ${minutes}:${seconds}`;
 }
-
 function updateTurnIndicator(){ turnIndicatorCard.textContent = (turn === 'player') ? '🧑 Player' : '🤖 AI'; }
 
 /* ---------- Chess logic ---------- */
@@ -204,348 +200,286 @@ function getCol(i){ return i % 8; }
 function isEmpty(i){ return board[i] === 0; }
 function isOpponent(i, isWhite){ return board[i] !== 0 && Math.sign(board[i]) !== (isWhite ? 1 : -1); }
 
-/* Move generation (basic rules; no en-passant, no castling, no promotion auto-handling except simple moves) */
+/* Moves generation (same as before) */
 function getPawnMoves(idx, isWhite){
   const moves = [];
   const row = getRow(idx), col = getCol(idx);
   const dir = isWhite ? -1 : 1;
-  const oneStep = idx + dir * 8;
-  if(oneStep >= 0 && oneStep < 64 && isEmpty(oneStep)) {
+  const oneStep = idx + dir*8;
+  if(oneStep>=0 && oneStep<64 && isEmpty(oneStep)) {
     moves.push(oneStep);
-    // two-step from start
     const startRow = isWhite ? 6 : 1;
-    const twoStep = idx + dir * 16;
-    if(row === startRow && isEmpty(twoStep)) moves.push(twoStep);
+    const twoStep = idx + dir*16;
+    if(row===startRow && isEmpty(twoStep)) moves.push(twoStep);
   }
-  // captures
-  if(col > 0 && oneStep - 1 >= 0 && isOpponent(oneStep - 1, isWhite)) moves.push(oneStep - 1);
-  if(col < 7 && oneStep + 1 < 64 && isOpponent(oneStep + 1, isWhite)) moves.push(oneStep + 1);
+  if(col>0 && oneStep-1>=0 && isOpponent(oneStep-1,isWhite)) moves.push(oneStep-1);
+  if(col<7 && oneStep+1<64 && isOpponent(oneStep+1,isWhite)) moves.push(oneStep+1);
   return moves;
 }
-
-function getRookMoves(idx, isWhite){
-  const moves = [];
-  const row = getRow(idx), col = getCol(idx);
-  const directions = [[-1,0],[1,0],[0,-1],[0,1]];
-  directions.forEach(([dr,dc])=>{
-    let r = row + dr, c = col + dc;
-    while(r >= 0 && r < 8 && c >= 0 && c < 8){
-      const newIdx = r*8 + c;
+function getRookMoves(idx,isWhite){
+  const moves=[]; const row=getRow(idx), col=getCol(idx);
+  const dirs=[[-1,0],[1,0],[0,-1],[0,1]];
+  dirs.forEach(([dr,dc])=>{
+    let r=row+dr,c=col+dc;
+    while(r>=0 && r<8 && c>=0 && c<8){
+      const newIdx=r*8+c;
       if(isEmpty(newIdx)) moves.push(newIdx);
-      else { if(isOpponent(newIdx, isWhite)) moves.push(newIdx); break; }
-      r += dr; c += dc;
+      else { if(isOpponent(newIdx,isWhite)) moves.push(newIdx); break; }
+      r+=dr; c+=dc;
     }
   });
   return moves;
 }
-
-function getKnightMoves(idx, isWhite){
-  const moves = [];
-  const row = getRow(idx), col = getCol(idx);
-  const offsets = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+function getKnightMoves(idx,isWhite){
+  const moves=[]; const row=getRow(idx), col=getCol(idx);
+  const offsets=[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
   offsets.forEach(([dr,dc])=>{
-    const r = row + dr, c = col + dc;
-    if(r >= 0 && r < 8 && c >= 0 && c < 8){
-      const newIdx = r*8 + c;
-      if(isEmpty(newIdx) || isOpponent(newIdx, isWhite)) moves.push(newIdx);
+    const r=row+dr,c=col+dc;
+    if(r>=0 && r<8 && c>=0 && c<8){
+      const newIdx=r*8+c;
+      if(isEmpty(newIdx)||isOpponent(newIdx,isWhite)) moves.push(newIdx);
     }
   });
   return moves;
 }
-
-function getBishopMoves(idx, isWhite){
-  const moves = [];
-  const row = getRow(idx), col = getCol(idx);
-  const directions = [[-1,-1],[-1,1],[1,-1],[1,1]];
-  directions.forEach(([dr,dc])=>{
-    let r = row + dr, c = col + dc;
-    while(r >= 0 && r < 8 && c >= 0 && c < 8){
-      const newIdx = r*8 + c;
+function getBishopMoves(idx,isWhite){
+  const moves=[]; const row=getRow(idx), col=getCol(idx);
+  const dirs=[[-1,-1],[-1,1],[1,-1],[1,1]];
+  dirs.forEach(([dr,dc])=>{
+    let r=row+dr, c=col+dc;
+    while(r>=0 && r<8 && c>=0 && c<8){
+      const newIdx=r*8+c;
       if(isEmpty(newIdx)) moves.push(newIdx);
-      else { if(isOpponent(newIdx, isWhite)) moves.push(newIdx); break; }
-      r += dr; c += dc;
+      else { if(isOpponent(newIdx,isWhite)) moves.push(newIdx); break; }
+      r+=dr; c+=dc;
     }
   });
   return moves;
 }
-function getQueenMoves(idx, isWhite){ return getRookMoves(idx,isWhite).concat(getBishopMoves(idx,isWhite)); }
-function getKingMoves(idx, isWhite){
-  const moves = [];
-  const row = getRow(idx), col = getCol(idx);
-  const offsets = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+function getQueenMoves(idx,isWhite){ return getRookMoves(idx,isWhite).concat(getBishopMoves(idx,isWhite)); }
+function getKingMoves(idx,isWhite){
+  const moves=[]; const row=getRow(idx), col=getCol(idx);
+  const offsets=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
   offsets.forEach(([dr,dc])=>{
-    const r = row + dr, c = col + dc;
-    if(r >= 0 && r < 8 && c >= 0 && c < 8){
-      const newIdx = r*8 + c;
-      if(isEmpty(newIdx) || isOpponent(newIdx, isWhite)) moves.push(newIdx);
+    const r=row+dr,c=col+dc;
+    if(r>=0 && r<8 && c>=0 && c<8){
+      const newIdx=r*8+c;
+      if(isEmpty(newIdx)||isOpponent(newIdx,isWhite)) moves.push(newIdx);
     }
   });
   return moves;
 }
 
 function rawValidMoves(idx){
-  const piece = board[idx];
-  if(piece === 1) return getPawnMoves(idx,true);
-  if(piece === -1) return getPawnMoves(idx,false);
-  if(piece === 2) return getRookMoves(idx,true);
-  if(piece === -2) return getRookMoves(idx,false);
-  if(piece === 3) return getKnightMoves(idx,true);
-  if(piece === -3) return getKnightMoves(idx,false);
-  if(piece === 4) return getBishopMoves(idx,true);
-  if(piece === -4) return getBishopMoves(idx,false);
-  if(piece === 5) return getQueenMoves(idx,true);
-  if(piece === -5) return getQueenMoves(idx,false);
-  if(piece === 6) return getKingMoves(idx,true);
-  if(piece === -6) return getKingMoves(idx,false);
+  const piece=board[idx];
+  if(piece===1) return getPawnMoves(idx,true);
+  if(piece===-1) return getPawnMoves(idx,false);
+  if(piece===2) return getRookMoves(idx,true);
+  if(piece===-2) return getRookMoves(idx,false);
+  if(piece===3) return getKnightMoves(idx,true);
+  if(piece===-3) return getKnightMoves(idx,false);
+  if(piece===4) return getBishopMoves(idx,true);
+  if(piece===-4) return getBishopMoves(idx,false);
+  if(piece===5) return getQueenMoves(idx,true);
+  if(piece===-5) return getQueenMoves(idx,false);
+  if(piece===6) return getKingMoves(idx,true);
+  if(piece===-6) return getKingMoves(idx,false);
   return [];
 }
 
+/* ---------- FIXED isKingInCheck ---------- */
 function isKingInCheck(isWhite){
   const king = board.findIndex(p => p === (isWhite ? 6 : -6));
-  if(king === -1) return true; // if king missing, treat as "in check" (captured)
+  if(king===-1) return true;
   for(let i=0;i<64;i++){
-    const piece = board[i];
-    if(piece === 0) continue;
-    if(Math.sign(piece) !== (isWhite ? 1 : -1)){
-      const moves = rawValidMoves(i);
+    const piece=board[i];
+    if(piece===0) continue;
+    if(Math.sign(piece)!==(isWhite?1:-1)){
+      let moves=[];
+      const absPiece=Math.abs(piece);
+      if(absPiece===1) moves=getPawnMoves(i,piece>0);
+      else if(absPiece===2) moves=getRookMoves(i,piece>0);
+      else if(absPiece===3) moves=getKnightMoves(i,piece>0);
+      else if(absPiece===4) moves=getBishopMoves(i,piece>0);
+      else if(absPiece===5) moves=getQueenMoves(i,piece>0);
+      else if(absPiece===6) moves=getKingMoves(i,piece>0);
+
+      if(absPiece===2||absPiece===4||absPiece===5){
+        moves=moves.filter(dest=>isPathClear(i,dest));
+      }
+
       if(moves.includes(king)) return true;
     }
   }
   return false;
 }
 
+function isPathClear(from,to){
+  const fromRow=Math.floor(from/8), fromCol=from%8;
+  const toRow=Math.floor(to/8), toCol=to%8;
+  const dRow=Math.sign(toRow-fromRow);
+  const dCol=Math.sign(toCol-fromCol);
+  let r=fromRow+dRow, c=fromCol+dCol;
+  while(r!==toRow||c!==toCol){
+    if(board[r*8+c]!==0) return false;
+    r+=dRow; c+=dCol;
+  }
+  return true;
+}
+
+/* ---------- Other logic (moves, AI, timer, buttons) ---------- */
+/* keep the same logic as in your original code for move validation, AI, and buttons */
 function filterLegalMoves(idx, moves){
   const piece = board[idx];
   const isWhite = piece > 0;
   return moves.filter(dest => {
     const backup = board.slice();
-    board[dest] = board[idx];
-    board[idx] = 0;
-    const inCheck = isKingInCheck(isWhite);
-    board = backup;
+    board[dest]=board[idx]; board[idx]=0;
+    const inCheck=isKingInCheck(isWhite);
+    board=backup;
     return !inCheck;
   });
 }
-
 function getValidMoves(idx){ return filterLegalMoves(idx, rawValidMoves(idx)); }
 
 function isCheckmate(isWhite){
   for(let i=0;i<64;i++){
-    if(Math.sign(board[i]) === (isWhite ? 1 : -1) && getValidMoves(i).length > 0) return false;
+    if(Math.sign(board[i])===(isWhite?1:-1)&&getValidMoves(i).length>0) return false;
   }
   return isKingInCheck(isWhite);
 }
 
 function isStalemate(isWhite){
   for(let i=0;i<64;i++){
-    if(Math.sign(board[i]) === (isWhite ? 1 : -1) && getValidMoves(i).length > 0) return false;
+    if(Math.sign(board[i])===(isWhite?1:-1)&&getValidMoves(i).length>0) return false;
   }
   return !isKingInCheck(isWhite);
 }
 
 /* ---------- Player interaction ---------- */
 function cellClick(i){
-  if(turn === 'ai' || gameOverlay.style.display === 'flex') return;
-  const piece = board[i];
-  if(selected === null){
-    if(piece > 0) { selected = i; renderBoard(); }
+  if(turn==='ai'||gameOverlay.style.display==='flex') return;
+  const piece=board[i];
+  if(selected===null){
+    if(piece>0){ selected=i; renderBoard(); }
     return;
   }
-  const valid = getValidMoves(selected);
+  const valid=getValidMoves(selected);
   if(valid.includes(i)){
-    // move
-    board[i] = board[selected];
-    board[selected] = 0;
-    selected = null;
-    renderBoard();
-
-    // Handle pawn promotion simply: auto-queen when reaches last rank
+    board[i]=board[selected]; board[selected]=0; selected=null; renderBoard();
     for(let k=0;k<64;k++){
-      if(board[k] === 1 && getRow(k) === 0) board[k] = 5;
-      if(board[k] === -1 && getRow(k) === 7) board[k] = -5;
+      if(board[k]===1&&getRow(k)===0) board[k]=5;
+      if(board[k]===-1&&getRow(k)===7) board[k]=-5;
     }
-
-    // After the player's move, check if BLACK (AI) is checkmated/stalemated
-    if(isCheckmate(false)) { showOverlay("You Won!"); stopTimer(); return; }
-    else if(isStalemate(false)) { showOverlay("Stalemate!"); stopTimer(); return; }
-
-    turn = 'ai';
-    updateTurnIndicator();
-    setTimeout(aiMove, 200); // small delay so UI updates
-  } else {
-    selected = null;
-    renderBoard();
-  }
+    if(isCheckmate(false)){ showOverlay("You Won!"); stopTimer(); return; }
+    else if(isStalemate(false)){ showOverlay("Stalemate!"); stopTimer(); return; }
+    turn='ai'; updateTurnIndicator(); setTimeout(aiMove,200);
+  } else { selected=null; renderBoard(); }
 }
 
-/* ---------- AI logic: evaluation + minimax (alpha-beta) ---------- */
-/* piece values: positive white, negative black
-   We'll use material-only evaluation (simple, but effective). */
+/* ---------- AI logic, minimax & execution ---------- */
+/* same as original code, no changes needed for AI */
 const pieceValue = {
-  1: 100, 2: 500, 3: 320, 4: 330, 5: 900, 6: 20000,
-  "-1": -100, "-2": -500, "-3": -320, "-4": -330, "-5": -900, "-6": -20000
+  1:100,2:500,3:320,4:330,5:900,6:20000,
+  "-1":-100,"-2":-500,"-3":-320,"-4":-330,"-5":-900,"-6":-20000
 };
 
 function evaluateBoard(boardState){
-  // material sum: positive => white better, negative => black better
-  return boardState.reduce((s, piece) => s + (pieceValue[piece] || 0), 0);
+  return boardState.reduce((s,piece)=>s+(pieceValue[piece]||0),0);
 }
-
-/* Generate all legal moves for a side */
 function generateMoves(isWhite){
-  const moves = [];
+  const moves=[];
   for(let i=0;i<64;i++){
-    if(board[i] === 0) continue;
-    if((isWhite && board[i] > 0) || (!isWhite && board[i] < 0)){
-      const valids = getValidMoves(i);
-      valids.forEach(dest => moves.push({ from: i, to: dest }));
+    if(board[i]===0) continue;
+    if((isWhite&&board[i]>0)||(!isWhite&&board[i]<0)){
+      const valids=getValidMoves(i);
+      valids.forEach(dest=>moves.push({from:i,to:dest}));
     }
   }
   return moves;
 }
 
-/* minimax with alpha-beta. isMaximizing = true means we're evaluating white's turn (player),
-   false => black's turn (AI). We always evaluate on the current global board. */
-function minimax(depth, alpha, beta, isMaximizing){
-  if(depth === 0) return evaluateBoard(board);
-
-  const moves = generateMoves(isMaximizing); // moves for side to play
-  if(moves.length === 0) return evaluateBoard(board);
-
+function minimax(depth,alpha,beta,isMaximizing){
+  if(depth===0) return evaluateBoard(board);
+  const moves=generateMoves(isMaximizing);
+  if(moves.length===0) return evaluateBoard(board);
   if(isMaximizing){
-    let maxEval = -Infinity;
+    let maxEval=-Infinity;
     for(const move of moves){
-      const backup = board.slice();
-      // make move
-      board[move.to] = board[move.from];
-      board[move.from] = 0;
-
-      // simple pawn promotion auto-queen if needed for search correctness
-      if(board[move.to] === 1 && getRow(move.to) === 0) board[move.to] = 5;
-      if(board[move.to] === -1 && getRow(move.to) === 7) board[move.to] = -5;
-
-      const evalScore = minimax(depth - 1, alpha, beta, false);
-      board = backup;
-      if(evalScore > maxEval) maxEval = evalScore;
-      if(evalScore > alpha) alpha = evalScore;
-      if(beta <= alpha) break;
+      const backup=board.slice();
+      board[move.to]=board[move.from]; board[move.from]=0;
+      if(board[move.to]===1&&getRow(move.to)===0) board[move.to]=5;
+      if(board[move.to]===-1&&getRow(move.to)===7) board[move.to]=-5;
+      const evalScore=minimax(depth-1,alpha,beta,false);
+      board=backup;
+      if(evalScore>maxEval) maxEval=evalScore;
+      if(evalScore>alpha) alpha=evalScore;
+      if(beta<=alpha) break;
     }
     return maxEval;
   } else {
-    let minEval = Infinity;
+    let minEval=Infinity;
     for(const move of moves){
-      const backup = board.slice();
-      board[move.to] = board[move.from];
-      board[move.from] = 0;
-
-      if(board[move.to] === 1 && getRow(move.to) === 0) board[move.to] = 5;
-      if(board[move.to] === -1 && getRow(move.to) === 7) board[move.to] = -5;
-
-      const evalScore = minimax(depth - 1, alpha, beta, true);
-      board = backup;
-      if(evalScore < minEval) minEval = evalScore;
-      if(evalScore < beta) beta = evalScore;
-      if(beta <= alpha) break;
+      const backup=board.slice();
+      board[move.to]=board[move.from]; board[move.from]=0;
+      if(board[move.to]===1&&getRow(move.to)===0) board[move.to]=5;
+      if(board[move.to]===-1&&getRow(move.to)===7) board[move.to]=-5;
+      const evalScore=minimax(depth-1,alpha,beta,true);
+      board=backup;
+      if(evalScore<minEval) minEval=evalScore;
+      if(evalScore<beta) beta=evalScore;
+      if(beta<=alpha) break;
     }
     return minEval;
   }
 }
 
-/* AI performs a move depending on difficulty */
 function aiMove(){
-  // small delay already scheduled by caller
-  // difficulty: easy (random), medium (depth 2), hard (depth 3)
-  const allMoves = generateMoves(false); // AI is black (negative)
-  if(allMoves.length === 0){
-    turn = 'player';
-    updateTurnIndicator();
-    return;
-  }
-
-  let chosenMove = null;
-
-  if(difficulty === 'easy'){
-    chosenMove = allMoves[Math.floor(Math.random() * allMoves.length)];
-  } else {
-    const depth = (difficulty === 'medium') ? 2 : 3;
-    let bestScore = Infinity; // AI minimizes evaluation (wants negative)
-    // prefer captures or checks first: simple move ordering improves pruning
-    allMoves.sort((a,b)=>{
-      const aTarget = board[a.to], bTarget = board[b.to];
-      return ( (bTarget ? Math.abs(bTarget) : 0) - (aTarget ? Math.abs(aTarget) : 0) );
-    });
-
+  const allMoves=generateMoves(false);
+  if(allMoves.length===0){ turn='player'; updateTurnIndicator(); return; }
+  let chosenMove=null;
+  if(difficulty==='easy') chosenMove=allMoves[Math.floor(Math.random()*allMoves.length)];
+  else{
+    const depth=(difficulty==='medium')?2:3;
+    let bestScore=Infinity;
+    allMoves.sort((a,b)=>{const aTarget=board[a.to],bTarget=board[b.to]; return ((bTarget?Math.abs(bTarget):0)-(aTarget?Math.abs(aTarget):0));});
     for(const move of allMoves){
-      const backup = board.slice();
-      board[move.to] = board[move.from];
-      board[move.from] = 0;
-
-      // simple promotion
-      if(board[move.to] === 1 && getRow(move.to) === 0) board[move.to] = 5;
-      if(board[move.to] === -1 && getRow(move.to) === 7) board[move.to] = -5;
-
-      const score = minimax(depth - 1, -Infinity, Infinity, true);
-      board = backup;
-
-      if(score < bestScore){
-        bestScore = score;
-        chosenMove = move;
-      }
+      const backup=board.slice();
+      board[move.to]=board[move.from]; board[move.from]=0;
+      if(board[move.to]===1&&getRow(move.to)===0) board[move.to]=5;
+      if(board[move.to]===-1&&getRow(move.to)===7) board[move.to]=-5;
+      const score=minimax(depth-1,-Infinity,Infinity,true);
+      board=backup;
+      if(score<bestScore){ bestScore=score; chosenMove=move; }
     }
-    // fallback to a random move if somehow none chosen
-    if(!chosenMove) chosenMove = allMoves[Math.floor(Math.random() * allMoves.length)];
+    if(!chosenMove) chosenMove=allMoves[Math.floor(Math.random()*allMoves.length)];
   }
-
-  // execute chosen move
-  board[chosenMove.to] = board[chosenMove.from];
-  board[chosenMove.from] = 0;
-
-  // handle promotion
-  if(board[chosenMove.to] === 1 && getRow(chosenMove.to) === 0) board[chosenMove.to] = 5;
-  if(board[chosenMove.to] === -1 && getRow(chosenMove.to) === 7) board[chosenMove.to] = -5;
-
+  board[chosenMove.to]=board[chosenMove.from]; board[chosenMove.from]=0;
+  if(board[chosenMove.to]===1&&getRow(chosenMove.to)===0) board[chosenMove.to]=5;
+  if(board[chosenMove.to]===-1&&getRow(chosenMove.to)===7) board[chosenMove.to]=-5;
   renderBoard();
-
-  // After AI move, check if WHITE (player) is checkmated/stalemated
   if(isCheckmate(true)){ showOverlay("You Lost!"); stopTimer(); return; }
   else if(isStalemate(true)){ showOverlay("Stalemate!"); stopTimer(); return; }
-
-  turn = 'player';
-  updateTurnIndicator();
+  turn='player'; updateTurnIndicator();
 }
 
-/* ---------- Buttons & init ---------- */
-btnStart.onclick = () => {
+/* ---------- Buttons ---------- */
+btnStart.onclick=()=>{
   hideOverlay();
-  board = startingBoard.slice();
-  difficulty = diffSelect.value;
-  turn = (firstSelect.value === 'player') ? 'player' : 'ai';
-  selected = null;
-  updateTurnIndicator();
-  renderBoard();
-  startTimer();
-  if(turn === 'ai') {
-    // give the UI one frame to update then move
-    setTimeout(aiMove, 300);
-  }
+  board=startingBoard.slice();
+  difficulty=diffSelect.value;
+  turn=(firstSelect.value==='player')?'player':'ai';
+  selected=null; updateTurnIndicator(); renderBoard(); startTimer();
+  if(turn==='ai') setTimeout(aiMove,300);
 };
-
-btnReset.onclick = () => {
+btnReset.onclick=()=>{
   hideOverlay();
-  board = new Array(64).fill(0);
-  selected = null;
-  turn = 'player';
-  updateTurnIndicator();
-  renderBoard();
-  stopTimer();
+  board=new Array(64).fill(0);
+  selected=null; turn='player'; updateTurnIndicator(); renderBoard(); stopTimer();
 };
 
 /* initial setup */
-createBoard();
-board = startingBoard.slice();
-renderBoard();
-updateTurnIndicator();
-
+createBoard(); board=startingBoard.slice(); renderBoard(); updateTurnIndicator();
 </script>
 </body>
 </html>
