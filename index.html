@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Henrik World | Play Fun Games Online</title>
+<link rel="icon" href="images/favicon.png" type="image/png">
 
 <style>
 /* === Background Animation === */
@@ -122,6 +122,8 @@ header h1 {
   font-weight: bold;
   color: #222;
   margin: 0;
+  opacity: 0;
+  transition: opacity 0.8s ease;
 }
 
 #gamesSection .underline {
@@ -130,6 +132,8 @@ header h1 {
   background-color: #1e90ff;
   margin: 0.5rem auto 1rem auto;
   border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.8s ease;
 }
 
 #gamesContainer {
@@ -139,6 +143,8 @@ header h1 {
   flex-wrap: wrap;
   margin: 0 auto 1rem auto;
   max-width: 1000px;
+  opacity: 0;
+  transition: opacity 0.8s ease;
 }
 
 .cta-button {
@@ -151,9 +157,9 @@ header h1 {
   background-position: center;
   position: relative;
   box-sizing: border-box;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.8s ease;
   overflow: hidden;
-  opacity: 1;
+  opacity: 0;
 }
 
 .cta-button::before {
@@ -175,18 +181,16 @@ header h1 {
   box-shadow: 0 8px 16px rgba(0,0,0,0.25);
 }
 
-.game1-btn { 
-  background-image: url('images/game1picture.jpg'); 
-}
-
-.game2-btn { 
-  background-image: url('images/game2picture.jpg'); 
-}
+.game1-btn { background-image: url('images/game1picture.jpg'); }
+.game2-btn { background-image: url('images/game2picture.jpg'); }
+.game3-btn { background-image: url('images/game3picture.jpg'); }
 
 #gamesSection .more-games {
   font-size: 0.95rem;
   color: #555;
   margin-top: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.8s ease;
 }
 
 footer {
@@ -222,6 +226,19 @@ footer {
 @keyframes spin {
   0% { transform: rotate(0deg);}
   100% { transform: rotate(360deg);}
+}
+
+/* Message for not logged in users */
+#notLoggedInMessage {
+  display:none;
+  position: absolute;
+  top:50%;
+  left:50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  text-align:center;
 }
 
 @media (max-width: 640px) {
@@ -265,9 +282,13 @@ footer {
   <div id="gamesContainer">
     <a href="game1.html" class="cta-button game1-btn" alt="Tic Tac Toe Game"></a>
     <a href="game2.html" class="cta-button game2-btn" alt="Game 2"></a>
+    <a href="game3.html" class="cta-button game3-btn" alt="Blackjack Game"></a>
   </div>
   <div class="more-games">More games coming soon!</div>
 </div>
+
+<!-- Message for not logged in users -->
+<div id="notLoggedInMessage"></div>
 
 <footer>
   &copy; 2025 henrikworld.com. All rights reserved.
@@ -279,17 +300,24 @@ footer {
 
 <script>
 const loggedInUser = localStorage.getItem('loggedInUser');
-
 const usernameDisplay = document.getElementById('usernameDisplay');
 const dropdownMenu = document.getElementById('dropdownMenu');
 const logoutBtn = document.getElementById('logoutBtn');
 const loadingOverlay = document.getElementById('loadingOverlay');
+const gamesSection = document.getElementById('gamesSection');
+const notLoggedInMessage = document.getElementById('notLoggedInMessage');
 const gamesContainer = document.getElementById('gamesContainer');
+
+// Hide all by default
+gamesSection.style.display = "none";
+notLoggedInMessage.style.display = "none";
 
 if (loggedInUser) {
   usernameDisplay.textContent = loggedInUser;
   usernameDisplay.classList.add('logged-in');
-  gamesContainer.style.display = "flex";
+  gamesSection.style.display = "block";
+  notLoggedInMessage.style.display = "none";
+
   usernameDisplay.onclick = () => {
     dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
   };
@@ -308,18 +336,72 @@ if (loggedInUser) {
     }
   });
 
+  // Fade in each element in sequence
+  setTimeout(() => {
+    const elements = [
+      gamesSection.querySelector('h2'),
+      gamesSection.querySelector('.underline'),
+      gamesContainer,
+      gamesSection.querySelector('.more-games')
+    ];
+    elements.forEach((el, i) => {
+      setTimeout(() => {
+        el.style.opacity = 1;
+      }, i * 300);
+    });
+
+    // Fade in each game button individually
+    gamesContainer.querySelectorAll('.cta-button').forEach((btn, i) => {
+      setTimeout(() => {
+        btn.style.opacity = 1;
+      }, i * 200 + 1000);
+    });
+  }, 200);
+
 } else {
   usernameDisplay.textContent = "Log in";
   usernameDisplay.classList.add('logged-out');
-  gamesContainer.style.display = "none";
+  gamesSection.style.display = "none";
+  notLoggedInMessage.style.display = "block";
+
   usernameDisplay.onclick = () => {
     loadingOverlay.style.display = 'flex';
     setTimeout(() => {
       window.location.href = 'login.html';
     }, 300);
   };
+
+  // Falling letters animation
+  const messageText = "Projects created by Henrik!";
+  notLoggedInMessage.innerHTML = "";
+  messageText.split("").forEach((char, index) => {
+    const span = document.createElement("span");
+    span.textContent = char;
+    span.style.display = "inline-block";
+    span.style.opacity = 0;
+    span.style.transform = "translateY(-50px)";
+    span.style.transition = `transform 0.8s ease ${index * 0.1}s, opacity 0.8s ease ${index * 0.1}s`;
+    notLoggedInMessage.appendChild(span);
+  });
+
+  setTimeout(() => {
+    notLoggedInMessage.querySelectorAll("span").forEach(span => {
+      span.style.opacity = 1;
+      span.style.transform = "translateY(0)";
+    });
+  }, 100);
+
+  notLoggedInMessage.style.position = "absolute";
+  notLoggedInMessage.style.top = "50%";
+  notLoggedInMessage.style.left = "50%";
+  notLoggedInMessage.style.transform = "translate(-50%, -50%)";
+  notLoggedInMessage.style.fontSize = "2rem";
+  notLoggedInMessage.style.fontWeight = "bold";
+  notLoggedInMessage.style.color = "#333";
+  notLoggedInMessage.style.textAlign = "center";
 }
 
+// Loading overlay when clicking a game
 document.querySelectorAll('.cta-button').forEach(btn => {
   btn.addEventListener('click', e => {
     e.preventDefault();

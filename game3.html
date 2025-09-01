@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Henrik World</title>
+<link rel="icon" href="images/favicon.png" type="image/png" />
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  body { font-family: Arial, sans-serif; background: #f0f0f0; min-height: 100vh; display:flex; flex-direction:column; }
+  header { background:#fff; padding:1rem 2rem; position:sticky; top:0; z-index:1000; box-shadow:0 4px 8px rgba(0,0,0,.1); display:flex; justify-content:space-between; align-items:center; }
+  header h1 { font-size:1.5rem; }
+  header .home-emoji { cursor:pointer; font-size:1.5rem; }
+  main { flex:1; display:flex; flex-direction:column; align-items:center; padding:1rem; }
+  #statusText { margin-bottom:0.5rem; color:#444; font-size:1.5rem; font-weight:bold; text-align:center; min-height:2em; }
+  .game-area { width:90vw; max-width:900px; background:#0b7b0b; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.2); position:relative; overflow:hidden; height:400px; display:flex; justify-content:space-between; }
+  .game-content { position:relative; flex:1; display:flex; justify-content:center; align-items:flex-end; padding:10px; }
+  .card-img { position:absolute; width:120px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.3); animation: fall 0.8s forwards; }
+  @keyframes fall { 0% { transform: translate(500px,-500px) rotate(-20deg); opacity:0; } 100% { transform: translate(0,0) rotate(0deg); opacity:1; } }
+  .total-value { position:absolute; color:#fff; font-size:1.8rem; font-weight:bold; left:10px; }
+  .button-container { display:flex; flex-direction:column; justify-content:center; align-items:center; padding:10px; }
+  #btnStand, #btnHit { background-color:#fff; border-radius:8px; padding:0.8rem 1.5rem; font-size:1.1rem; cursor:pointer; border:3px solid; transition:transform 0.2s, box-shadow 0.2s, background 0.2s; width:120px; margin:10px 0; }
+  #btnStand { border-color:#e74c3c; color:#e74c3c; }
+  #btnHit { border-color:#2ecc71; color:#2ecc71; }
+  #btnStand:hover { background-color:#fceaea; transform:scale(1.05); }
+  #btnHit:hover { background-color:#eafcf0; transform:scale(1.05); }
+  footer { text-align:center; font-size:0.9rem; color:#555; margin:2rem 1rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌍Henrik World</h1>
+  <span class="home-emoji" onclick="location.href='index.html'">🏠</span>
+</header>
+<main>
+  <div id="statusText"></div>
+  <div class="game-area">
+    <div class="game-content" id="gameContent"></div>
+    <div class="button-container">
+      <button id="btnHit">Hit</button>
+      <button id="btnStand">Stand</button>
+    </div>
+  </div>
+</main>
+<footer>&copy; 2025 henrikworld.com. All rights reserved.</footer>
+
+<script>
+const cards = [
+  'ace_of_spades.png','2_of_hearts.png','2_of_clubs.png','3_of_hearts.png','3_of_clubs.png',
+  '4_of_hearts.png','4_of_clubs.png','5_of_hearts.png','5_of_clubs.png','6_of_hearts.png','6_of_clubs.png',
+  '7_of_hearts.png','7_of_clubs.png','8_of_hearts.png','8_of_clubs.png','9_of_hearts.png','9_of_clubs.png',
+  '10_of_hearts.png','10_of_clubs.png','jack_of_diamonds.png','queen_of_hearts.png','king_of_spades.png'
+];
+const cardValues = { ace:11,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,jack:10,queen:10,king:10 };
+
+let playerCards=[], dealerCards=[], dealerHiddenCard=null, deck=[];
+const gameContent=document.getElementById('gameContent');
+const statusText=document.getElementById('statusText');
+const btnHit=document.getElementById('btnHit');
+const btnStand=document.getElementById('btnStand');
+
+const shuffle=array=>array.sort(()=>Math.random()-0.5);
+
+function setButtons(enabled){
+  btnHit.disabled = !enabled;
+  btnStand.disabled = !enabled;
+}
+
+function resetGame(){
+  playerCards=[];
+  dealerCards=[];
+  dealerHiddenCard=null;
+  deck=shuffle([...cards]);
+  statusText.textContent='';
+  gameContent.querySelectorAll('.card-img, .total-value').forEach(el=>el.remove());
+  setButtons(true);
+}
+
+function getCardValue(name){ return cardValues[name.split('_')[0].toLowerCase()]||0; }
+
+function calculateTotal(cards){
+  let total=cards.reduce((sum,c)=>sum+getCardValue(c),0);
+  let aces=cards.filter(c=>c.startsWith('ace')).length;
+  while(total>21 && aces>0){ total-=10; aces--; }
+  return total;
+}
+
+function drawCard(cardsArray,bottom,delay=0){
+  setTimeout(()=>{
+    if(deck.length===0) deck=shuffle([...cards]);
+    const newCard=deck.pop();
+    cardsArray.push(newCard);
+
+    const img=document.createElement('img');
+    img.src=`images/game3/${newCard}`;
+    img.className='card-img';
+
+    const index=cardsArray.length-1;
+    const offsetX=index*30;
+    const offsetY=index*5;
+    const rotation=(Math.random()*20)-10;
+    img.style.left=`calc(50% - 60px + ${offsetX}px)`;
+    if(bottom) img.style.bottom=`${10 + offsetY}px`;
+    else img.style.top=`${10 + offsetY}px`;
+    img.style.transform=`rotate(${rotation}deg)`;
+    gameContent.appendChild(img);
+
+    updateTotal(cardsArray,bottom);
+  },delay);
+}
+
+function updateTotal(cardsArray,bottom){
+  let totalEl=bottom?document.getElementById('playerTotal'):document.getElementById('dealerTotal');
+  if(!totalEl){
+    totalEl=document.createElement('div');
+    totalEl.className='total-value';
+    totalEl.id=bottom?'playerTotal':'dealerTotal';
+    totalEl.style.left='10px';
+    totalEl.style.color='#fff';
+    if(bottom) totalEl.style.bottom='10px';
+    else totalEl.style.top='10px';
+    gameContent.appendChild(totalEl);
+  }
+
+  if(bottom){
+    totalEl.textContent=`Player: ${calculateTotal(cardsArray)}`;
+  } else {
+    if(dealerCards.length>0){
+      if(dealerHiddenCard){
+        totalEl.textContent=`Dealer: ${getCardValue(dealerCards[0])}`;
+      } else {
+        totalEl.textContent=`Dealer: ${calculateTotal(dealerCards)}`;
+      }
+    }
+  }
+}
+
+function initialDeal(){
+  resetGame();
+  drawCard(playerCards,true,0);
+  drawCard(dealerCards,false,400);
+  drawCard(playerCards,true,800);
+
+  dealerHiddenCard = deck.pop(); // hidden card
+
+  setTimeout(()=>{
+    if(calculateTotal(playerCards)===21){
+      statusText.textContent="Blackjack! Player Wins!";
+      setButtons(false);
+      setTimeout(initialDeal,3000);
+    }
+  },1000);
+}
+
+function checkEnd(){
+  if(calculateTotal(playerCards)>21){
+    statusText.textContent="Player Bust! Dealer Wins";
+    setButtons(false);
+    setTimeout(initialDeal,3000);
+    return true;
+  }
+  return false;
+}
+
+function hit(){
+  drawCard(playerCards,true);
+  setTimeout(()=>{
+    if(checkEnd()) return;
+    if(calculateTotal(playerCards)===21){
+      stand();
+    }
+  },300);
+}
+
+function stand(){
+  setButtons(false); // disable buttons during dealer turn
+
+  const img=document.createElement('img');
+  img.src=`images/game3/${dealerHiddenCard}`;
+  img.className='card-img';
+  const index=1;
+  const offsetX=index*30;
+  const offsetY=index*5;
+  const rotation=(Math.random()*20)-10;
+  img.style.left=`calc(50% - 60px + ${offsetX}px)`;
+  img.style.top=`10px`;
+  img.style.transform=`rotate(${rotation}deg)`;
+  gameContent.appendChild(img);
+
+  dealerCards.push(dealerHiddenCard);
+  dealerHiddenCard=null;
+  updateTotal(dealerCards,false);
+
+  const dealerDraw=()=>{
+    const dealerTotal=calculateTotal(dealerCards);
+    if(dealerTotal<17){
+      drawCard(dealerCards,false);
+      setTimeout(dealerDraw,500);
+    } else {
+      const playerTotal=calculateTotal(playerCards);
+      const finalDealer=calculateTotal(dealerCards);
+      if(finalDealer>21) statusText.textContent="Dealer Bust! Player Wins";
+      else if(finalDealer>playerTotal) statusText.textContent="Dealer Wins";
+      else if(finalDealer<playerTotal) statusText.textContent="Player Wins";
+      else statusText.textContent="Draw";
+      setTimeout(initialDeal,3000);
+    }
+  }
+  dealerDraw();
+}
+
+btnHit.onclick=hit;
+btnStand.onclick=stand;
+
+initialDeal();
+</script>
+</body>
+</html>
