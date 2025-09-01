@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-<title>Henrik World | Chess AI</title>
+<title>Henrik World | Chess AI (Fixed)</title>
 <link rel="icon" href="images/favicon.png" type="image/png">
 <style>
   body { margin:0; font-family:Arial,sans-serif; background:#f0f0f0; display:flex; flex-direction:column; min-height:100vh;}
@@ -302,7 +302,7 @@ function rawValidMoves(idx){
 
 function isKingInCheck(isWhite){
   const king = board.findIndex(p => p === (isWhite ? 6 : -6));
-  if(king === -1) return false; // king not on board (shouldn't usually happen)
+  if(king === -1) return true; // if king missing, treat as "in check" (captured)
   for(let i=0;i<64;i++){
     const piece = board[i];
     if(piece === 0) continue;
@@ -365,7 +365,8 @@ function cellClick(i){
       if(board[k] === -1 && getRow(k) === 7) board[k] = -5;
     }
 
-    if(isCheckmate(false)) { showOverlay("You Lost!"); stopTimer(); return; }
+    // After the player's move, check if BLACK (AI) is checkmated/stalemated
+    if(isCheckmate(false)) { showOverlay("You Won!"); stopTimer(); return; }
     else if(isStalemate(false)) { showOverlay("Stalemate!"); stopTimer(); return; }
 
     turn = 'ai';
@@ -395,7 +396,7 @@ function generateMoves(isWhite){
   const moves = [];
   for(let i=0;i<64;i++){
     if(board[i] === 0) continue;
-    if(isWhite && board[i] > 0 || !isWhite && board[i] < 0){
+    if((isWhite && board[i] > 0) || (!isWhite && board[i] < 0)){
       const valids = getValidMoves(i);
       valids.forEach(dest => moves.push({ from: i, to: dest }));
     }
@@ -505,7 +506,8 @@ function aiMove(){
 
   renderBoard();
 
-  if(isCheckmate(true)){ showOverlay("You Won!"); stopTimer(); return; }
+  // After AI move, check if WHITE (player) is checkmated/stalemated
+  if(isCheckmate(true)){ showOverlay("You Lost!"); stopTimer(); return; }
   else if(isStalemate(true)){ showOverlay("Stalemate!"); stopTimer(); return; }
 
   turn = 'player';
