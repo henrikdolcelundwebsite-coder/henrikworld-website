@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Guestbook</title>
+  <title>HenrikWorld Guestbook</title>
   <link rel="stylesheet" href="style.css">
 
   <!-- Firebase SDKs for browser -->
@@ -11,16 +11,25 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <h1>Guestbook</h1>
+  <header>
+    <h1>HenrikWorld Guestbook</h1>
+    <p>Leave a message and see what others have written!</p>
+  </header>
 
-  <div id="messagesContainer"></div>
+  <main>
+    <div id="messagesContainer"></div>
 
-  <h2>Leave a message</h2>
-  <form id="messageForm">
-    <input type="text" id="name" placeholder="Your name" required>
-    <input type="text" id="message" placeholder="Your message" required>
-    <button type="submit">Send</button>
-  </form>
+    <h2>Leave a message</h2>
+    <form id="messageForm">
+      <input type="text" id="name" placeholder="Your name" required>
+      <textarea id="message" placeholder="Your message" required></textarea>
+      <button type="submit">Send</button>
+    </form>
+  </main>
+
+  <footer>
+    <p>&copy; HenrikWorld 2025</p>
+  </footer>
 
   <script src="script.js"></script>
 </body>

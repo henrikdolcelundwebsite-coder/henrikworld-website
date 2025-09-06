@@ -1,4 +1,4 @@
-/* General reset */
+/* Reset & base */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -6,56 +6,76 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Body styling */
 body {
-  background: #f0f4f8;
+  background: #f9f9f9;
   color: #333;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 20px;
+  min-height: 100vh;
+  padding: 20px;
 }
 
-/* Title */
-h1 {
-  margin-bottom: 20px;
+header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+header h1 {
   color: #1a73e8;
   font-size: 2.5rem;
-  text-align: center;
+  margin-bottom: 5px;
+}
+
+header p {
+  color: #555;
+  font-size: 1rem;
+}
+
+main {
+  width: 100%;
+  max-width: 700px;
 }
 
 /* Messages container */
 #messagesContainer {
-  width: 100%;
-  max-width: 600px;
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   margin-bottom: 30px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
-/* Each message */
-#messagesContainer div {
+.message {
   border-bottom: 1px solid #eee;
-  padding: 10px 0;
-  font-size: 1rem;
+  padding: 12px 0;
 }
 
-#messagesContainer div:last-child {
+.message:last-child {
   border-bottom: none;
 }
 
-/* Form styling */
+.message .name {
+  font-weight: bold;
+  color: #1a73e8;
+}
+
+.message .timestamp {
+  font-size: 0.8rem;
+  color: #888;
+  margin-left: 10px;
+}
+
+/* Form */
 form {
-  width: 100%;
-  max-width: 600px;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-input[type="text"] {
+input[type="text"], textarea {
   padding: 12px;
   border-radius: 8px;
   border: 1px solid #ccc;
@@ -64,12 +84,17 @@ input[type="text"] {
   transition: border-color 0.3s;
 }
 
-input[type="text"]:focus {
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+input[type="text"]:focus, textarea:focus {
   border-color: #1a73e8;
   outline: none;
 }
 
-/* Submit button */
+/* Button */
 button {
   padding: 12px;
   background-color: #1a73e8;
@@ -85,9 +110,16 @@ button:hover {
   background-color: #155ab6;
 }
 
-/* Footer spacing */
 h2 {
-  margin-bottom: 10px;
   color: #1a73e8;
+  margin-bottom: 10px;
   text-align: center;
+}
+
+/* Footer */
+footer {
+  margin-top: 40px;
+  text-align: center;
+  color: #555;
+  font-size: 0.9rem;
 }

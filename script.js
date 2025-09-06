@@ -18,6 +18,12 @@ const db = firebase.firestore();
 const form = document.getElementById("messageForm");
 const container = document.getElementById("messagesContainer");
 
+// Helper: format timestamp
+function formatDate(ts) {
+  const date = new Date(ts);
+  return date.toLocaleString(); // e.g., "9/6/2025, 3:45:12 PM"
+}
+
 // Submit a new message
 form.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -38,8 +44,14 @@ db.collection("guestbook").orderBy("timestamp", "desc")
   .onSnapshot((snapshot) => {
     container.innerHTML = "";
     snapshot.forEach((doc) => {
+      const data = doc.data();
       const div = document.createElement("div");
-      div.textContent = `${doc.data().name}: ${doc.data().message}`;
+      div.classList.add("message");
+      div.innerHTML = `
+        <span class="name">${data.name}</span>
+        <span class="timestamp">${formatDate(data.timestamp)}</span>
+        <p>${data.message}</p>
+      `;
       container.appendChild(div);
     });
   });
