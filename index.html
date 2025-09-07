@@ -3,78 +3,416 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Index Page</title>
+<title>Henrik World | Play Fun Games Online</title>
+<link rel="icon" href="images/favicon.png" type="image/png">
+
 <style>
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-        font-family: 'Arial', sans-serif; /* same as login page */
-    }
+/* === Background Animation === */
+#backgroundAnimation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
 
-    body {
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        background-color: #f0f0f0;
-    }
+#backgroundAnimation .shape {
+  position: absolute;
+  background: rgba(50,50,50,0.05);
+  border-radius: 50%;
+  animation-name: moveShape;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
 
-    h1 {
-        font-size: 36px;
-        color: #333; /* same dark gray as Henrik World text */
-        margin-bottom: 10px;
-        text-align: center;
-    }
+@keyframes moveShape {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(100px, 200px) rotate(180deg); }
+  100% { transform: translate(0, 0) rotate(360deg); }
+}
 
-    /* Animated gradient bar */
-    .bar {
-        width: 200px; /* width */
-        height: 3px; /* 3px tall */
-        border-radius: 2px;
-        background: linear-gradient(270deg, #00ffbf 0%, #00ff80 40%, #00d2ff 80%, #3a7bd5 100%);
-        background-size: 600% 600%;
-        animation: gradientBar 6s ease infinite;
-        margin-bottom: 30px;
-    }
+/* === General Styles === */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f0f0f0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
 
-    @keyframes gradientBar {
-        0% {background-position: 0% 50%;}
-        50% {background-position: 100% 50%;}
-        100% {background-position: 0% 50%;}
-    }
+header, #gamesSection, footer {
+  position: relative;
+  z-index: 1;
+}
 
-    .red-square {
-        width: 400px;
-        height: 300px;
-        background-color: red;
-        border-radius: 15px;
-        border: 5px solid #333;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        cursor: pointer;
-    }
+header {
+  background: #fff;
+  padding: 1rem 2rem;
+  position: sticky;
+  top: 0;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-    .red-square:hover {
-        transform: scale(1.05);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-    }
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #222;
+  margin-right: auto;
+}
 
-    .red-square:active {
-        transform: scale(0.97);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    }
+.user-menu {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  margin-left: 1rem;
+}
+
+#usernameDisplay.logged-in,
+#usernameDisplay.logged-out { 
+  font-weight: bold;
+  font-size: 1.3rem;
+  color: #333;
+}
+
+.dropdown {
+  display: none;
+  position: absolute;
+  top: 3.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 0.3rem 0;
+  width: 80px;
+  text-align: center;
+}
+
+.dropdown button {
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  color: #333;
+  padding: 0.2rem 0;
+  width: 100%;
+  cursor: pointer;
+}
+
+.dropdown button:hover {
+  text-decoration: none;
+}
+
+/* === Games Section === */
+#gamesSection {
+  text-align: center;
+  margin: 2rem 0 1rem 0;
+}
+
+#gamesSection h2 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #222;
+  margin: 0;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+#gamesSection .underline {
+  width: 600px; 
+  height: 3px;
+  background-color: #1e90ff;
+  margin: 0.5rem auto 1rem auto;
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+#gamesContainer {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0 auto 1rem auto;
+  max-width: 1000px;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.cta-button {
+  width: 300px;
+  height: 250px;
+  border-radius: 16px;
+  border: 4px solid #333;
+  cursor: pointer;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  box-sizing: border-box;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.8s ease;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.cta-button::before {
+  content: '';
+  position: absolute;
+  top:0; left:0;
+  width:100%; height:100%;
+  border-radius:16px;
+  background-color: rgba(255,255,255,0.15);
+  transition: background-color 0.3s ease;
+}
+
+.cta-button:hover::before {
+  background-color: rgba(255,255,255,0);
+}
+
+.cta-button:hover {
+  transform: scale(1.08);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+}
+
+.game1-btn { background-image: url('images/game1picture.jpg'); }
+.game2-btn { background-image: url('images/game2picture.jpg'); }
+.game3-btn { background-image: url('images/game3picture.jpg'); }
+
+#gamesSection .more-games {
+  font-size: 0.95rem;
+  color: #555;
+  margin-top: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+footer {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #555;
+  margin: 2rem 1rem;
+}
+
+#loadingOverlay {
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background: rgba(255,255,255,0.5);
+  display: flex;
+  justify-content:center;
+  align-items:center;
+  z-index: 999;
+  display:none;
+}
+
+.spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #1e90ff;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+
+/* Message for not logged in users */
+#notLoggedInMessage {
+  display:none;
+  position: absolute;
+  top:50%;
+  left:50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  text-align:center;
+}
+
+@media (max-width: 640px) {
+  .cta-button {
+    width: 90%;
+    height: 200px;
+    border-radius: 12px;
+  }
+}
+@media (max-width: 400px) {
+  header h1 { font-size: 1.2rem; }
+  #usernameDisplay { font-size: 1.1rem; }
+}
 </style>
 </head>
 <body>
-    <h1>Games</h1>
-    <div class="bar"></div>
-    <div class="red-square" onclick="openChess()"></div>
+
+<!-- Background Animation -->
+<div id="backgroundAnimation">
+  <div class="shape" style="width: 400px; height: 400px; top: 0; left: 0; animation-duration: 60s;"></div>
+  <div class="shape" style="width: 300px; height: 300px; top: 200px; left: 500px; animation-duration: 80s;"></div>
+  <div class="shape" style="width: 250px; height: 250px; top: 400px; left: 100px; animation-duration: 70s;"></div>
+  <div class="shape" style="width: 350px; height: 350px; top: 100px; left: 800px; animation-duration: 90s;"></div>
+  <div class="shape" style="width: 200px; height: 200px; top: 600px; left: 300px; animation-duration: 65s;"></div>
+</div>
+
+<header>
+  <h1>🌍Henrik World</h1>
+  <div class="user-menu" id="userMenu">
+    <span id="usernameDisplay">Log in</span>
+    <div class="dropdown" id="dropdownMenu">
+      <button id="logoutBtn">Log out</button>
+    </div>
+  </div>
+</header>
+
+<!-- Games Section -->
+<div id="gamesSection">
+  <h2>GAMES</h2>
+  <div class="underline"></div>
+  <div id="gamesContainer">
+    <a href="game1.html" class="cta-button game1-btn" alt="Tic Tac Toe Game"></a>
+    <a href="game2.html" class="cta-button game2-btn" alt="Game 2"></a>
+    <a href="game3.html" class="cta-button game3-btn" alt="Blackjack Game"></a>
+  </div>
+  <div class="more-games">More games coming soon!</div>
+</div>
+
+<!-- Message for not logged in users -->
+<div id="notLoggedInMessage"></div>
+
+<footer>
+  &copy; 2025 henrikworld.com. All rights reserved.
+</footer>
+
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
 
 <script>
-function openChess() {
-    window.location.href = "chess.html"; // Redirects to chess.html
+const loggedInUser = localStorage.getItem('loggedInUser');
+const usernameDisplay = document.getElementById('usernameDisplay');
+const dropdownMenu = document.getElementById('dropdownMenu');
+const logoutBtn = document.getElementById('logoutBtn');
+const loadingOverlay = document.getElementById('loadingOverlay');
+const gamesSection = document.getElementById('gamesSection');
+const notLoggedInMessage = document.getElementById('notLoggedInMessage');
+const gamesContainer = document.getElementById('gamesContainer');
+
+// Hide all by default
+gamesSection.style.display = "none";
+notLoggedInMessage.style.display = "none";
+
+if (loggedInUser) {
+  usernameDisplay.textContent = loggedInUser;
+  usernameDisplay.classList.add('logged-in');
+  gamesSection.style.display = "block";
+  notLoggedInMessage.style.display = "none";
+
+  usernameDisplay.onclick = () => {
+    dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+  };
+
+  logoutBtn.onclick = () => {
+    loadingOverlay.style.display = 'flex';
+    setTimeout(() => {
+      localStorage.removeItem('loggedInUser');
+      window.location.href = 'login.html';
+    }, 500);
+  };
+
+  document.addEventListener('click', function(event) {
+    if (!document.getElementById('userMenu').contains(event.target)) {
+      dropdownMenu.style.display = 'none';
+    }
+  });
+
+  // Fade in each element in sequence
+  setTimeout(() => {
+    const elements = [
+      gamesSection.querySelector('h2'),
+      gamesSection.querySelector('.underline'),
+      gamesContainer,
+      gamesSection.querySelector('.more-games')
+    ];
+    elements.forEach((el, i) => {
+      setTimeout(() => {
+        el.style.opacity = 1;
+      }, i * 300);
+    });
+
+    // Fade in each game button individually
+    gamesContainer.querySelectorAll('.cta-button').forEach((btn, i) => {
+      setTimeout(() => {
+        btn.style.opacity = 1;
+      }, i * 200 + 1000);
+    });
+  }, 200);
+
+} else {
+  usernameDisplay.textContent = "Log in";
+  usernameDisplay.classList.add('logged-out');
+  gamesSection.style.display = "none";
+  notLoggedInMessage.style.display = "block";
+
+  usernameDisplay.onclick = () => {
+    loadingOverlay.style.display = 'flex';
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 300);
+  };
+
+  // Falling letters animation
+  const messageText = "Projects created by Henrik!";
+  notLoggedInMessage.innerHTML = "";
+  messageText.split("").forEach((char, index) => {
+    const span = document.createElement("span");
+    span.textContent = char;
+    span.style.display = "inline-block";
+    span.style.opacity = 0;
+    span.style.transform = "translateY(-50px)";
+    span.style.transition = `transform 0.8s ease ${index * 0.1}s, opacity 0.8s ease ${index * 0.1}s`;
+    notLoggedInMessage.appendChild(span);
+  });
+
+  setTimeout(() => {
+    notLoggedInMessage.querySelectorAll("span").forEach(span => {
+      span.style.opacity = 1;
+      span.style.transform = "translateY(0)";
+    });
+  }, 100);
+
+  notLoggedInMessage.style.position = "absolute";
+  notLoggedInMessage.style.top = "50%";
+  notLoggedInMessage.style.left = "50%";
+  notLoggedInMessage.style.transform = "translate(-50%, -50%)";
+  notLoggedInMessage.style.fontSize = "2rem";
+  notLoggedInMessage.style.fontWeight = "bold";
+  notLoggedInMessage.style.color = "#333";
+  notLoggedInMessage.style.textAlign = "center";
 }
+
+// Loading overlay when clicking a game
+document.querySelectorAll('.cta-button').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    loadingOverlay.style.display = 'flex';
+    const link = btn.getAttribute('href');
+    setTimeout(() => {
+      window.location.href = link;
+    }, 500);
+  });
+});
 </script>
+
 </body>
 </html>
