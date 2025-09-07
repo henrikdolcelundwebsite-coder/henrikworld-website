@@ -1,36 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HenrikWorld Guestbook</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Index Page</title>
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: 'Arial', sans-serif; /* same as login page */
+    }
 
-  <!-- Firebase SDKs for browser -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    body {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #f0f0f0;
+    }
+
+    h1 {
+        font-size: 36px;
+        color: #333; /* same dark gray as Henrik World text */
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    /* Animated gradient bar */
+    .bar {
+        width: 200px; /* width */
+        height: 3px; /* 3px tall */
+        border-radius: 2px;
+        background: linear-gradient(270deg, #00ffbf 0%, #00ff80 40%, #00d2ff 80%, #3a7bd5 100%);
+        background-size: 600% 600%;
+        animation: gradientBar 6s ease infinite;
+        margin-bottom: 30px;
+    }
+
+    @keyframes gradientBar {
+        0% {background-position: 0% 50%;}
+        50% {background-position: 100% 50%;}
+        100% {background-position: 0% 50%;}
+    }
+
+    .red-square {
+        width: 400px;
+        height: 300px;
+        background-color: red;
+        border-radius: 15px;
+        border: 5px solid #333;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        cursor: pointer;
+    }
+
+    .red-square:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .red-square:active {
+        transform: scale(0.97);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+</style>
 </head>
 <body>
-  <header>
-    <h1>HenrikWorld Guestbook</h1>
-    <p>Leave a message and see what others have written!</p>
-  </header>
+    <h1>Games</h1>
+    <div class="bar"></div>
+    <div class="red-square" onclick="openChess()"></div>
 
-  <main>
-    <div id="messagesContainer"></div>
-
-    <h2>Leave a message</h2>
-    <form id="messageForm">
-      <input type="text" id="name" placeholder="Your name" required>
-      <textarea id="message" placeholder="Your message" required></textarea>
-      <button type="submit">Send</button>
-    </form>
-  </main>
-
-  <footer>
-    <p>&copy; HenrikWorld 2025</p>
-  </footer>
-
-  <script src="script.js"></script>
+<script>
+function openChess() {
+    window.location.href = "chess.html"; // Redirects to chess.html
+}
+</script>
 </body>
 </html>

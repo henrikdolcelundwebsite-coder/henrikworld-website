@@ -3,228 +3,136 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Henrik World | Login</title>
-<link rel="icon" href="images/favicon.png" type="image/png">
+<title>Login Page</title>
 <style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f0f0f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    position: relative;
-  }
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: 'Arial', sans-serif;
+    }
 
-  .login-container {
-    background: #fff;
-    border-radius: 16px;
-    padding: 2rem;
-    max-width: 400px;
-    width: 90%;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-    text-align: center;
-    position: relative;
-    z-index: 1;
-  }
+    body {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f0f0f0;
+    }
 
-  .login-container h2 {
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-    color: #222;
-  }
+    .login-container {
+        background-color: #ffffff;
+        padding: 50px;
+        border-radius: 15px;
+        width: 450px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+    }
 
-  .login-container input {
-    width: calc(100% - 2rem);
-    max-width: 100%;
-    padding: 0.8rem;
-    margin: 0.5rem 0 1rem 0;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    font-size: 1rem;
-    box-sizing: border-box;
-  }
+    .login-header {
+        text-align: center;
+        margin-bottom: 35px;
+    }
 
-  .btn {
-    background: linear-gradient(-45deg, #1e90ff, #00ff99, #1e90ff, #00ff99);
-    background-size: 400% 400%;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 0.8rem 1.5rem;
-    font-size: 1.1rem;
-    cursor: pointer;
-    width: calc(100% - 2rem);
-    max-width: 100%;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    box-sizing: border-box;
-    animation: gradientMove 6s ease infinite;
-  }
+    /* Emoji bounce */
+    .login-header h1 span {
+        display: inline-block;
+        animation: bounce 2s infinite;
+    }
 
-  .btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  }
-  .btn:active {
-    transform: scale(1.02);
-  }
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
 
-  @keyframes gradientMove {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
+    .login-header h1 {
+        font-size: 28px;
+        color: #333;
+    }
 
-  .login-footer {
-    margin-top: 1rem;
-    font-size: 0.9rem;
-    color: #555;
-  }
+    .login-header small {
+        display: block;
+        margin-top: 5px;
+        font-size: 14px;
+        color: #666;
+    }
 
-  .login-footer a {
-    color: #1e90ff;
-    text-decoration: none;
-    cursor: pointer;
-  }
-  .login-footer a:hover {
-    text-decoration: underline;
-  }
+    .input-group {
+        margin-bottom: 25px;
+    }
 
-  /* Loading overlay */
-  #loadingOverlay {
-    position: fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background: rgba(255,255,255,0.5);
-    display: flex;
-    justify-content:center;
-    align-items:center;
-    z-index: 999;
-    display:none;
-  }
+    .input-group input {
+        width: 100%;
+        padding: 16px;
+        border: 1px solid #ccc;
+        border-radius: 50px;
+        font-size: 18px;
+        transition: 0.3s;
+    }
 
-  .spinner {
-    border: 6px solid #f3f3f3;
-    border-top: 6px solid #1e90ff;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 1s linear infinite;
-  }
+    .input-group input:focus {
+        border-color: #00ffbf;
+        box-shadow: 0 0 8px rgba(0, 255, 191, 0.5);
+        outline: none;
+    }
 
-  @keyframes spin {
-    0% { transform: rotate(0deg);}
-    100% { transform: rotate(360deg);}
-  }
+    /* Green-dominant animated gradient button */
+    .login-btn {
+        width: 100%;
+        padding: 16px;
+        border: none;
+        border-radius: 50px;
+        font-size: 18px;
+        color: #fff;
+        cursor: pointer;
+        background: linear-gradient(270deg, #00ffbf 0%, #00ff80 40%, #00d2ff 80%, #3a7bd5 100%);
+        background-size: 600% 600%;
+        animation: gradientButton 6s ease infinite;
+        transition: 0.3s;
+    }
 
-  /* Register message overlay */
-  #registerMessage {
-    position: fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background: rgba(0,0,0,0.5);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    color: #fff;
-    font-size: 1.5rem;
-    text-align:center;
-    padding: 1rem;
-    border-radius: 16px;
-    display: none;
-    z-index: 1000;
-  }
+    @keyframes gradientButton {
+        0% {background-position: 0% 50%;}
+        50% {background-position: 100% 50%;}
+        100% {background-position: 0% 50%;}
+    }
 
-  #registerMessage button {
-    margin-top: 1rem;
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    background: #1e90ff;
-    color: #fff;
-  }
-
+    .error-message {
+        color: #ff4c4c;
+        text-align: center;
+        margin-bottom: 20px;
+        display: none;
+    }
 </style>
 </head>
 <body>
-
 <div class="login-container">
-  <h2>🌍 Henrik World</h2>
-  <input type="text" id="username" placeholder="Username" />
-  <input type="password" id="password" placeholder="Password" />
-  <button class="btn" id="loginBtn">Login</button>
-
-  <div class="login-footer">
-    <p>Don't have an account? <a id="registerLink">Register</a></p>
-  </div>
-</div>
-
-<!-- Loading overlay -->
-<div id="loadingOverlay">
-  <div class="spinner"></div>
-</div>
-
-<!-- Register permission message -->
-<div id="registerMessage">
-  <div>
-    You need special permission to have an account!
-    <br>
-    <button id="closeMessageBtn">Close</button>
-  </div>
+    <div class="login-header">
+        <h1><span>🌍</span>Henrik World</h1>
+        <small>Login</small>
+    </div>
+    <div class="error-message" id="error-message">Invalid username or password</div>
+    <div class="input-group">
+        <input type="text" id="username" placeholder="Username">
+    </div>
+    <div class="input-group">
+        <input type="password" id="password" placeholder="Password">
+    </div>
+    <button class="login-btn" onclick="login()">Log In</button>
 </div>
 
 <script>
-  const accounts = [
-    { username: "Henrik", password: "Green898" },
-    { username: "Bogeybag", password: "123" },
-    { username: "Tom738495", password: "Koala783Cockroach" },
-    { username: "Bean456", password: "bigbackrhombus" }
-  ];
+function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const errorMessage = document.getElementById('error-message');
 
-  const loginBtn = document.getElementById('loginBtn');
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  const registerLink = document.getElementById('registerLink');
-  const registerMessage = document.getElementById('registerMessage');
-  const closeMessageBtn = document.getElementById('closeMessageBtn');
-
-  loginBtn.onclick = () => {
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
-
-    if (!username || !password) {
-      alert('Please enter both username and password.');
-      return;
+    if(username === 'admin' && password === 'password') {
+        alert('Login successful!');
+        errorMessage.style.display = 'none';
+    } else {
+        errorMessage.style.display = 'block';
     }
-
-    const account = accounts.find(acc => acc.username === username && acc.password === password);
-    if (!account) {
-      alert('Invalid username or password.');
-      return;
-    }
-
-    loadingOverlay.style.display = 'flex';
-    setTimeout(() => {
-      localStorage.setItem('loggedInUser', account.username);
-      window.location.href = 'index.html';
-    }, 2000);
-  };
-
-  // Register click shows message
-  registerLink.onclick = () => {
-    registerMessage.style.display = 'flex';
-  };
-
-  closeMessageBtn.onclick = () => {
-    registerMessage.style.display = 'none';
-  };
+}
 </script>
-
 </body>
 </html>
