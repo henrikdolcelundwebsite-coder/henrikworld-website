@@ -39,6 +39,7 @@
     .box:hover { transform: scale(1.05); background-color: #ff4d4d; }
     .box:active { transform: scale(0.95); }
     @media (max-width: 1000px) { .container { flex-direction: column; gap: 20px; } }
+
     .join-section { display: flex; flex-direction: column; align-items: center; gap: 15px; }
     .join-section .join-text { font-size: 1.2rem; font-weight: 500; color: #333; text-align: center; }
     .join-lobby { display: flex; justify-content: center; align-items: center; gap: 10px; }
@@ -46,8 +47,10 @@
     .join-lobby input:focus { outline: none; border-color: #ff4d4d; }
     .join-lobby .arrow { font-size: 1.8rem; cursor: pointer; transition: transform 0.2s, color 0.2s; }
     .join-lobby .arrow:hover { transform: scale(1.2); color: #ff4d4d; }
+
     .bottom-section { min-height: 100vh; width: 100%; background-color: #e0e0e0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 40px; }
     .bottom-container { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
+
     .generated-code { font-size: 2rem; font-weight: bold; color: #333; letter-spacing: 2px; }
     .game-label { font-size: 1rem; color: #555; margin-bottom: 5px; }
   </style>
@@ -108,7 +111,6 @@
           game: gameName,
           createdAt: Date.now()
         });
-        // Open multiplayer.html in a new tab with game info
         window.open(`multiplayer.html?game=${encodeURIComponent(gameName)}&code=${newCode}`, '_blank');
       } catch (error) {
         console.error("Error creating game:", error);
@@ -122,6 +124,7 @@
       try {
         const q = query(collection(db, "games"), where("code", "==", code));
         const querySnapshot = await getDocs(q);
+
         if (querySnapshot.empty) {
           alert("Game not found!");
         } else {
@@ -139,6 +142,11 @@
     document.getElementById('topChess').addEventListener('click', () => createGame('Chess'));
     document.getElementById('topTicTacToe').addEventListener('click', () => createGame('Tic Tac Toe'));
     joinBtn.addEventListener('click', joinGame);
+
+    // Enter key triggers join
+    joinInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') joinGame();
+    });
 
     codeElement.textContent = generateCode();
   </script>
