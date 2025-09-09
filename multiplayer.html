@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multiplayer Game</title>
+  <style>
+    body { font-family: Arial, sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0; background-color:#f0f0f0; }
+    #gameInfo { font-size:2rem; font-weight:bold; margin-bottom:30px; }
+    #chatPlaceholder { width:80%; height:300px; background:#fff; border:1px solid #ccc; display:flex; justify-content:center; align-items:center; color:#888; font-size:1.2rem; }
+  </style>
+</head>
+<body>
+  <div id="gameInfo">Loading...</div>
+  <div id="chatPlaceholder">Chat / Game Area Placeholder</div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const game = params.get('game') || "Unknown Game";
+    const code = params.get('code') || "----";
+
+    const infoDiv = document.getElementById('gameInfo');
+    infoDiv.textContent = `${game} | Code: ${code}`;
+  </script>
+</body>
+</html>

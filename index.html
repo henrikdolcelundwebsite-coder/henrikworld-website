@@ -3,48 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Private Chat Rooms</title>
-</head>
-<body>
-  <h1>Private Chat Rooms</h1>
-
-  <!-- Create Room Section -->
-  <div>
-    <h2>Create a Room</h2>
-    <button id="createRoomBtn">Create Room</button>
-    <p id="newRoomCode"></p>
-  </div>
-
-  <hr>
-
-  <!-- Join Room Section -->
-  <div>
-    <h2>Join a Room</h2>
-    <input type="text" id="nicknameInput" placeholder="Enter your nickname" />
-    <input type="text" id="roomCodeInput" placeholder="Enter room code" />
-    <button id="joinBtn">Join Room</button>
-  </div>
-
-  <!-- Chat Section -->
-  <div id="chatSection" style="display:none;">
-    <h2>Chat Room: <span id="roomCodeDisplay"></span></h2>
-    <ul id="messagesList"></ul>
-    <input type="text" id="messageInput" placeholder="Type a message..." />
-    <button id="sendBtn">Send</button>
-  </div>
-
+  <title>Multiplayer Lobby</title>
+  <!-- Boxicons CSS -->
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <!-- Firebase -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-app.js";
-    import { 
-      getFirestore, collection, addDoc, query, orderBy, onSnapshot, getDocs, serverTimestamp 
-    } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
-    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDmFdbny6w6noCga2YU_sVQvvoAEK-_3vY",
       authDomain: "onlinewebsite-e55c8.firebaseapp.com",
       projectId: "onlinewebsite-e55c8",
-      storageBucket: "onlinewebsite-e55c8.firebasestorage.app",
+      storageBucket: "onlinewebsite-e55c8.appspot.com",
       messagingSenderId: "153855517055",
       appId: "1:153855517055:web:eee5c6739bfa16ca78fa4a",
       measurementId: "G-6WK0BFJ0DS"
@@ -53,97 +24,123 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const roomsCol = collection(db, "rooms");
+    window.db = db;
+    window.collection = collection;
+    window.addDoc = addDoc;
+    window.query = query;
+    window.where = where;
+    window.getDocs = getDocs;
+  </script>
+  <style>
+    html, body { margin: 0; font-family: Arial, sans-serif; scroll-behavior: smooth; }
+    .main-content { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 50px; background-color: #f5f5f5; }
+    .container { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
+    .box { width: 300px; height: 200px; background-color: red; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: transform 0.2s, background-color 0.2s; cursor: pointer; display: flex; justify-content: center; align-items: center; color: white; font-size: 1.5rem; font-weight: bold; text-align: center; }
+    .box:hover { transform: scale(1.05); background-color: #ff4d4d; }
+    .box:active { transform: scale(0.95); }
+    @media (max-width: 1000px) { .container { flex-direction: column; gap: 20px; } }
+    .join-section { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+    .join-section .join-text { font-size: 1.2rem; font-weight: 500; color: #333; text-align: center; }
+    .join-lobby { display: flex; justify-content: center; align-items: center; gap: 10px; }
+    .join-lobby input { padding: 12px 15px; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; width: 150px; text-align: center; transition: border-color 0.2s; }
+    .join-lobby input:focus { outline: none; border-color: #ff4d4d; }
+    .join-lobby .arrow { font-size: 1.8rem; cursor: pointer; transition: transform 0.2s, color 0.2s; }
+    .join-lobby .arrow:hover { transform: scale(1.2); color: #ff4d4d; }
+    .bottom-section { min-height: 100vh; width: 100%; background-color: #e0e0e0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 40px; }
+    .bottom-container { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
+    .generated-code { font-size: 2rem; font-weight: bold; color: #333; letter-spacing: 2px; }
+    .game-label { font-size: 1rem; color: #555; margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+  <div class="main-content">
+    <div class="container">
+      <div class="box" id="topChess">Chess</div>
+      <div class="box" id="topTicTacToe">Tic Tac Toe</div>
+      <div class="box">Coming Soon</div>
+    </div>
 
-    const createRoomBtn = document.getElementById("createRoomBtn");
-    const newRoomCode = document.getElementById("newRoomCode");
-    const nicknameInput = document.getElementById("nicknameInput");
-    const roomCodeInput = document.getElementById("roomCodeInput");
-    const joinBtn = document.getElementById("joinBtn");
-    const chatSection = document.getElementById("chatSection");
-    const roomCodeDisplay = document.getElementById("roomCodeDisplay");
-    const messagesList = document.getElementById("messagesList");
-    const messageInput = document.getElementById("messageInput");
-    const sendBtn = document.getElementById("sendBtn");
+    <div class="join-section">
+      <div class="join-text">Enter a Code to Join a Multiplayer Game</div>
+      <div class="join-lobby">
+        <input type="text" placeholder="Game ID" id="joinCodeInput" />
+        <i class='bx bx-right-arrow-alt arrow' id="joinBtn"></i>
+      </div>
+    </div>
+  </div>
 
-    let currentRoomCode = "";
-    let nickname = "";
-    let unsubscribe = null;
+  <div class="bottom-section">
+    <div class="game-label" id="gameLabel">Current Game: None</div>
+    <div class="generated-code" id="generatedCode"></div>
+
+    <div class="bottom-container">
+      <div class="box" id="bottomChess">Chess</div>
+      <div class="box" id="bottomTicTacToe">Tic Tac Toe</div>
+    </div>
+  </div>
+
+  <script type="module">
+    const codeElement = document.getElementById('generatedCode');
+    const gameLabel = document.getElementById('gameLabel');
+    const joinInput = document.getElementById('joinCodeInput');
+    const joinBtn = document.getElementById('joinBtn');
+
+    const db = window.db;
+    const { collection, addDoc, query, where, getDocs } = window;
 
     function generateCode(length = 6) {
-      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      let code = "";
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let result = '';
       for (let i = 0; i < length; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
       }
-      return code;
+      return result;
     }
 
-    // Create Room
-    createRoomBtn.addEventListener("click", async () => {
-      const code = generateCode();
+    async function createGame(gameName) {
+      const newCode = generateCode();
+      codeElement.textContent = newCode;
+      gameLabel.textContent = `Current Game: ${gameName}`;
+
       try {
-        await addDoc(roomsCol, { 
-          code, 
-          createdAt: serverTimestamp() // Use server timestamp for TTL
+        await addDoc(collection(db, "games"), {
+          code: newCode,
+          game: gameName,
+          createdAt: Date.now()
         });
-        newRoomCode.textContent = `Room created! Share this code: ${code}`;
-      } catch (err) {
-        console.error("Error creating room: ", err);
-        newRoomCode.textContent = "Failed to create room.";
+        // Open multiplayer.html in a new tab with game info
+        window.open(`multiplayer.html?game=${encodeURIComponent(gameName)}&code=${newCode}`, '_blank');
+      } catch (error) {
+        console.error("Error creating game:", error);
       }
-    });
+    }
 
-    // Join Room
-    joinBtn.addEventListener("click", async () => {
-      nickname = nicknameInput.value.trim();
-      if (!nickname) return alert("Enter your nickname!");
+    async function joinGame() {
+      const code = joinInput.value.trim().toUpperCase();
+      if (!code) return alert("Enter a game code");
 
-      const code = roomCodeInput.value.trim().toUpperCase();
-      if (!code) return alert("Enter a room code!");
+      try {
+        const q = query(collection(db, "games"), where("code", "==", code));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+          alert("Game not found!");
+        } else {
+          const gameData = querySnapshot.docs[0].data();
+          window.open(`multiplayer.html?game=${encodeURIComponent(gameData.game)}&code=${gameData.code}`, '_blank');
+        }
+      } catch (error) {
+        console.error("Error joining game:", error);
+      }
+    }
 
-      // Check if room exists
-      const snapshot = await getDocs(roomsCol);
-      const roomExists = snapshot.docs.some(doc => doc.data().code === code);
-      if (!roomExists) return alert("Room not found!");
+    // Attach click events
+    document.getElementById('bottomChess').addEventListener('click', () => createGame('Chess'));
+    document.getElementById('bottomTicTacToe').addEventListener('click', () => createGame('Tic Tac Toe'));
+    document.getElementById('topChess').addEventListener('click', () => createGame('Chess'));
+    document.getElementById('topTicTacToe').addEventListener('click', () => createGame('Tic Tac Toe'));
+    joinBtn.addEventListener('click', joinGame);
 
-      currentRoomCode = code;
-      roomCodeDisplay.textContent = code;
-      chatSection.style.display = "block";
-
-      // Unsubscribe previous listener if exists
-      if (unsubscribe) unsubscribe();
-
-      const chatCol = collection(db, `messages/${currentRoomCode}/chat`);
-      const q = query(chatCol, orderBy("timestamp", "asc"));
-
-      // Real-time listener
-      unsubscribe = onSnapshot(q, snapshot => {
-        messagesList.innerHTML = "";
-        snapshot.forEach(doc => {
-          const msg = doc.data();
-          const li = document.createElement("li");
-          const time = msg.timestamp?.toDate ? msg.timestamp.toDate().toLocaleTimeString() : '';
-          li.textContent = `[${time}] ${msg.nickname}: ${msg.text}`;
-          messagesList.appendChild(li);
-        });
-      });
-    });
-
-    // Send Message
-    sendBtn.addEventListener("click", async () => {
-      const text = messageInput.value.trim();
-      if (!text) return;
-      const chatCol = collection(db, `messages/${currentRoomCode}/chat`);
-      await addDoc(chatCol, { 
-        text, 
-        nickname, 
-        timestamp: serverTimestamp() // Use server timestamp for messages
-      });
-      messageInput.value = "";
-    });
-
+    codeElement.textContent = generateCode();
   </script>
 </body>
 </html>
-
