@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Multiplayer Game</title>
+<title>Multiplayer Tic Tac Toe</title>
+<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDmFdbny6w6noCga2YU_sVQvvoAEK-_3vY",
@@ -26,31 +27,134 @@ const docId = urlParams.get("docId");
 const nickname = urlParams.get("nickname");
 const gameName = urlParams.get("game");
 
-document.addEventListener("DOMContentLoaded",()=>{
-  document.getElementById("gameInfo").textContent=`Game: ${gameName}`;
-  document.getElementById("playerNickname").textContent=`Your Nickname: ${nickname}`;
+const gameDocRef = doc(db, "games", docId);
 
-  const gameDocRef = doc(db,"games",docId);
+let currentBoard = [["","",""],["","",""],["","",""]];
+let currentTurn = "X";
+let players = [];
+let scores = {};
+let winningCells = [];
 
-  onSnapshot(gameDocRef,(docSnap)=>{
-    if(docSnap.exists()){
-      const data = docSnap.data();
-      const players = data.players || [];
-      document.getElementById("playersList").innerHTML = "Players in Lobby:<br>"+players.join("<br>");
+function checkWinner(board) {
+  const lines = [
+    // rows
+    [[0,0],[0,1],[0,2]], [[1,0],[1,1],[1,2]], [[2,0],[2,1],[2,2]],
+    // cols
+    [[0,0],[1,0],[2,0]], [[0,1],[1,1],[2,1]], [[0,2],[1,2],[2,2]],
+    // diagonals
+    [[0,0],[1,1],[2,2]], [[0,2],[1,1],[2,0]]
+  ];
+  for (let line of lines){
+    const [a,b,c] = line;
+    if(board[a[0]][a[1]] && board[a[0]][a[1]]===board[b[0]][b[1]] && board[a[0]][a[1]]===board[c[0]][c[1]]){
+      winningCells = [a,b,c];
+      return board[a[0]][a[1]];
     }
-  });
+  }
+  return null;
+}
+
+function checkDraw(board){
+  for(let r=0;r<3;r++){
+    for(let c=0;c<3;c++){
+      if(board[r][c]==="") return false;
+    }
+  }
+  return true;
+}
+
+function renderBoard(){
+  const boardDiv = document.getElementById("board");
+  boardDiv.innerHTML="";
+  for(let r=0;r<3;r++){
+    const rowDiv = document.createElement("div");
+    rowDiv.style.display="flex";
+    rowDiv.style.gap="5px";
+    for(let c=0;c<3;c++){
+      const cell = document.createElement("div");
+      cell.textContent=currentBoard[r][c];
+      cell.style.width="80px";
+      cell.style.height="80px";
+      cell.style.display="flex";
+      cell.style.alignItems="center";
+      cell.style.justifyContent="center";
+      cell.style.fontSize="2rem";
+      cell.style.backgroundColor=winningCells.some(([wr,wc])=>wr===r&&wc===c)?"#4CAF50":"#ff4d4d";
+      cell.style.color="white";
+      cell.style.borderRadius="10px";
+      cell.style.cursor="pointer";
+      cell.addEventListener("click",()=>handleMove(r,c));
+      rowDiv.appendChild(cell);
+    }
+    boardDiv.appendChild(rowDiv);
+  }
+}
+
+async function handleMove(r,c){
+  if(currentBoard[r][c] || currentTurn!==playerSymbol()) return;
+  currentBoard[r][c] = currentTurn;
+
+  const winner = checkWinner(currentBoard);
+  const draw = checkDraw(currentBoard);
+
+  if(winner){
+    alert(`${playerName(currentTurn)} wins!`);
+    if(scores[playerName(currentTurn)]!==undefined){
+      scores[playerName(currentTurn)]++;
+    }
+  } else if(draw){
+    alert("Draw!");
+  }
+
+  currentTurn = currentTurn==="X"?"O":"X";
+  await updateDoc(gameDocRef, {board:currentBoard, turn:currentTurn, scores});
+}
+
+function playerSymbol(){
+  return players[0]===nickname?"X":"O";
+}
+
+function playerName(symbol){
+  return symbol==="X"?players[0]:players[1];
+}
+
+onSnapshot(gameDocRef,(docSnap)=>{
+  if(docSnap.exists()){
+    const data = docSnap.data();
+    players = data.players || [];
+    currentBoard = data.board || [["","",""],["","",""],["","",""]];
+    currentTurn = data.turn || "X";
+    scores = data.scores || {};
+    winningCells=[]; // reset before rendering
+    renderBoard();
+    document.getElementById("playersList").innerHTML="Players in Lobby:<br>"+players.map(p=>`${p} (${scores[p]||0})`).join("<br>");
+    document.getElementById("gameCode").textContent=`Game Code: ${data.code}`;
+  }
+});
+
+document.addEventListener("DOMContentLoaded",()=>{
+  if(gameName!=="Tic Tac Toe"){
+    document.getElementById("gameContainer").innerHTML="<h2>This game is not Tic Tac Toe.</h2>";
+    return;
+  }
 });
 </script>
 <style>
-body { font-family: Arial, sans-serif; margin:0; padding:20px; background-color:#f5f5f5; }
-#gameInfo, #playerNickname { font-size:1.2rem; margin-bottom:10px; }
-#playersList { margin-top:15px; font-size:1.1rem; }
+body { font-family: Arial,sans-serif; margin:0; background:#f5f5f5; display:flex; flex-direction:column; align-items:center; padding:20px;}
+#gameContainer { display:flex; flex-direction:column; align-items:center; gap:15px; margin-top:20px; }
+#board { display:flex; flex-direction:column; gap:5px; }
+#playersList, #gameCode { font-size:1.1rem; margin-top:10px; text-align:center; }
+@media (max-width:500px){
+  #board div { width:60px; height:60px; font-size:1.5rem; }
+}
 </style>
 </head>
 <body>
-<div id="gameInfo"></div>
-<div id="playerNickname"></div>
-<div id="playersList">Players in Lobby:</div>
-<!-- Future chat/game area here -->
+<h1 id="gameName">Multiplayer Tic Tac Toe</h1>
+<div id="gameContainer">
+  <div id="board"></div>
+  <div id="playersList">Players in Lobby:</div>
+  <div id="gameCode">Game Code:</div>
+</div>
 </body>
 </html>
