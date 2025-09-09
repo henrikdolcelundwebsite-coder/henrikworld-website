@@ -3,18 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firebase Input Example</title>
+  <title>Private Chat Rooms</title>
 </head>
 <body>
-  <h1>Type Something!</h1>
-  <input type="text" id="userInput" placeholder="Type here..." />
-  <button id="submitBtn">Submit</button>
-  <ul id="messagesList"></ul>
+  <h1>Private Chat Rooms</h1>
 
-  <!-- Firebase SDKs -->
+  <!-- Create Room Section -->
+  <div>
+    <h2>Create a Room</h2>
+    <button id="createRoomBtn">Create Room</button>
+    <p id="newRoomCode"></p>
+  </div>
+
+  <hr>
+
+  <!-- Join Room Section -->
+  <div>
+    <h2>Join a Room</h2>
+    <input type="text" id="nicknameInput" placeholder="Enter your nickname" />
+    <input type="text" id="roomCodeInput" placeholder="Enter room code" />
+    <button id="joinBtn">Join Room</button>
+  </div>
+
+  <!-- Chat Section -->
+  <div id="chatSection" style="display:none;">
+    <h2>Chat Room: <span id="roomCodeDisplay"></span></h2>
+    <ul id="messagesList"></ul>
+    <input type="text" id="messageInput" placeholder="Type a message..." />
+    <button id="sendBtn">Send</button>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-firestore.js";
+    import { 
+      getFirestore, collection, addDoc, query, orderBy, onSnapshot, getDocs, serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-firestore.js";
 
     // Firebase config
     const firebaseConfig = {
@@ -27,41 +50,100 @@
       measurementId: "G-6WK0BFJ0DS"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const messagesCol = collection(db, "messages");
+    const roomsCol = collection(db, "rooms");
 
-    const submitBtn = document.getElementById("submitBtn");
-    const userInput = document.getElementById("userInput");
+    const createRoomBtn = document.getElementById("createRoomBtn");
+    const newRoomCode = document.getElementById("newRoomCode");
+    const nicknameInput = document.getElementById("nicknameInput");
+    const roomCodeInput = document.getElementById("roomCodeInput");
+    const joinBtn = document.getElementById("joinBtn");
+    const chatSection = document.getElementById("chatSection");
+    const roomCodeDisplay = document.getElementById("roomCodeDisplay");
     const messagesList = document.getElementById("messagesList");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
 
-    submitBtn.addEventListener("click", async () => {
-      const text = userInput.value.trim();
-      if (!text) return alert("Please type something!");
+    let currentRoomCode = "";
+    let nickname = "";
+    let unsubscribe = null;
 
+    function generateCode(length = 6) {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let code = "";
+      for (let i = 0; i < length; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
+    // Create Room
+    createRoomBtn.addEventListener("click", async () => {
+      const code = generateCode();
       try {
-        await addDoc(messagesCol, { text, timestamp: new Date() });
-        alert("Message saved!");
-        userInput.value = "";
-        loadMessages();
+        await addDoc(roomsCol, { 
+          code, 
+          createdAt: serverTimestamp() // Use server timestamp for TTL
+        });
+        newRoomCode.textContent = `Room created! Share this code: ${code}`;
       } catch (err) {
-        console.error("Error adding message: ", err);
+        console.error("Error creating room: ", err);
+        newRoomCode.textContent = "Failed to create room.";
       }
     });
 
-    async function loadMessages() {
-      messagesList.innerHTML = "";
-      const snapshot = await getDocs(messagesCol);
-      snapshot.forEach(doc => {
-        const li = document.createElement("li");
-        li.textContent = doc.data().text;
-        messagesList.appendChild(li);
-      });
-    }
+    // Join Room
+    joinBtn.addEventListener("click", async () => {
+      nickname = nicknameInput.value.trim();
+      if (!nickname) return alert("Enter your nickname!");
 
-    loadMessages(); // Load existing messages on page load
+      const code = roomCodeInput.value.trim().toUpperCase();
+      if (!code) return alert("Enter a room code!");
+
+      // Check if room exists
+      const snapshot = await getDocs(roomsCol);
+      const roomExists = snapshot.docs.some(doc => doc.data().code === code);
+      if (!roomExists) return alert("Room not found!");
+
+      currentRoomCode = code;
+      roomCodeDisplay.textContent = code;
+      chatSection.style.display = "block";
+
+      // Unsubscribe previous listener if exists
+      if (unsubscribe) unsubscribe();
+
+      const chatCol = collection(db, `messages/${currentRoomCode}/chat`);
+      const q = query(chatCol, orderBy("timestamp", "asc"));
+
+      // Real-time listener
+      unsubscribe = onSnapshot(q, snapshot => {
+        messagesList.innerHTML = "";
+        snapshot.forEach(doc => {
+          const msg = doc.data();
+          const li = document.createElement("li");
+          const time = msg.timestamp?.toDate ? msg.timestamp.toDate().toLocaleTimeString() : '';
+          li.textContent = `[${time}] ${msg.nickname}: ${msg.text}`;
+          messagesList.appendChild(li);
+        });
+      });
+    });
+
+    // Send Message
+    sendBtn.addEventListener("click", async () => {
+      const text = messageInput.value.trim();
+      if (!text) return;
+      const chatCol = collection(db, `messages/${currentRoomCode}/chat`);
+      await addDoc(chatCol, { 
+        text, 
+        nickname, 
+        timestamp: serverTimestamp() // Use server timestamp for messages
+      });
+      messageInput.value = "";
+    });
+
   </script>
 </body>
 </html>
+
