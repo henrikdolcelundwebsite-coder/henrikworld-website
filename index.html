@@ -1,28 +1,67 @@
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.24.0/firebase-app.js";
-  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.24.0/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Input Example</title>
+</head>
+<body>
+  <h1>Type Something!</h1>
+  <input type="text" id="userInput" placeholder="Type here..." />
+  <button id="submitBtn">Submit</button>
+  <ul id="messagesList"></ul>
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDB0PEb4hXsEIZP8yY6tEmokye23l53E-Y",
-    authDomain: "onlinewebsite-78010.firebaseapp.com",
-    projectId: "onlinewebsite-78010",
-    storageBucket: "onlinewebsite-78010.firebasestorage.app",
-    messagingSenderId: "1061908243842",
-    appId: "1:1061908243842:web:39f6b57a4b5da10f7e5b9b",
-    measurementId: "G-6DD0R64L7R"
-  };
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-firestore.js";
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDmFdbny6w6noCga2YU_sVQvvoAEK-_3vY",
+      authDomain: "onlinewebsite-e55c8.firebaseapp.com",
+      projectId: "onlinewebsite-e55c8",
+      storageBucket: "onlinewebsite-e55c8.firebasestorage.app",
+      messagingSenderId: "153855517055",
+      appId: "1:153855517055:web:eee5c6739bfa16ca78fa4a",
+      measurementId: "G-6WK0BFJ0DS"
+    };
 
-  async function testWrite() {
-    try {
-      await setDoc(doc(db, "testCollection", "testDoc"), { name: "Hello World" });
-      console.log("Document written!");
-    } catch (err) {
-      console.error("Error writing document:", err);
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const messagesCol = collection(db, "messages");
+
+    const submitBtn = document.getElementById("submitBtn");
+    const userInput = document.getElementById("userInput");
+    const messagesList = document.getElementById("messagesList");
+
+    submitBtn.addEventListener("click", async () => {
+      const text = userInput.value.trim();
+      if (!text) return alert("Please type something!");
+
+      try {
+        await addDoc(messagesCol, { text, timestamp: new Date() });
+        alert("Message saved!");
+        userInput.value = "";
+        loadMessages();
+      } catch (err) {
+        console.error("Error adding message: ", err);
+      }
+    });
+
+    async function loadMessages() {
+      messagesList.innerHTML = "";
+      const snapshot = await getDocs(messagesCol);
+      snapshot.forEach(doc => {
+        const li = document.createElement("li");
+        li.textContent = doc.data().text;
+        messagesList.appendChild(li);
+      });
     }
-  }
 
-  testWrite();
-</script>
+    loadMessages(); // Load existing messages on page load
+  </script>
+</body>
+</html>
