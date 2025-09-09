@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Multiplayer Lobby</title>
+<title>HenrikWorld.com - Home</title>
+<link rel="icon" type="image/png" href="favicon.png">
 <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
@@ -31,34 +32,29 @@
   window.updateDoc = updateDoc;
 </script>
 <style>
-html, body { margin:0; font-family: Arial,sans-serif; scroll-behavior:smooth; }
-body { background-color:#f5f5f5; }
-
-#nicknameInput { padding: 8px 10px; border-radius:6px; border:1px solid #ccc; font-size:0.9rem; width:120px; }
-
+html, body { margin:0; font-family: Arial,sans-serif; scroll-behavior:smooth; background:#f5f5f5; }
+#nicknameInput { padding: 8px 10px; border-radius:6px; border:1px solid #ccc; font-size:0.9rem; width:120px; position:fixed; top:10px; right:20px; z-index:1000; }
 .main-content { min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:40px; padding:20px; }
 .container, .bottom-container { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; }
 .box { width:300px; height:200px; background-color:red; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:transform 0.2s, background-color 0.2s; cursor:pointer; display:flex; justify-content:center; align-items:center; color:white; font-size:1.5rem; font-weight:bold; text-align:center; }
 .box:hover { transform: scale(1.05); background-color:#ff4d4d; }
 .box:active { transform: scale(0.95); }
-
 .join-section { display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; max-width:400px; }
 .join-text { font-size:1.1rem; font-weight:500; color:#333; text-align:center; }
 .join-lobby { display:flex; justify-content:center; align-items:center; gap:10px; width:100%; }
 .join-lobby input { padding:12px 10px; font-size:1rem; border-radius:8px; border:1px solid #ccc; width:70%; text-align:center; }
 .join-lobby .arrow { font-size:1.8rem; cursor:pointer; transition:transform 0.2s, color 0.2s; }
 .join-lobby .arrow:hover { transform:scale(1.2); color:#ff4d4d; }
-
 .bottom-section { min-height:80vh; width:100%; background-color:#e0e0e0; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:30px; padding:20px 0; }
 .generated-code { font-size:2rem; font-weight:bold; color:#333; letter-spacing:2px; }
 .game-label { font-size:1rem; color:#555; margin-bottom:5px; }
+footer { margin-top:20px; text-align:center; font-size:0.9rem; color:#555; }
 
 @media (max-width:800px) {
   .box { width:80%; height:150px; font-size:1.3rem; }
   .join-lobby input { width:65%; font-size:0.9rem; }
   #nicknameInput { width:100px; }
 }
-
 @media (max-width:500px) {
   .box { width:90%; height:130px; font-size:1.1rem; }
   .join-lobby input { width:60%; font-size:0.9rem; }
@@ -67,11 +63,7 @@ body { background-color:#f5f5f5; }
 </style>
 </head>
 <body>
-<!-- Nickname input -->
-<div style="position:fixed; top:10px; right:20px; z-index:1000;">
-  <input id="nicknameInput" type="text" placeholder="Nickname" />
-</div>
-
+<input id="nicknameInput" type="text" placeholder="Nickname" />
 <div class="main-content">
   <div class="container">
     <div class="box" id="topChess">Chess</div>
@@ -97,6 +89,8 @@ body { background-color:#f5f5f5; }
     <div class="box" id="bottomTicTacToe">Tic Tac Toe</div>
   </div>
 </div>
+
+<footer>&copy; 2025 HenrikWorld.com. All rights reserved.</footer>
 
 <script type="module">
 const codeElement = document.getElementById('generatedCode');
@@ -133,9 +127,12 @@ async function createGame(gameName){
       code:newCode,
       game:gameName,
       createdAt:Date.now(),
-      players:[nickname]
+      players:[nickname],
+      board:{},
+      turn:"X",
+      scores:{},
+      messages:[]
     });
-    // Mobile-friendly: navigate in the same tab
     window.location.href = `multiplayer.html?game=${encodeURIComponent(gameName)}&docId=${docRef.id}&nickname=${encodeURIComponent(nickname)}`;
   } catch(e){ console.error(e); }
 }

@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Multiplayer Tic Tac Toe</title>
+<title>HenrikWorld.com - Multiplayer</title>
+<link rel="icon" type="image/png" href="favicon.png">
 <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDmFdbny6w6noCga2YU_sVQvvoAEK-_3vY",
@@ -29,19 +30,35 @@ const gameName = urlParams.get("game");
 
 const gameDocRef = doc(db, "games", docId);
 
-let currentBoard = [["","",""],["","",""],["","",""]];
+let currentBoard = {};
 let currentTurn = "X";
 let players = [];
 let scores = {};
+let messages = [];
 let winningCells = [];
+
+function initializeBoard(){
+  currentBoard = {};
+  for(let r=0;r<3;r++){
+    for(let c=0;c<3;c++){
+      currentBoard[`${r}-${c}`] = "";
+    }
+  }
+}
+initializeBoard();
+
+function boardToArray(){
+  return [
+    [currentBoard["0-0"],currentBoard["0-1"],currentBoard["0-2"]],
+    [currentBoard["1-0"],currentBoard["1-1"],currentBoard["1-2"]],
+    [currentBoard["2-0"],currentBoard["2-1"],currentBoard["2-2"]]
+  ];
+}
 
 function checkWinner(board) {
   const lines = [
-    // rows
     [[0,0],[0,1],[0,2]], [[1,0],[1,1],[1,2]], [[2,0],[2,1],[2,2]],
-    // cols
     [[0,0],[1,0],[2,0]], [[0,1],[1,1],[2,1]], [[0,2],[1,2],[2,2]],
-    // diagonals
     [[0,0],[1,1],[2,2]], [[0,2],[1,1],[2,0]]
   ];
   for (let line of lines){
@@ -66,13 +83,14 @@ function checkDraw(board){
 function renderBoard(){
   const boardDiv = document.getElementById("board");
   boardDiv.innerHTML="";
+  const arrayBoard = boardToArray();
   for(let r=0;r<3;r++){
     const rowDiv = document.createElement("div");
     rowDiv.style.display="flex";
     rowDiv.style.gap="5px";
     for(let c=0;c<3;c++){
       const cell = document.createElement("div");
-      cell.textContent=currentBoard[r][c];
+      cell.textContent=arrayBoard[r][c];
       cell.style.width="80px";
       cell.style.height="80px";
       cell.style.display="flex";
@@ -88,26 +106,7 @@ function renderBoard(){
     }
     boardDiv.appendChild(rowDiv);
   }
-}
-
-async function handleMove(r,c){
-  if(currentBoard[r][c] || currentTurn!==playerSymbol()) return;
-  currentBoard[r][c] = currentTurn;
-
-  const winner = checkWinner(currentBoard);
-  const draw = checkDraw(currentBoard);
-
-  if(winner){
-    alert(`${playerName(currentTurn)} wins!`);
-    if(scores[playerName(currentTurn)]!==undefined){
-      scores[playerName(currentTurn)]++;
-    }
-  } else if(draw){
-    alert("Draw!");
-  }
-
-  currentTurn = currentTurn==="X"?"O":"X";
-  await updateDoc(gameDocRef, {board:currentBoard, turn:currentTurn, scores});
+  document.getElementById("turnInfo").textContent = `Current Turn: ${currentTurn} (${playerName(currentTurn)})`;
 }
 
 function playerSymbol(){
@@ -115,35 +114,98 @@ function playerSymbol(){
 }
 
 function playerName(symbol){
-  return symbol==="X"?players[0]:players[1];
+  return symbol==="X"?players[0]:players[1] || "Waiting...";
+}
+
+async function handleMove(r,c){
+  const key = `${r}-${c}`;
+  if(currentBoard[key] || currentTurn!==playerSymbol()) return;
+
+  currentBoard[key] = currentTurn;
+
+  const winner = checkWinner(boardToArray());
+  const draw = checkDraw(boardToArray());
+
+  if(winner){
+    alert(`${playerName(currentTurn)} wins!`);
+    if(scores[playerName(currentTurn)]!==undefined){
+      scores[playerName(currentTurn)]++;
+    } else {
+      scores[playerName(currentTurn)]=1;
+    }
+    await updateDoc(gameDocRef, {board:currentBoard, turn:currentTurn, scores});
+    setTimeout(async ()=>{
+      initializeBoard();
+      currentTurn = "X";
+      winningCells=[];
+      await updateDoc(gameDocRef, {board:currentBoard, turn:currentTurn});
+    }, 2000);
+    return;
+  } else if(draw){
+    alert("Draw!");
+    await updateDoc(gameDocRef, {board:currentBoard, turn:currentTurn, scores});
+    setTimeout(async ()=>{
+      initializeBoard();
+      currentTurn = "X";
+      winningCells=[];
+      await updateDoc(gameDocRef, {board:currentBoard, turn:currentTurn});
+    }, 2000);
+    return;
+  }
+
+  currentTurn = currentTurn==="X"?"O":"X";
+  await updateDoc(gameDocRef, {board:currentBoard, turn:currentTurn, scores});
+}
+
+// Chat functionality
+document.getElementById("sendBtn").addEventListener("click",sendMessage);
+document.getElementById("chatInput").addEventListener("keydown",(e)=>{if(e.key==="Enter") sendMessage();});
+
+async function sendMessage(){
+  const chatInput = document.getElementById("chatInput");
+  const msg = chatInput.value.trim();
+  if(!msg) return;
+  const messageObj = {sender:nickname, text:msg, timestamp:Date.now()};
+  await updateDoc(gameDocRef, {messages: arrayUnion(messageObj)});
+  chatInput.value="";
 }
 
 onSnapshot(gameDocRef,(docSnap)=>{
   if(docSnap.exists()){
     const data = docSnap.data();
     players = data.players || [];
-    currentBoard = data.board || [["","",""],["","",""],["","",""]];
+    currentBoard = data.board || currentBoard;
     currentTurn = data.turn || "X";
     scores = data.scores || {};
-    winningCells=[]; // reset before rendering
+    messages = data.messages || [];
+    winningCells=[];
     renderBoard();
     document.getElementById("playersList").innerHTML="Players in Lobby:<br>"+players.map(p=>`${p} (${scores[p]||0})`).join("<br>");
     document.getElementById("gameCode").textContent=`Game Code: ${data.code}`;
-  }
-});
+    document.title = `HenrikWorld.com - ${data.code}`;
 
-document.addEventListener("DOMContentLoaded",()=>{
-  if(gameName!=="Tic Tac Toe"){
-    document.getElementById("gameContainer").innerHTML="<h2>This game is not Tic Tac Toe.</h2>";
-    return;
+    const chatDiv = document.getElementById("chatBox");
+    chatDiv.innerHTML = "";
+    messages.sort((a,b)=>a.timestamp-b.timestamp).forEach(m=>{
+      const msgEl = document.createElement("div");
+      msgEl.innerHTML=`<strong>${m.sender}:</strong> ${m.text}`;
+      chatDiv.appendChild(msgEl);
+    });
+    chatDiv.scrollTop = chatDiv.scrollHeight;
   }
 });
 </script>
 <style>
-body { font-family: Arial,sans-serif; margin:0; background:#f5f5f5; display:flex; flex-direction:column; align-items:center; padding:20px;}
-#gameContainer { display:flex; flex-direction:column; align-items:center; gap:15px; margin-top:20px; }
-#board { display:flex; flex-direction:column; gap:5px; }
-#playersList, #gameCode { font-size:1.1rem; margin-top:10px; text-align:center; }
+body { font-family: Arial, sans-serif; margin:0; background:#f5f5f5; display:flex; flex-direction:column; align-items:center; padding:20px;}
+#gameContainer { display:flex; flex-direction:column; align-items:center; gap:15px; margin-top:20px; width:100%; max-width:700px; background:#fff; padding:15px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+#board { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
+#playersList, #gameCode, #turnInfo { font-size:1.1rem; margin-top:10px; text-align:center; }
+#chatBox { margin-top:10px; width:100%; max-height:200px; overflow-y:auto; border:1px solid #ccc; border-radius:8px; padding:10px; background:#f9f9f9; }
+#chatInputContainer { display:flex; margin-top:5px; gap:5px; width:100%; }
+#chatInput { flex:1; padding:8px; border-radius:6px; border:1px solid #ccc; }
+#sendBtn { padding:8px 12px; border:none; border-radius:6px; background:#ff4d4d; color:#fff; cursor:pointer; transition:0.2s; }
+#sendBtn:hover { background:#e04343; }
+footer { margin-top:20px; text-align:center; font-size:0.9rem; color:#555; }
 @media (max-width:500px){
   #board div { width:60px; height:60px; font-size:1.5rem; }
 }
@@ -153,8 +215,15 @@ body { font-family: Arial,sans-serif; margin:0; background:#f5f5f5; display:flex
 <h1 id="gameName">Multiplayer Tic Tac Toe</h1>
 <div id="gameContainer">
   <div id="board"></div>
+  <div id="turnInfo"></div>
   <div id="playersList">Players in Lobby:</div>
   <div id="gameCode">Game Code:</div>
+  <div id="chatBox"></div>
+  <div id="chatInputContainer">
+    <input id="chatInput" type="text" placeholder="Type a message..." />
+    <button id="sendBtn">Send</button>
+  </div>
 </div>
+<footer>&copy; 2025 HenrikWorld.com. All rights reserved.</footer>
 </body>
 </html>
