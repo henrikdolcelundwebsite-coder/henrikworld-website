@@ -1,74 +1,53 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sorry — Page Unavailable</title>
-  <meta name="robots" content="noindex" />
-  <style>
-    :root{
-      --bg:#0f1724;
-      --muted:#9aa4b2;
-      --accent:#6ee7b7;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
-
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      min-height:100%;
-      background: linear-gradient(180deg,var(--bg) 0%, #071026 100%);
-      color:#e6eef6;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:24px;
-      text-align:center;
-    }
-
-    .card{
-      width:100%;
-      max-width:640px;
-      background:rgba(255,255,255,0.02);
-      border-radius:18px;
-      padding:36px;
-      box-shadow:0 8px 30px rgba(2,6,23,0.6);
-    }
-
-    .icon{
-      width:100px;height:100px;
-      margin:0 auto 20px;
-      background:linear-gradient(135deg,#052033 30%, #0a2333 100%);
-      border-radius:16px;
-      display:flex;align-items:center;justify-content:center;
-    }
-
-    .icon svg{width:64px;height:64px}
-
-    h1{margin:0;font-size:26px;letter-spacing:-0.02em}
-    p{color:var(--muted);margin:16px 0 0;line-height:1.5}
-  </style>
+  <meta charset="UTF-8">
+  <title>Firestore Test</title>
 </head>
 <body>
-  <main class="card" role="main" aria-labelledby="title" aria-describedby="desc">
-    <div class="icon" aria-hidden="true">
-      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect x="2" y="6" width="60" height="40" rx="6" fill="url(#g)" />
-        <circle cx="22" cy="24" r="3" fill="#fff" opacity="0.9"/>
-        <circle cx="42" cy="24" r="3" fill="#fff" opacity="0.9"/>
-        <path d="M24 36c2 3 6 3 8 0" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
-        <defs>
-          <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0" stop-color="#072033"/>
-            <stop offset="1" stop-color="#0c2a3a"/>
-          </linearGradient>
-        </defs>
-      </svg>
-    </div>
+  <h1>Firestore Test</h1>
 
-    <h1 id="title">Sorry — this website is currently unavailable</h1>
-    <p id="desc">The site has been shut down and is not accessible at the moment.</p>
-  </main>
+  <input type="text" id="nickname" placeholder="Enter a nickname">
+  <button id="saveBtn">Save to Firestore</button>
+
+  <p id="status"></p>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.29.0/firebase-app.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.29.0/firebase-firestore.js";
+
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDB0PEb4hXsEIZP8yY6tEmokye23l53E-Y",
+      authDomain: "onlinewebsite-78010.firebaseapp.com",
+      projectId: "onlinewebsite-78010",
+      storageBucket: "onlinewebsite-78010.firebasestorage.app",
+      messagingSenderId: "1061908243842",
+      appId: "1:1061908243842:web:39f6b57a4b5da10f7e5b9b",
+      measurementId: "G-6DD0R64L7R"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const nicknameInput = document.getElementById("nickname");
+    const saveBtn = document.getElementById("saveBtn");
+    const status = document.getElementById("status");
+
+    saveBtn.addEventListener("click", async () => {
+      const nickname = nicknameInput.value.trim();
+      if (!nickname) return alert("Enter a nickname!");
+
+      try {
+        // Write a test document with nickname
+        await setDoc(doc(db, "testCollection", "testDoc"), { name: nickname });
+        status.textContent = `Saved "${nickname}" to Firestore!`;
+      } catch (err) {
+        console.error(err);
+        status.textContent = "Error saving to Firestore.";
+      }
+    });
+  </script>
 </body>
 </html>
