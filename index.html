@@ -1,154 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Multiplayer Lobby</title>
-  <!-- Boxicons CSS -->
-  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-  <!-- Firebase -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multiplayer Lobby</title>
+<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDmFdbny6w6noCga2YU_sVQvvoAEK-_3vY",
-      authDomain: "onlinewebsite-e55c8.firebaseapp.com",
-      projectId: "onlinewebsite-e55c8",
-      storageBucket: "onlinewebsite-e55c8.appspot.com",
-      messagingSenderId: "153855517055",
-      appId: "1:153855517055:web:eee5c6739bfa16ca78fa4a",
-      measurementId: "G-6WK0BFJ0DS"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyDmFdbny6w6noCga2YU_sVQvvoAEK-_3vY",
+    authDomain: "onlinewebsite-e55c8.firebaseapp.com",
+    projectId: "onlinewebsite-e55c8",
+    storageBucket: "onlinewebsite-e55c8.appspot.com",
+    messagingSenderId: "153855517055",
+    appId: "1:153855517055:web:eee5c6739bfa16ca78fa4a",
+    measurementId: "G-6WK0BFJ0DS"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    window.db = db;
-    window.collection = collection;
-    window.addDoc = addDoc;
-    window.query = query;
-    window.where = where;
-    window.getDocs = getDocs;
-  </script>
-  <style>
-    html, body { margin: 0; font-family: Arial, sans-serif; scroll-behavior: smooth; }
-    .main-content { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 50px; background-color: #f5f5f5; }
-    .container { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
-    .box { width: 300px; height: 200px; background-color: red; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: transform 0.2s, background-color 0.2s; cursor: pointer; display: flex; justify-content: center; align-items: center; color: white; font-size: 1.5rem; font-weight: bold; text-align: center; }
-    .box:hover { transform: scale(1.05); background-color: #ff4d4d; }
-    .box:active { transform: scale(0.95); }
-    @media (max-width: 1000px) { .container { flex-direction: column; gap: 20px; } }
+  window.db = db;
+  window.collection = collection;
+  window.addDoc = addDoc;
+  window.query = query;
+  window.where = where;
+  window.getDocs = getDocs;
+  window.updateDoc = updateDoc;
+</script>
+<style>
+html, body { margin:0; font-family: Arial,sans-serif; scroll-behavior:smooth; }
+body { background-color:#f5f5f5; }
 
-    .join-section { display: flex; flex-direction: column; align-items: center; gap: 15px; }
-    .join-section .join-text { font-size: 1.2rem; font-weight: 500; color: #333; text-align: center; }
-    .join-lobby { display: flex; justify-content: center; align-items: center; gap: 10px; }
-    .join-lobby input { padding: 12px 15px; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; width: 150px; text-align: center; transition: border-color 0.2s; }
-    .join-lobby input:focus { outline: none; border-color: #ff4d4d; }
-    .join-lobby .arrow { font-size: 1.8rem; cursor: pointer; transition: transform 0.2s, color 0.2s; }
-    .join-lobby .arrow:hover { transform: scale(1.2); color: #ff4d4d; }
+#nicknameInput { padding: 8px 10px; border-radius:6px; border:1px solid #ccc; font-size:0.9rem; width:120px; }
 
-    .bottom-section { min-height: 100vh; width: 100%; background-color: #e0e0e0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 40px; }
-    .bottom-container { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
+.main-content { min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:40px; padding:20px; }
+.container, .bottom-container { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; }
+.box { width:300px; height:200px; background-color:red; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:transform 0.2s, background-color 0.2s; cursor:pointer; display:flex; justify-content:center; align-items:center; color:white; font-size:1.5rem; font-weight:bold; text-align:center; }
+.box:hover { transform: scale(1.05); background-color:#ff4d4d; }
+.box:active { transform: scale(0.95); }
 
-    .generated-code { font-size: 2rem; font-weight: bold; color: #333; letter-spacing: 2px; }
-    .game-label { font-size: 1rem; color: #555; margin-bottom: 5px; }
-  </style>
+.join-section { display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; max-width:400px; }
+.join-text { font-size:1.1rem; font-weight:500; color:#333; text-align:center; }
+.join-lobby { display:flex; justify-content:center; align-items:center; gap:10px; width:100%; }
+.join-lobby input { padding:12px 10px; font-size:1rem; border-radius:8px; border:1px solid #ccc; width:70%; text-align:center; }
+.join-lobby .arrow { font-size:1.8rem; cursor:pointer; transition:transform 0.2s, color 0.2s; }
+.join-lobby .arrow:hover { transform:scale(1.2); color:#ff4d4d; }
+
+.bottom-section { min-height:80vh; width:100%; background-color:#e0e0e0; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:30px; padding:20px 0; }
+.generated-code { font-size:2rem; font-weight:bold; color:#333; letter-spacing:2px; }
+.game-label { font-size:1rem; color:#555; margin-bottom:5px; }
+
+@media (max-width:800px) {
+  .box { width:80%; height:150px; font-size:1.3rem; }
+  .join-lobby input { width:65%; font-size:0.9rem; }
+  #nicknameInput { width:100px; }
+}
+
+@media (max-width:500px) {
+  .box { width:90%; height:130px; font-size:1.1rem; }
+  .join-lobby input { width:60%; font-size:0.9rem; }
+  #nicknameInput { width:90px; font-size:0.85rem; }
+}
+</style>
 </head>
 <body>
-  <div class="main-content">
-    <div class="container">
-      <div class="box" id="topChess">Chess</div>
-      <div class="box" id="topTicTacToe">Tic Tac Toe</div>
-      <div class="box">Coming Soon</div>
-    </div>
+<!-- Nickname input -->
+<div style="position:fixed; top:10px; right:20px; z-index:1000;">
+  <input id="nicknameInput" type="text" placeholder="Nickname" />
+</div>
 
-    <div class="join-section">
-      <div class="join-text">Enter a Code to Join a Multiplayer Game</div>
-      <div class="join-lobby">
-        <input type="text" placeholder="Game ID" id="joinCodeInput" />
-        <i class='bx bx-right-arrow-alt arrow' id="joinBtn"></i>
-      </div>
-    </div>
+<div class="main-content">
+  <div class="container">
+    <div class="box" id="topChess">Chess</div>
+    <div class="box" id="topTicTacToe">Tic Tac Toe</div>
+    <div class="box">Coming Soon</div>
   </div>
 
-  <div class="bottom-section">
-    <div class="game-label" id="gameLabel">Current Game: None</div>
-    <div class="generated-code" id="generatedCode"></div>
-
-    <div class="bottom-container">
-      <div class="box" id="bottomChess">Chess</div>
-      <div class="box" id="bottomTicTacToe">Tic Tac Toe</div>
+  <div class="join-section">
+    <div class="join-text">Enter a Code to Join a Multiplayer Game</div>
+    <div class="join-lobby">
+      <input type="text" placeholder="Game ID" id="joinCodeInput" />
+      <i class='bx bx-right-arrow-alt arrow' id="joinBtn"></i>
     </div>
   </div>
+</div>
 
-  <script type="module">
-    const codeElement = document.getElementById('generatedCode');
-    const gameLabel = document.getElementById('gameLabel');
-    const joinInput = document.getElementById('joinCodeInput');
-    const joinBtn = document.getElementById('joinBtn');
+<div class="bottom-section">
+  <div class="game-label" id="gameLabel">Current Game: None</div>
+  <div class="generated-code" id="generatedCode"></div>
 
-    const db = window.db;
-    const { collection, addDoc, query, where, getDocs } = window;
+  <div class="bottom-container">
+    <div class="box" id="bottomChess">Chess</div>
+    <div class="box" id="bottomTicTacToe">Tic Tac Toe</div>
+  </div>
+</div>
 
-    function generateCode(length = 6) {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let result = '';
-      for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return result;
-    }
+<script type="module">
+const codeElement = document.getElementById('generatedCode');
+const gameLabel = document.getElementById('gameLabel');
+const joinInput = document.getElementById('joinCodeInput');
+const joinBtn = document.getElementById('joinBtn');
+const nicknameInput = document.getElementById('nicknameInput');
 
-    async function createGame(gameName) {
-      const newCode = generateCode();
-      codeElement.textContent = newCode;
-      gameLabel.textContent = `Current Game: ${gameName}`;
+const db = window.db;
+const { collection, addDoc, query, where, getDocs, updateDoc } = window;
 
-      try {
-        await addDoc(collection(db, "games"), {
-          code: newCode,
-          game: gameName,
-          createdAt: Date.now()
-        });
-        window.open(`multiplayer.html?game=${encodeURIComponent(gameName)}&code=${newCode}`, '_blank');
-      } catch (error) {
-        console.error("Error creating game:", error);
-      }
-    }
+function generateCode(length = 6) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i=0;i<length;i++){result+=chars.charAt(Math.floor(Math.random()*chars.length));}
+  return result;
+}
 
-    async function joinGame() {
-      const code = joinInput.value.trim().toUpperCase();
-      if (!code) return alert("Enter a game code");
+function getNickname(){
+  const nickname = nicknameInput.value.trim();
+  if(!nickname){ alert("Please enter a nickname before creating or joining a game."); nicknameInput.focus(); return null; }
+  return nickname;
+}
 
-      try {
-        const q = query(collection(db, "games"), where("code", "==", code));
-        const querySnapshot = await getDocs(q);
+async function createGame(gameName){
+  const nickname = getNickname(); if(!nickname) return;
 
-        if (querySnapshot.empty) {
-          alert("Game not found!");
-        } else {
-          const gameData = querySnapshot.docs[0].data();
-          window.open(`multiplayer.html?game=${encodeURIComponent(gameData.game)}&code=${gameData.code}`, '_blank');
-        }
-      } catch (error) {
-        console.error("Error joining game:", error);
-      }
-    }
+  const newCode = generateCode();
+  codeElement.textContent = newCode;
+  gameLabel.textContent = `Current Game: ${gameName}`;
 
-    // Attach click events
-    document.getElementById('bottomChess').addEventListener('click', () => createGame('Chess'));
-    document.getElementById('bottomTicTacToe').addEventListener('click', () => createGame('Tic Tac Toe'));
-    document.getElementById('topChess').addEventListener('click', () => createGame('Chess'));
-    document.getElementById('topTicTacToe').addEventListener('click', () => createGame('Tic Tac Toe'));
-    joinBtn.addEventListener('click', joinGame);
-
-    // Enter key triggers join
-    joinInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') joinGame();
+  try {
+    const docRef = await addDoc(collection(db,"games"),{
+      code:newCode,
+      game:gameName,
+      createdAt:Date.now(),
+      players:[nickname]
     });
+    window.open(`multiplayer.html?game=${encodeURIComponent(gameName)}&docId=${docRef.id}&nickname=${encodeURIComponent(nickname)}`,'_blank');
+  } catch(e){ console.error(e); }
+}
 
-    codeElement.textContent = generateCode();
-  </script>
+async function joinGame(){
+  const nickname = getNickname(); if(!nickname) return;
+
+  const code = joinInput.value.replace(/\s+/g,'').toUpperCase();
+  if(!code) return alert("Enter a game code");
+
+  try {
+    const q = query(collection(db,"games"),where("code","==",code));
+    const querySnapshot = await getDocs(q);
+    if(querySnapshot.empty){ alert("Game not found!"); return; }
+
+    const docRef = querySnapshot.docs[0].ref;
+    const gameData = querySnapshot.docs[0].data();
+    const players = gameData.players || [];
+    if(!players.includes(nickname)) players.push(nickname);
+    await updateDoc(docRef,{players});
+
+    window.open(`multiplayer.html?game=${encodeURIComponent(gameData.game)}&docId=${docRef.id}&nickname=${encodeURIComponent(nickname)}`,'_blank');
+  } catch(e){ console.error(e); }
+}
+
+// Attach events
+document.getElementById('bottomChess').addEventListener('click',()=>createGame('Chess'));
+document.getElementById('bottomTicTacToe').addEventListener('click',()=>createGame('Tic Tac Toe'));
+document.getElementById('topChess').addEventListener('click',()=>createGame('Chess'));
+document.getElementById('topTicTacToe').addEventListener('click',()=>createGame('Tic Tac Toe'));
+joinBtn.addEventListener('click',joinGame);
+joinBtn.addEventListener('touchstart',joinGame);
+joinInput.addEventListener('keydown',(e)=>{if(e.key==='Enter') joinGame();});
+
+codeElement.textContent = generateCode();
+</script>
 </body>
 </html>
