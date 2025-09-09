@@ -135,7 +135,8 @@ async function createGame(gameName){
       createdAt:Date.now(),
       players:[nickname]
     });
-    window.open(`multiplayer.html?game=${encodeURIComponent(gameName)}&docId=${docRef.id}&nickname=${encodeURIComponent(nickname)}`,'_blank');
+    // Mobile-friendly: navigate in the same tab
+    window.location.href = `multiplayer.html?game=${encodeURIComponent(gameName)}&docId=${docRef.id}&nickname=${encodeURIComponent(nickname)}`;
   } catch(e){ console.error(e); }
 }
 
@@ -156,7 +157,7 @@ async function joinGame(){
     if(!players.includes(nickname)) players.push(nickname);
     await updateDoc(docRef,{players});
 
-    window.open(`multiplayer.html?game=${encodeURIComponent(gameData.game)}&docId=${docRef.id}&nickname=${encodeURIComponent(nickname)}`,'_blank');
+    window.location.href = `multiplayer.html?game=${encodeURIComponent(gameData.game)}&docId=${docRef.id}&nickname=${encodeURIComponent(nickname)}`;
   } catch(e){ console.error(e); }
 }
 
