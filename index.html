@@ -1,53 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Firestore Test</title>
-</head>
-<body>
-  <h1>Firestore Test</h1>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.24.0/firebase-app.js";
+  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.24.0/firebase-firestore.js";
 
-  <input type="text" id="nickname" placeholder="Enter a nickname">
-  <button id="saveBtn">Save to Firestore</button>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDB0PEb4hXsEIZP8yY6tEmokye23l53E-Y",
+    authDomain: "onlinewebsite-78010.firebaseapp.com",
+    projectId: "onlinewebsite-78010",
+    storageBucket: "onlinewebsite-78010.firebasestorage.app",
+    messagingSenderId: "1061908243842",
+    appId: "1:1061908243842:web:39f6b57a4b5da10f7e5b9b",
+    measurementId: "G-6DD0R64L7R"
+  };
 
-  <p id="status"></p>
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.29.0/firebase-app.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.29.0/firebase-firestore.js";
+  async function testWrite() {
+    try {
+      await setDoc(doc(db, "testCollection", "testDoc"), { name: "Hello World" });
+      console.log("Document written!");
+    } catch (err) {
+      console.error("Error writing document:", err);
+    }
+  }
 
-    // Your Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyDB0PEb4hXsEIZP8yY6tEmokye23l53E-Y",
-      authDomain: "onlinewebsite-78010.firebaseapp.com",
-      projectId: "onlinewebsite-78010",
-      storageBucket: "onlinewebsite-78010.firebasestorage.app",
-      messagingSenderId: "1061908243842",
-      appId: "1:1061908243842:web:39f6b57a4b5da10f7e5b9b",
-      measurementId: "G-6DD0R64L7R"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    const nicknameInput = document.getElementById("nickname");
-    const saveBtn = document.getElementById("saveBtn");
-    const status = document.getElementById("status");
-
-    saveBtn.addEventListener("click", async () => {
-      const nickname = nicknameInput.value.trim();
-      if (!nickname) return alert("Enter a nickname!");
-
-      try {
-        // Write a test document with nickname
-        await setDoc(doc(db, "testCollection", "testDoc"), { name: nickname });
-        status.textContent = `Saved "${nickname}" to Firestore!`;
-      } catch (err) {
-        console.error(err);
-        status.textContent = "Error saving to Firestore.";
-      }
-    });
-  </script>
-</body>
-</html>
+  testWrite();
+</script>
