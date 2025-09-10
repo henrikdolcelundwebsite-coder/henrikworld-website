@@ -1,228 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Henrik World | Login</title>
-<link rel="icon" href="images/favicon.png" type="image/png">
-<style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f0f0f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    position: relative;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HenrikWorld - Login</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: black;
+      overflow: hidden;
+    }
 
-  .login-container {
-    background: #fff;
-    border-radius: 16px;
-    padding: 2rem;
-    max-width: 400px;
-    width: 90%;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-    text-align: center;
-    position: relative;
-    z-index: 1;
-  }
+    /* STAR FIELD */
+    .stars {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      background-image: 
+        radial-gradient(2px 2px at 20px 30px, white, transparent),
+        radial-gradient(1px 1px at 40px 70px, white, transparent),
+        radial-gradient(2px 2px at 130px 80px, white, transparent),
+        radial-gradient(1px 1px at 220px 150px, white, transparent),
+        radial-gradient(2px 2px at 320px 200px, white, transparent),
+        radial-gradient(1px 1px at 420px 50px, white, transparent),
+        radial-gradient(2px 2px at 520px 300px, white, transparent),
+        radial-gradient(1px 1px at 620px 400px, white, transparent),
+        radial-gradient(2px 2px at 720px 100px, white, transparent),
+        radial-gradient(1px 1px at 820px 250px, white, transparent),
+        radial-gradient(1px 1px at 900px 320px, white, transparent),
+        radial-gradient(2px 2px at 1000px 180px, white, transparent),
+        radial-gradient(1px 1px at 1100px 400px, white, transparent),
+        radial-gradient(2px 2px at 1200px 90px, white, transparent),
+        radial-gradient(1px 1px at 1300px 260px, white, transparent),
+        radial-gradient(2px 2px at 1400px 330px, white, transparent),
+        radial-gradient(1px 1px at 1500px 150px, white, transparent),
+        radial-gradient(2px 2px at 1600px 220px, white, transparent),
+        radial-gradient(1px 1px at 1700px 380px, white, transparent),
+        radial-gradient(2px 2px at 1800px 120px, white, transparent);
+      background-size: 1800px 600px;
+      animation: starScroll 120s linear infinite;
+      z-index: 0;
+    }
 
-  .login-container h2 {
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-    color: #222;
-  }
+    @keyframes starScroll {
+      from { background-position: 0 0; }
+      to { background-position: -1800px -600px; }
+    }
 
-  .login-container input {
-    width: calc(100% - 2rem);
-    max-width: 100%;
-    padding: 0.8rem;
-    margin: 0.5rem 0 1rem 0;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    font-size: 1rem;
-    box-sizing: border-box;
-  }
+    .login-container {
+      background: #fff;
+      padding: 30px 25px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      z-index: 1;
+      position: relative;
+    }
 
-  .btn {
-    background: linear-gradient(-45deg, #1e90ff, #00ff99, #1e90ff, #00ff99);
-    background-size: 400% 400%;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 0.8rem 1.5rem;
-    font-size: 1.1rem;
-    cursor: pointer;
-    width: calc(100% - 2rem);
-    max-width: 100%;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    box-sizing: border-box;
-    animation: gradientMove 6s ease infinite;
-  }
+    .login-container h1 {
+      margin-bottom: 25px;
+      font-size: 1.8rem;
+      color: #333;
+    }
 
-  .btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  }
-  .btn:active {
-    transform: scale(1.02);
-  }
+    .input-group {
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: center;
+    }
 
-  @keyframes gradientMove {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
+    .input-group input {
+      width: 100%;
+      max-width: 280px;
+      padding: 14px 18px;
+      border-radius: 999px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      outline: none;
+      text-align: left;
+    }
 
-  .login-footer {
-    margin-top: 1rem;
-    font-size: 0.9rem;
-    color: #555;
-  }
+    .input-group input:focus {
+      border-color: #4CAF50;
+      box-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
+    }
 
-  .login-footer a {
-    color: #1e90ff;
-    text-decoration: none;
-    cursor: pointer;
-  }
-  .login-footer a:hover {
-    text-decoration: underline;
-  }
+    .login-btn {
+      width: 100%;
+      max-width: 280px;
+      padding: 14px;
+      color: white;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: 0.3s;
+      margin-top: 10px;
 
-  /* Loading overlay */
-  #loadingOverlay {
-    position: fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background: rgba(255,255,255,0.5);
-    display: flex;
-    justify-content:center;
-    align-items:center;
-    z-index: 999;
-    display:none;
-  }
+      background: linear-gradient(270deg, #4CAF50, #2196F3, #2E7D32, #1976D2);
+      background-size: 600% 600%;
+      animation: earthGradient 6s ease infinite;
+    }
 
-  .spinner {
-    border: 6px solid #f3f3f3;
-    border-top: 6px solid #1e90ff;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 1s linear infinite;
-  }
+    @keyframes earthGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
 
-  @keyframes spin {
-    0% { transform: rotate(0deg);}
-    100% { transform: rotate(360deg);}
-  }
+    .login-btn:hover {
+      transform: scale(1.05);
+    }
 
-  /* Register message overlay */
-  #registerMessage {
-    position: fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background: rgba(0,0,0,0.5);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    color: #fff;
-    font-size: 1.5rem;
-    text-align:center;
-    padding: 1rem;
-    border-radius: 16px;
-    display: none;
-    z-index: 1000;
-  }
-
-  #registerMessage button {
-    margin-top: 1rem;
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    background: #1e90ff;
-    color: #fff;
-  }
-
-</style>
+    footer {
+      position: absolute;
+      bottom: 10px;
+      font-size: 0.8rem;
+      color: #fff;
+      z-index: 1;
+    }
+  </style>
 </head>
 <body>
+  <div class="stars"></div>
 
-<div class="login-container">
-  <h2>🌍 Henrik World</h2>
-  <input type="text" id="username" placeholder="Username" />
-  <input type="password" id="password" placeholder="Password" />
-  <button class="btn" id="loginBtn">Login</button>
-
-  <div class="login-footer">
-    <p>Don't have an account? <a id="registerLink">Register</a></p>
+  <div class="login-container">
+    <h1>🌍 HenrikWorld</h1>
+    <form id="loginForm">
+      <div class="input-group">
+        <input type="text" id="username" placeholder="Username" maxlength="20" required>
+      </div>
+      <div class="input-group">
+        <input type="password" id="password" placeholder="Password" minlength="6" maxlength="30" required>
+      </div>
+      <button type="submit" class="login-btn">Login</button>
+    </form>
   </div>
-</div>
 
-<!-- Loading overlay -->
-<div id="loadingOverlay">
-  <div class="spinner"></div>
-</div>
+  <footer>&copy; 2025 HenrikWorld.com</footer>
 
-<!-- Register permission message -->
-<div id="registerMessage">
-  <div>
-    You need special permission to have an account!
-    <br>
-    <button id="closeMessageBtn">Close</button>
-  </div>
-</div>
+  <script>
+    const loginForm = document.getElementById('loginForm');
 
-<script>
-  const accounts = [
-    { username: "Henrik", password: "Green898" },
-    { username: "Guest", password: "123" }
-  ];
+    // Hardcoded user list
+    const users = [
+      { username: "Henrik", password: "Green898" }
+    ];
 
-  const loginBtn = document.getElementById('loginBtn');
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  const registerLink = document.getElementById('registerLink');
-  const registerMessage = document.getElementById('registerMessage');
-  const closeMessageBtn = document.getElementById('closeMessageBtn');
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
 
-  loginBtn.onclick = () => {
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
+      const user = users.find(u => u.username === username && u.password === password);
 
-    if (!username || !password) {
-      alert('Please enter both username and password.');
-      return;
-    }
-
-    const account = accounts.find(acc => acc.username === username && acc.password === password);
-    if (!account) {
-      alert('Invalid username or password.');
-      return;
-    }
-
-    loadingOverlay.style.display = 'flex';
-    setTimeout(() => {
-      localStorage.setItem('loggedInUser', account.username);
-      window.location.href = 'index.html';
-    }, 2000);
-  };
-
-  // Register click shows message
-  registerLink.onclick = () => {
-    registerMessage.style.display = 'flex';
-  };
-
-  closeMessageBtn.onclick = () => {
-    registerMessage.style.display = 'none';
-  };
-</script>
-
+      if (user) {
+        alert("Login successful!");
+        window.location.href = "index.html"; // redirect
+      } else {
+        alert("Wrong username or password!");
+      }
+    });
+  </script>
 </body>
 </html>
