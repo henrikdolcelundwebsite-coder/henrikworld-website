@@ -1,253 +1,74 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HenrikWorld.com - Home</title>
-<link rel="icon" type="image/png" href="favicon.png">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sorry — Page Unavailable</title>
+  <meta name="robots" content="noindex" />
+  <style>
+    :root{
+      --bg:#0f1724;
+      --muted:#9aa4b2;
+      --accent:#6ee7b7;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
 
-<!-- Firebase -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      min-height:100%;
+      background: linear-gradient(180deg,var(--bg) 0%, #071026 100%);
+      color:#e6eef6;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      text-align:center;
+    }
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDmFdbny6w6noCga2YU_sVQvvoAEK-_3vY",
-    authDomain: "onlinewebsite-e55c8.firebaseapp.com",
-    projectId: "onlinewebsite-e55c8",
-    storageBucket: "onlinewebsite-e55c8.appspot.com",
-    messagingSenderId: "153855517055",
-    appId: "1:153855517055:web:eee5c6739bfa16ca78fa4a",
-    measurementId: "G-6WK0BFJ0DS"
-  };
+    .card{
+      width:100%;
+      max-width:640px;
+      background:rgba(255,255,255,0.02);
+      border-radius:18px;
+      padding:36px;
+      box-shadow:0 8px 30px rgba(2,6,23,0.6);
+    }
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    .icon{
+      width:100px;height:100px;
+      margin:0 auto 20px;
+      background:linear-gradient(135deg,#052033 30%, #0a2333 100%);
+      border-radius:16px;
+      display:flex;align-items:center;justify-content:center;
+    }
 
-  window.db = db;
-  window.collection = collection;
-  window.addDoc = addDoc;
-  window.query = query;
-  window.where = where;
-  window.getDocs = getDocs;
-</script>
+    .icon svg{width:64px;height:64px}
 
-<style>
-body, html { margin:0; font-family: Arial,sans-serif; scroll-behavior:smooth; }
-
-/* NAVBAR */
-nav {
-  position: fixed;
-  top:0;
-  width:100%;
-  background:white;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:20px 40px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.2);
-  z-index:1000;
-}
-.nav-left { font-size:1.4rem; font-weight:bold; display:flex; align-items:center; gap:8px; }
-.nav-center { display:flex; gap:25px; font-weight:500; }
-.nav-center a { text-decoration:none; color:#333; transition:0.3s; }
-.nav-center a:hover { color:#1976D2; }
-.nav-right { max-width:150px; text-align:right; margin-right:50px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-
-/* SECTIONS */
-section { width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 20px; box-sizing:border-box; min-height:100vh; }
-#welcome { background:black; color:white; position:relative; text-align:center; overflow:hidden; }
-.stars {
-  position:absolute;
-  width:100%;
-  height:100%;
-  background:transparent;
-  background-image:
-    radial-gradient(2px 2px at 20px 30px, white, transparent),
-    radial-gradient(1px 1px at 40px 70px, white, transparent),
-    radial-gradient(2px 2px at 130px 80px, white, transparent),
-    radial-gradient(1px 1px at 220px 150px, white, transparent),
-    radial-gradient(2px 2px at 320px 200px, white, transparent),
-    radial-gradient(1px 1px at 420px 50px, white, transparent),
-    radial-gradient(2px 2px at 520px 300px, white, transparent),
-    radial-gradient(1px 1px at 620px 400px, white, transparent),
-    radial-gradient(2px 2px at 720px 100px, white, transparent),
-    radial-gradient(1px 1px at 820px 250px, white, transparent);
-  background-size:1800px 600px;
-  animation: starScroll 120s linear infinite;
-  z-index:0;
-}
-@keyframes starScroll { from {background-position:0 0;} to {background-position:-1800px -600px;} }
-
-h1,h2,h3 { z-index:1; animation: fadeIn 2s ease-in; }
-#games { background:#fff; }
-#multiplayer { background:#e8e8e8; }
-
-.game-container { display:flex; flex-wrap:wrap; gap:20px; justify-content:center; margin-top:20px; }
-.box { width:300px; height:180px; background:#1976D2; border-radius:10px; display:flex; justify-content:center; align-items:center; color:white; font-size:1.5rem; font-weight:bold; text-align:center; cursor:pointer; transition:transform 0.3s, background 0.3s, box-shadow 0.3s; }
-.box:hover { transform:scale(1.05); background:#4CAF50; box-shadow:0 8px 16px rgba(0,0,0,0.3); }
-
-.join-lobby { display:flex; margin-top:20px; gap:10px; }
-.join-lobby input { padding:12px; border-radius:8px; border:1px solid #ccc; width:200px; }
-.join-lobby button { padding:12px 20px; border:none; border-radius:8px; background:#1976D2; color:white; cursor:pointer; }
-
-/* LOADER */
-#loader {
-  position: fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:white;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  z-index:2000;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity 0.3s ease;
-}
-#loader.active { opacity:1; pointer-events:all; }
-.orbit {
-  width:100px;
-  height:100px;
-  position:relative;
-  animation: orbit 1.5s linear infinite;
-}
-.rocket {
-  font-size:3rem;
-  position:absolute;
-  top:0;
-  left:50%;
-  transform:translateX(-50%);
-}
-@keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-footer { text-align:center; font-size:0.9rem; color:#555; margin-top:20px; }
-
-/* Animations */
-@keyframes fadeIn { from { opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);} }
-
-/* RESPONSIVE */
-@media(max-width:800px){
-  #welcome h1{font-size:2.2rem;}
-  #multiplayer h2{font-size:2rem;}
-  .box{width:80%;height:150px;font-size:1.3rem;}
-}
-@media(max-width:500px){
-  nav{flex-direction:column;gap:10px;padding:15px 20px;}
-  .nav-center{gap:10px;}
-  #welcome h1{font-size:1.8rem;}
-  #multiplayer h2{font-size:1.5rem;}
-  .box{width:90%;height:130px;font-size:1.1rem;}
-}
-</style>
+    h1{margin:0;font-size:26px;letter-spacing:-0.02em}
+    p{color:var(--muted);margin:16px 0 0;line-height:1.5}
+  </style>
 </head>
 <body>
+  <main class="card" role="main" aria-labelledby="title" aria-describedby="desc">
+    <div class="icon" aria-hidden="true">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="2" y="6" width="60" height="40" rx="6" fill="url(#g)" />
+        <circle cx="22" cy="24" r="3" fill="#fff" opacity="0.9"/>
+        <circle cx="42" cy="24" r="3" fill="#fff" opacity="0.9"/>
+        <path d="M24 36c2 3 6 3 8 0" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
+        <defs>
+          <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stop-color="#072033"/>
+            <stop offset="1" stop-color="#0c2a3a"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
 
-<!-- NAV -->
-<nav>
-  <div class="nav-left">🌍 HenrikWorld</div>
-  <div class="nav-center">
-    <a href="#welcome">Home</a>
-    <a href="#games">Games</a>
-    <a href="#multiplayer">Multiplayer</a>
-  </div>
-  <div class="nav-right">Henrik</div>
-</nav>
-
-<!-- LOADER -->
-<div id="loader">
-  <div class="orbit">
-    <div class="rocket">🚀</div>
-  </div>
-</div>
-
-<!-- WELCOME -->
-<section id="welcome">
-  <div class="stars"></div>
-  <h1>Welcome, Henrik!</h1>
-</section>
-
-<!-- GAMES -->
-<section id="games">
-  <h2>Games</h2>
-  <h3>Offline Games</h3>
-  <div class="game-container">
-    <div class="box" onclick="alert('Offline Chess launched')">Chess</div>
-    <div class="box" onclick="alert('Offline Tic Tac Toe launched')">Tic Tac Toe</div>
-  </div>
-
-  <h3>Join Online Game</h3>
-  <div class="join-lobby">
-    <input type="text" id="joinCode" placeholder="Enter Game ID">
-    <button onclick="joinGame()">Join</button>
-  </div>
-</section>
-
-<!-- MULTIPLAYER -->
-<section id="multiplayer">
-  <h2>Create Multiplayer Game</h2>
-  <div class="game-container">
-    <div class="box" onclick="createGame('Chess')">Chess</div>
-    <div class="box" onclick="createGame('Tic Tac Toe')">Tic Tac Toe</div>
-  </div>
-</section>
-
-<footer>&copy; 2025 HenrikWorld.com. All rights reserved.</footer>
-
-<script>
-const db = window.db;
-const { collection, addDoc, query, where, getDocs } = window;
-
-function generateCode(length=6){
-  const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result='';
-  for(let i=0;i<length;i++) result+=chars.charAt(Math.floor(Math.random()*chars.length));
-  return result;
-}
-
-function showLoader(){
-  const loader = document.getElementById('loader');
-  loader.classList.add('active');
-  setTimeout(()=> loader.classList.remove('active'), 2000);
-}
-
-async function createGame(gameName){
-  showLoader();
-  setTimeout(async ()=>{
-    const code = generateCode();
-    try{
-      const docRef = await addDoc(collection(db,"games"),{
-        code: code,
-        game: gameName,
-        createdAt: Date.now(),
-        players: [],
-        board: {},
-        turn: "X",
-        scores: {},
-        messages: []
-      });
-      window.location.href = `multiplayer.html?game=${encodeURIComponent(gameName)}&docId=${docRef.id}`;
-    } catch(e){ console.error(e); }
-  }, 2000);
-}
-
-async function joinGame(){
-  const code = document.getElementById('joinCode').value.trim().toUpperCase();
-  if(!code) return alert("Enter a game code");
-  showLoader();
-  setTimeout(async ()=>{
-    try{
-      const q = query(collection(db,"games"),where("code","==",code));
-      const querySnapshot = await getDocs(q);
-      if(querySnapshot.empty){ alert("Game not found!"); return; }
-      const gameData = querySnapshot.docs[0].data();
-      window.location.href = `multiplayer.html?game=${encodeURIComponent(gameData.game)}&docId=${querySnapshot.docs[0].id}`;
-    } catch(e){ console.error(e); }
-  }, 2000);
-}
-</script>
-
+    <h1 id="title">Sorry — this website is currently unavailable</h1>
+    <p id="desc">The site has been shut down and is not accessible at the moment.</p>
+  </main>
 </body>
 </html>
