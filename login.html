@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HenrikWorld - Login</title>
-  <link rel="icon" type="image/png" href="favicon.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - henrikworld</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
   <style>
     body {
       margin: 0;
@@ -16,7 +16,6 @@
       background: black;
       overflow: hidden;
     }
-
     /* STAR FIELD */
     .stars {
       position: absolute;
@@ -48,7 +47,6 @@
       animation: starScroll 120s linear infinite;
       z-index: 0;
     }
-
     @keyframes starScroll {
       from { background-position: 0 0; }
       to { background-position: -1800px -600px; }
@@ -89,11 +87,6 @@
       text-align: left;
     }
 
-    .input-group input:focus {
-      border-color: #4CAF50;
-      box-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
-    }
-
     .login-btn {
       width: 100%;
       max-width: 280px;
@@ -105,23 +98,18 @@
       border-radius: 999px;
       cursor: pointer;
       transition: 0.3s;
-      margin-top: 10px;
-
       background: linear-gradient(270deg, #4CAF50, #2196F3, #2E7D32, #1976D2);
       background-size: 600% 600%;
       animation: earthGradient 6s ease infinite;
     }
-
     @keyframes earthGradient {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-
     .login-btn:hover {
       transform: scale(1.05);
     }
-
     footer {
       position: absolute;
       bottom: 10px;
@@ -132,45 +120,47 @@
   </style>
 </head>
 <body>
-  <div class="stars"></div>
+<div class="stars"></div>
+<div class="login-container">
+  <h1>🌍 HenrikWorld</h1>
+  <form id="loginForm">
+    <div class="input-group">
+      <input type="text" id="username" placeholder="Username" maxlength="20" required>
+    </div>
+    <div class="input-group">
+      <input type="password" id="password" placeholder="Password" minlength="6" maxlength="30" required>
+    </div>
+    <button type="submit" class="login-btn">Login</button>
+  </form>
+</div>
+<footer>&copy; 2025 HenrikWorld.com</footer>
+<script>
+  const loginForm = document.getElementById('loginForm');
 
-  <div class="login-container">
-    <h1>🌍 HenrikWorld</h1>
-    <form id="loginForm">
-      <div class="input-group">
-        <input type="text" id="username" placeholder="Username" maxlength="20" required>
-      </div>
-      <div class="input-group">
-        <input type="password" id="password" placeholder="Password" minlength="6" maxlength="30" required>
-      </div>
-      <button type="submit" class="login-btn">Login</button>
-    </form>
-  </div>
+  // Hardcoded user list
+  const users = [
+    { username: "Henrik", password: "Green898" },
+    { username: "Bogeybag", password: "123456" },
+    { username: "Owenwinters99", password: "Owenwinters99" },
+    { username: "Billdozer4th", password: "Biglet67" },
+    { username: "Guest", password: "Admin123" }
 
-  <footer>&copy; 2025 HenrikWorld.com</footer>
+  ];
 
-  <script>
-    const loginForm = document.getElementById('loginForm');
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
 
-    // Hardcoded user list
-    const users = [
-      { username: "Henrik", password: "Green898" }
-    ];
-
-    loginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value.trim();
-
-      const user = users.find(u => u.username === username && u.password === password);
-
-      if (user) {
-        alert("Login successful!");
-        window.location.href = "index.html"; // redirect
-      } else {
-        alert("Wrong username or password!");
-      }
-    });
-  </script>
+    const user = users.find(u => u.username === username && u.password === password);
+    if (user) {
+      alert("Login successful!");
+      localStorage.setItem('username', username);
+      window.location.href = "index.html"; // redirect
+    } else {
+      alert("Wrong username or password!");
+    }
+  });
+</script>
 </body>
 </html>

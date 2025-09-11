@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HenrikWorld.com - Multiplayer</title>
 <link rel="icon" type="image/png" href="favicon.png">
-
+<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
 import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
@@ -25,55 +25,71 @@ const db = getFirestore(app);
 
 const urlParams = new URLSearchParams(window.location.search);
 const docId = urlParams.get("docId");
-const gameName = urlParams.get("game") || "Game";
+const nickname = urlParams.get("nickname");
+const gameName = urlParams.get("game");
+
 const gameDocRef = doc(db, "games", docId);
 
+let currentBoard = {};
+let currentTurn = "X";
 let players = [];
-let turn = "X";
-let ticTacToeBoard = {};
-let chessBoard = {};
-let currentChessTurn = "white";
+let scores = {};
 let messages = [];
 let winningCells = [];
 
-// Initialize Tic Tac Toe board
-function initTicTacToe(){
-  ticTacToeBoard = {};
+function initializeBoard(){
+  currentBoard = {};
   for(let r=0;r<3;r++){
     for(let c=0;c<3;c++){
-      ticTacToeBoard[`${r}-${c}`]="";
+      currentBoard[`${r}-${c}`] = "";
     }
   }
 }
-initTicTacToe();
+initializeBoard();
 
-// Initialize Chess board
-function initChess(){
-  const emptyRow = ["","","","","","","",""];
-  chessBoard={};
-  // Black pieces
-  ["rook","knight","bishop","queen","king","bishop","knight","rook"].forEach((p,i)=>chessBoard[`0-${i}`]="black-"+p);
-  for(let i=0;i<8;i++) chessBoard[`1-${i}`]="black-pawn";
-  for(let r=2;r<6;r++) for(let c=0;c<8;c++) chessBoard[`${r}-${c}`]="";
-  for(let i=0;i<8;i++) chessBoard[`6-${i}`]="white-pawn";
-  ["rook","knight","bishop","queen","king","bishop","knight","rook"].forEach((p,i)=>chessBoard[`7-${i}`]="white-"+p);
-}
-initChess();
-
-function renderTicTacToe(){
-  const boardDiv=document.getElementById("ticTacToeBoard");
-  boardDiv.innerHTML="";
-  const arrayBoard = [
-    [ticTacToeBoard["0-0"],ticTacToeBoard["0-1"],ticTacToeBoard["0-2"]],
-    [ticTacToeBoard["1-0"],ticTacToeBoard["1-1"],ticTacToeBoard["1-2"]],
-    [ticTacToeBoard["2-0"],ticTacToeBoard["2-1"],ticTacToeBoard["2-2"]]
+function boardToArray(){
+  return [
+    [currentBoard["0-0"],currentBoard["0-1"],currentBoard["0-2"]],
+    [currentBoard["1-0"],currentBoard["1-1"],currentBoard["1-2"]],
+    [currentBoard["2-0"],currentBoard["2-1"],currentBoard["2-2"]]
   ];
+}
+
+function checkWinner(board) {
+  const lines = [
+    [[0,0],[0,1],[0,2]], [[1,0],[1,1],[1,2]], [[2,0],[2,1],[2,2]],
+    [[0,0],[1,0],[2,0]], [[0,1],[1,1],[2,1]], [[0,2],[1,2],[2,2]],
+    [[0,0],[1,1],[2,2]], [[0,2],[1,1],[2,0]]
+  ];
+  for (let line of lines){
+    const [a,b,c] = line;
+    if(board[a[0]][a[1]] && board[a[0]][a[1]]===board[b[0]][b[1]] && board[a[0]][a[1]]===board[c[0]][c[1]]){
+      winningCells = [a,b,c];
+      return board[a[0]][a[1]];
+    }
+  }
+  return null;
+}
+
+function checkDraw(board){
   for(let r=0;r<3;r++){
-    const rowDiv=document.createElement("div");
+    for(let c=0;c<3;c++){
+      if(board[r][c]==="") return false;
+    }
+  }
+  return true;
+}
+
+function renderBoard(){
+  const boardDiv = document.getElementById("board");
+  boardDiv.innerHTML="";
+  const arrayBoard = boardToArray();
+  for(let r=0;r<3;r++){
+    const rowDiv = document.createElement("div");
     rowDiv.style.display="flex";
     rowDiv.style.gap="5px";
     for(let c=0;c<3;c++){
-      const cell=document.createElement("div");
+      const cell = document.createElement("div");
       cell.textContent=arrayBoard[r][c];
       cell.style.width="80px";
       cell.style.height="80px";
@@ -85,167 +101,129 @@ function renderTicTacToe(){
       cell.style.color="white";
       cell.style.borderRadius="10px";
       cell.style.cursor="pointer";
-      cell.addEventListener("click",()=>ticTacToeMove(r,c));
+      cell.addEventListener("click",()=>handleMove(r,c));
       rowDiv.appendChild(cell);
     }
     boardDiv.appendChild(rowDiv);
   }
-  document.getElementById("ticTacToeTurn").textContent=`Current Turn: ${turn}`;
+  document.getElementById("turnInfo").textContent = `Current Turn: ${currentTurn} (${playerName(currentTurn)})`;
 }
 
-function ticTacToeMove(r,c){
-  const key=`${r}-${c}`;
-  if(ticTacToeBoard[key] || turn!=="X") return; // simple single player X
-  ticTacToeBoard[key]=turn;
-  const winner = checkTicTacToeWinner();
-  if(winner){ alert(`${winner} wins!`); initTicTacToe(); turn="X"; }
-  else turn=turn==="X"?"O":"X";
-  updateDoc(gameDocRef,{board:ticTacToeBoard,turn});
+function playerSymbol(){
+  return players[0]===nickname?"X":"O";
 }
 
-function checkTicTacToeWinner(){
-  const b=[
-    [ticTacToeBoard["0-0"],ticTacToeBoard["0-1"],ticTacToeBoard["0-2"]],
-    [ticTacToeBoard["1-0"],ticTacToeBoard["1-1"],ticTacToeBoard["1-2"]],
-    [ticTacToeBoard["2-0"],ticTacToeBoard["2-1"],ticTacToeBoard["2-2"]]
-  ];
-  const lines=[
-    [[0,0],[0,1],[0,2]], [[1,0],[1,1],[1,2]], [[2,0],[2,1],[2,2]],
-    [[0,0],[1,0],[2,0]], [[0,1],[1,1],[2,1]], [[0,2],[1,2],[2,2]],
-    [[0,0],[1,1],[2,2]], [[0,2],[1,1],[2,0]]
-  ];
-  for(const l of lines){
-    const [a,b1,c]=l;
-    if(b[a[0]][a[1]] && b[a[0]][a[1]]===b[b1[0]][b1[1]] && b[a[0]][a[1]]===b[c[0]][c[1]]) return b[a[0]][a[1]];
-  }
-  return null;
+function playerName(symbol){
+  return symbol==="X"?players[0]:players[1] || "Waiting...";
 }
 
-// Chess rendering
-function renderChess(){
-  const boardDiv=document.getElementById("chessBoard");
-  boardDiv.innerHTML="";
-  for(let r=0;r<8;r++){
-    const rowDiv=document.createElement("div");
-    rowDiv.style.display="flex";
-    for(let c=0;c<8;c++){
-      const cell=document.createElement("div");
-      cell.dataset.pos=`${r}-${c}`;
-      cell.style.width="60px";
-      cell.style.height="60px";
-      cell.style.backgroundColor=(r+c)%2===0?"#eee":"#999";
-      cell.style.display="flex";
-      cell.style.alignItems="center";
-      cell.style.justifyContent="center";
-      cell.style.position="relative";
-      const piece=chessBoard[`${r}-${c}`];
-      if(piece){
-        const img=document.createElement("img");
-        img.src=`chessimages/${piece}.png`;
-        img.style.width="50px";
-        img.draggable=true;
-        img.addEventListener("dragstart",e=>dragStart(e,`${r}-${c}`));
-        cell.appendChild(img);
-      }
-      cell.addEventListener("dragover",e=>e.preventDefault());
-      cell.addEventListener("drop",e=>drop(e,`${r}-${c}`));
-      rowDiv.appendChild(cell);
+async function handleMove(r,c){
+  const key = `${r}-${c}`;
+  if(currentBoard[key] || currentTurn!==playerSymbol()) return;
+
+  currentBoard[key] = currentTurn;
+
+  const winner = checkWinner(boardToArray());
+  const draw = checkDraw(boardToArray());
+
+  if(winner){
+    alert(`${playerName(currentTurn)} wins!`);
+    if(scores[playerName(currentTurn)]!==undefined){
+      scores[playerName(currentTurn)]++;
+    } else {
+      scores[playerName(currentTurn)]=1;
     }
-    boardDiv.appendChild(rowDiv);
+    await updateDoc(gameDocRef, {board:currentBoard, turn:currentTurn, scores});
+    setTimeout(async ()=>{
+      initializeBoard();
+      currentTurn = "X";
+      winningCells=[];
+      await updateDoc(gameDocRef, {board:currentBoard, turn:currentTurn});
+    }, 2000);
+    return;
+  } else if(draw){
+    alert("Draw!");
+    await updateDoc(gameDocRef, {board:currentBoard, turn:currentTurn, scores});
+    setTimeout(async ()=>{
+      initializeBoard();
+      currentTurn = "X";
+      winningCells=[];
+      await updateDoc(gameDocRef, {board:currentBoard, turn:currentTurn});
+    }, 2000);
+    return;
   }
-  document.getElementById("chessTurn").textContent=`Current Turn: ${currentChessTurn}`;
+
+  currentTurn = currentTurn==="X"?"O":"X";
+  await updateDoc(gameDocRef, {board:currentBoard, turn:currentTurn, scores});
 }
 
-// Drag & drop Chess logic
-let draggedFrom="";
-function dragStart(e,pos){ draggedFrom=pos; }
-async function drop(e,toPos){
-  const piece=chessBoard[draggedFrom];
-  if(!piece) return;
-  if(piece.startsWith(currentChessTurn)){
-    chessBoard[toPos]=piece;
-    chessBoard[draggedFrom]="";
-    currentChessTurn=currentChessTurn==="white"?"black":"white";
-    await updateDoc(gameDocRef,{chessBoard,currentChessTurn});
-  }
-}
-
-// Chat
+// Chat functionality
 document.getElementById("sendBtn").addEventListener("click",sendMessage);
-document.getElementById("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter") sendMessage();});
+document.getElementById("chatInput").addEventListener("keydown",(e)=>{if(e.key==="Enter") sendMessage();});
+
 async function sendMessage(){
-  const msg=document.getElementById("chatInput").value.trim();
+  const chatInput = document.getElementById("chatInput");
+  const msg = chatInput.value.trim();
   if(!msg) return;
-  await updateDoc(gameDocRef,{messages: arrayUnion({sender:"Player",text:msg,timestamp:Date.now()})});
-  document.getElementById("chatInput").value="";
+  const messageObj = {sender:nickname, text:msg, timestamp:Date.now()};
+  await updateDoc(gameDocRef, {messages: arrayUnion(messageObj)});
+  chatInput.value="";
 }
 
-// Real-time updates
-onSnapshot(gameDocRef,docSnap=>{
+onSnapshot(gameDocRef,(docSnap)=>{
   if(docSnap.exists()){
-    const data=docSnap.data();
-    players=data.players||[];
-    messages=data.messages||[];
-    ticTacToeBoard=data.board||ticTacToeBoard;
-    turn=data.turn||"X";
-    chessBoard=data.chessBoard||chessBoard;
-    currentChessTurn=data.currentChessTurn||currentChessTurn;
+    const data = docSnap.data();
+    players = data.players || [];
+    currentBoard = data.board || currentBoard;
+    currentTurn = data.turn || "X";
+    scores = data.scores || {};
+    messages = data.messages || [];
     winningCells=[];
-    renderTicTacToe();
-    renderChess();
-    const chatDiv=document.getElementById("chatBox");
-    chatDiv.innerHTML="";
+    renderBoard();
+    document.getElementById("playersList").innerHTML="Players in Lobby:<br>"+players.map(p=>`${p} (${scores[p]||0})`).join("<br>");
+    document.getElementById("gameCode").textContent=`Game Code: ${data.code}`;
+    document.title = `HenrikWorld.com - ${data.code}`;
+
+    const chatDiv = document.getElementById("chatBox");
+    chatDiv.innerHTML = "";
     messages.sort((a,b)=>a.timestamp-b.timestamp).forEach(m=>{
-      const div=document.createElement("div");
-      div.innerHTML=`<strong>${m.sender}:</strong> ${m.text}`;
-      chatDiv.appendChild(div);
+      const msgEl = document.createElement("div");
+      msgEl.innerHTML=`<strong>${m.sender}:</strong> ${m.text}`;
+      chatDiv.appendChild(msgEl);
     });
-    chatDiv.scrollTop=chatDiv.scrollHeight;
-    document.getElementById("playersList").innerHTML="Players in Lobby:<br>"+players.join("<br>");
+    chatDiv.scrollTop = chatDiv.scrollHeight;
   }
 });
 </script>
-
 <style>
-body{font-family:Arial,sans-serif;margin:0;padding:20px;display:flex;flex-direction:column;align-items:center;background:#f5f5f5;}
-#gameContainer{width:100%;max-width:900px;}
-section{margin-bottom:40px;}
-h2{margin-bottom:10px;}
-#ticTacToeBoard div,#chessBoard div{border-radius:5px;}
-#ticTacToeBoard div{cursor:pointer;}
-#chatBox{border:1px solid #ccc;padding:10px;height:200px;overflow-y:auto;background:#f9f9f9;}
-#chatInputContainer{display:flex;gap:5px;margin-top:5px;}
-#chatInput{flex:1;padding:8px;border-radius:6px;border:1px solid #ccc;}
-#sendBtn{padding:8px 12px;border:none;border-radius:6px;background:#1976D2;color:#fff;cursor:pointer;}
-#sendBtn:hover{background:#4CAF50;}
+body { font-family: Arial, sans-serif; margin:0; background:#f5f5f5; display:flex; flex-direction:column; align-items:center; padding:20px;}
+#gameContainer { display:flex; flex-direction:column; align-items:center; gap:15px; margin-top:20px; width:100%; max-width:700px; background:#fff; padding:15px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+#board { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
+#playersList, #gameCode, #turnInfo { font-size:1.1rem; margin-top:10px; text-align:center; }
+#chatBox { margin-top:10px; width:100%; max-height:200px; overflow-y:auto; border:1px solid #ccc; border-radius:8px; padding:10px; background:#f9f9f9; }
+#chatInputContainer { display:flex; margin-top:5px; gap:5px; width:100%; }
+#chatInput { flex:1; padding:8px; border-radius:6px; border:1px solid #ccc; }
+#sendBtn { padding:8px 12px; border:none; border-radius:6px; background:#ff4d4d; color:#fff; cursor:pointer; transition:0.2s; }
+#sendBtn:hover { background:#e04343; }
+footer { margin-top:20px; text-align:center; font-size:0.9rem; color:#555; }
+@media (max-width:500px){
+  #board div { width:60px; height:60px; font-size:1.5rem; }
+}
 </style>
 </head>
 <body>
-
-<h1>Multiplayer - {gameName}</h1>
-
-<section>
-<h2>Tic Tac Toe</h2>
-<div id="ticTacToeBoard"></div>
-<div id="ticTacToeTurn"></div>
-</section>
-
-<section>
-<h2>Chess</h2>
-<div id="chessBoard"></div>
-<div id="chessTurn"></div>
-</section>
-
-<section>
-<h2>Chat</h2>
-<div id="playersList">Players in Lobby:</div>
-<div id="chatBox"></div>
-<div id="chatInputContainer">
-<input id="chatInput" type="text" placeholder="Type a message..." />
-<button id="sendBtn">Send</button>
+<h1 id="gameName">Multiplayer Tic Tac Toe</h1>
+<div id="gameContainer">
+  <div id="board"></div>
+  <div id="turnInfo"></div>
+  <div id="playersList">Players in Lobby:</div>
+  <div id="gameCode">Game Code:</div>
+  <div id="chatBox"></div>
+  <div id="chatInputContainer">
+    <input id="chatInput" type="text" placeholder="Type a message..." />
+    <button id="sendBtn">Send</button>
+  </div>
 </div>
-</section>
-
 <footer>&copy; 2025 HenrikWorld.com. All rights reserved.</footer>
 </body>
 </html>
