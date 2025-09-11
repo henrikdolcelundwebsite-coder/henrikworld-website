@@ -22,7 +22,7 @@ html, body {
   width: 100%;
   background-color: #ffffff; 
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between; /* left and right */
   align-items: center;
   padding: 5px 30px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
@@ -35,12 +35,21 @@ html, body {
   color: #333;
 }
 
+/* Left site name */
+#topLeft {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  cursor: default;
+  user-select: none;
+}
+
 /* Right user info */
 #topRight {
   font-size: 1rem;
   font-weight: 500;
   color: #333;
-  margin-right: 50px;  
+  margin-right: 50px;  /* moved 50px to the left */
   cursor: pointer;
   user-select: none;
 }
@@ -173,14 +182,14 @@ footer {
 
 /* Version in bottom-right */
 .version {
-  position: fixed;      /* fixed so it stays at bottom-right */
+  position: fixed;      
   bottom: 10px;
   right: 10px;
   font-size: 1rem;
   font-weight: bold;
   color: white;
-  z-index: 9999;        /* above stars and other content */
-  pointer-events: none; /* optional: clicks pass through */
+  z-index: 9999;        
+  pointer-events: none; 
 }
 </style>
 </head>
@@ -188,6 +197,7 @@ footer {
 
 <!-- Top bar -->
 <div id="topBar">
+  <div id="topLeft">🌍 Henrik World</div>
   <div id="topRight">User: <span id="usernameDisplay"></span></div>
 </div>
 
