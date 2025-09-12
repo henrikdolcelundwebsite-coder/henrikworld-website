@@ -5,140 +5,71 @@
 <title>Chess - henrikworld</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <style>
-  body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin: 0;
-    font-family: Arial, sans-serif;
-    min-height: 100vh;
-    background: #fefefe;
-    padding: 10px;
-  }
+body {
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  margin:0;
+  font-family: Arial,sans-serif;
+  min-height:100vh;
+  background:white;
+  padding:10px;
+}
+#playersTop, #playersBottom { font-weight:bold; text-align:center; margin:5px 0; }
+#gameCode { margin-bottom:10px; font-weight:bold; font-size:1.2rem; text-align:center; }
+#turnDisplay, #moveLog { margin-top:5px; font-weight:bold; text-align:center; }
 
-  #playersTop, #playersBottom {
-    font-weight: bold;
-    text-align: center;
-    margin: 5px 0;
-  }
+.chessboard {
+  display:grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 90vw;
+  max-width: 640px;
+  aspect-ratio: 1;
+  border:6px solid #222;
+  border-radius:20px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.3);
+  overflow:hidden;
+}
+.square {
+  width:100%;
+  height:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  position:relative;
+  cursor:pointer;
+}
+.white { background-color:#f0d9b5; }
+.black { background-color:#b58863; }
+.square img { max-width:70%; max-height:70%; pointer-events:none; }
 
-  #gameCode {
-    margin-bottom: 10px;
-    font-weight: bold;
-    font-size: 1.2rem;
-    text-align: center;
-  }
+/* Highlight selected piece */
+.selected { background-color: rgba(65, 105, 225, 0.6) !important; }
+/* Highlight possible moves */
+.possible { background-color: rgba(30, 144, 255, 0.4); }
 
-  #turnDisplay, #moveLog {
-    margin-top: 5px;
-    font-weight: bold;
-    text-align: center;
-  }
-
-  /* Chessboard */
-  .chessboard {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    width: 90vw;
-    max-width: 640px;
-    aspect-ratio: 1;
-    border: 6px solid #222;
-    border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    overflow: hidden;
-  }
-
-  .square {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    cursor: pointer;
-  }
-
-  .white { background-color: #f0d9b5; }
-  .black { background-color: #b58863; }
-  .square img { max-width: 70%; max-height: 70%; pointer-events: none; }
-
-  .selected { background-color: rgba(65, 105, 225, 0.6) !important; }
-  .possible { background-color: rgba(30, 144, 255, 0.4); }
-
-  /* Chat */
-  #chatBox {
-    width: 90%;
-    max-width: 640px;
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    background: #fafafa;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    overflow: hidden;
-    padding: 8px;
-  }
-
-  #chatMessages {
-    flex: 1;
-    height: 200px;
-    overflow-y: auto;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .message {
-    max-width: 75%;
-    padding: 8px 12px;
-    border-radius: 16px;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    word-wrap: break-word;
-  }
-
-  .message.you {
-    align-self: flex-end;
-    background: #4a90e2;
-    color: white;
-    border-bottom-right-radius: 4px;
-  }
-
-  .message.other {
-    align-self: flex-start;
-    background: #e5e5ea;
-    color: #222;
-    border-bottom-left-radius: 4px;
-  }
-
-  #chatControls {
-    display: flex;
-    border-top: 1px solid #ddd;
-  }
-
-  #chatInput {
-    flex: 1;
-    border: none;
-    padding: 10px;
-    font-size: 0.95rem;
-    outline: none;
-  }
-
-  #sendChat {
-    background: #4a90e2;
-    border: none;
-    color: white;
-    padding: 0 16px;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  #sendChat:hover { background: #357abd; }
+#chatBox {
+  width:90%;
+  max-width:640px;
+  margin-top:15px;
+}
+#chatMessages {
+  height:150px;
+  overflow-y:auto;
+  border:1px solid #ccc;
+  padding:5px;
+  margin-bottom:5px;
+  font-size:0.9rem;
+}
+#chatInput {
+  width:75%;
+  padding:5px;
+}
+#sendChat {
+  padding:5px 10px;
+}
 </style>
 </head>
 <body>
@@ -153,27 +84,26 @@
 <!-- Chat -->
 <div id="chatBox">
   <div id="chatMessages"></div>
-  <div id="chatControls">
-    <input type="text" id="chatInput" placeholder="Type a message...">
-    <button id="sendChat">Send</button>
-  </div>
+  <input type="text" id="chatInput" placeholder="Type a message...">
+  <button id="sendChat">Send</button>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-app.js";
-import { getFirestore, doc, updateDoc, onSnapshot, arrayUnion } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, updateDoc, onSnapshot, arrayUnion } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-firestore.js";
 
 // Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDmFdbny6w6noCga2YU_sVQvvoAEK-_3vY",
   authDomain: "onlinewebsite-e55c8.firebaseapp.com",
   projectId: "onlinewebsite-e55c8",
-  storageBucket: "onlinewebsite-e55c8.appspot.com",
+  storageBucket: "onlinewebsite-e55c8.firebasestorage.app",
   messagingSenderId: "153855517055",
   appId: "1:153855517055:web:eee5c6739bfa16ca78fa4a",
   measurementId: "G-6WK0BFJ0DS"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -261,24 +191,135 @@ function renderBoard(possibleMoves=[]){
         img.dataset.piece = piece;
         sq.appendChild(img);
       }
+      if(selectedSquare && selectedSquare.row===r && selectedSquare.col===c){
+        sq.classList.add('selected');
+      }
+      if(possibleMoves.some(m=>m.row===r && m.col===c)){
+        sq.classList.add('possible');
+      }
       chessboard.appendChild(sq);
     }
   }
 }
 
-/* ------------ Chat ------------ */
-sendChatBtn.addEventListener('click', async ()=>{
-  const text = chatInput.value.trim();
-  if(!text) return;
-  await updateDoc(gameRef,{chat:arrayUnion({user:username,text:text,type:'text'})});
-  chatInput.value='';
-});
+function isMyTurn(piece){
+  if(!piece) return false;
+  const color = piece[0]==='w'?'white':'black';
+  return (username===hostUser && color==='white' && turn==='white') ||
+         (username===guestUser && color==='black' && turn==='black');
+}
+
+/* ------------ Chess Rules ------------ */
+
+// Basic pseudo-legal moves
+function getPossibleMoves(r,c,board,ignoreCheck=false){
+  const piece = board[r][c];
+  if(!piece) return [];
+  const color = piece[0]==='w'?'white':'black';
+  const moves=[];
+  const directions={
+    N:[[2,1],[1,2],[-1,2],[-2,1],[-2,-1],[-1,-2],[1,-2],[2,-1]],
+    B:[[1,1],[1,-1],[-1,1],[-1,-1]],
+    R:[[1,0],[-1,0],[0,1],[0,-1]],
+    Q:[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]],
+    K:[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]
+  };
+  function inBounds(x,y){ return x>=0 && x<8 && y>=0 && y<8; }
+
+  if(piece[1]==='P'){
+    const forward = color==='white'? -1:1;
+    if(inBounds(r+forward,c) && !board[r+forward][c]) moves.push({row:r+forward,col:c});
+    if((color==='white' && r===6)||(color==='black' && r===1)){
+      if(!board[r+forward][c] && !board[r+2*forward][c]) moves.push({row:r+2*forward,col:c});
+    }
+    const caps = color==='white'? [[-1,-1],[-1,1]]:[[1,-1],[1,1]];
+    for(const d of caps){
+      const nr=r+d[0], nc=c+d[1];
+      if(inBounds(nr,nc) && board[nr][nc] && board[nr][nc][0]!==piece[0]) moves.push({row:nr,col:nc});
+    }
+  } else if(piece[1]==='N'){
+    for(const d of directions.N){
+      const nr=r+d[0], nc=c+d[1];
+      if(inBounds(nr,nc) && (!board[nr][nc] || board[nr][nc][0]!==piece[0])) moves.push({row:nr,col:nc});
+    }
+  } else if(piece[1]==='B' || piece[1]==='R' || piece[1]==='Q'){
+    const dirs = piece[1]==='B'? directions.B : piece[1]==='R'? directions.R : directions.Q;
+    for(const d of dirs){
+      let nr=r+d[0], nc=c+d[1];
+      while(inBounds(nr,nc)){
+        if(!board[nr][nc]) moves.push({row:nr,col:nc});
+        else { if(board[nr][nc][0]!==piece[0]) moves.push({row:nr,col:nc}); break; }
+        nr+=d[0]; nc+=d[1];
+      }
+    }
+  } else if(piece[1]==='K'){
+    for(const d of directions.K){
+      const nr=r+d[0], nc=c+d[1];
+      if(inBounds(nr,nc) && (!board[nr][nc] || board[nr][nc][0]!==piece[0])) moves.push({row:nr,col:nc});
+    }
+  }
+  return moves;
+}
+
+// King helpers
+function findKing(board, color){
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+      if(board[r][c] === (color==='white'?'wK':'bK')) return {row:r, col:c};
+    }
+  }
+  return null;
+}
+function isSquareAttacked(board, row, col, attackerColor){
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+      const piece = board[r][c];
+      if(piece && ((attackerColor==='white' && piece[0]==='w') || (attackerColor==='black' && piece[0]==='b'))){
+        const moves = getPossibleMoves(r,c,board,true);
+        if(moves.some(m=>m.row===row && m.col===col)) return true;
+      }
+    }
+  }
+  return false;
+}
+function isInCheck(board, color){
+  const kingPos = findKing(board,color);
+  if(!kingPos) return false;
+  const opponent = color==='white'?'black':'white';
+  return isSquareAttacked(board, kingPos.row, kingPos.col, opponent);
+}
+function getLegalMoves(r,c,board){
+  const piece = board[r][c];
+  if(!piece) return [];
+  const rawMoves = getPossibleMoves(r,c,board);
+  const legal=[];
+  for(const m of rawMoves){
+    const copy = board.map(row=>[...row]);
+    copy[m.row][m.col] = piece;
+    copy[r][c] = '';
+    const color = piece[0]==='w'?'white':'black';
+    if(!isInCheck(copy,color)) legal.push(m);
+  }
+  return legal;
+}
+function isCheckmateOrStalemate(board,color){
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+      const piece = board[r][c];
+      if(piece && ((color==='white' && piece[0]==='w') || (color==='black' && piece[0]==='b'))){
+        const moves = getLegalMoves(r,c,board);
+        if(moves.length>0) return null;
+      }
+    }
+  }
+  if(isInCheck(board,color)) return 'checkmate';
+  return 'stalemate';
+}
 
 /* ------------ Game Sync ------------ */
 onSnapshot(gameRef, async (snap)=>{
   const data = snap.data();
   if(!data) return;
-
   hostUser = data.players[0];
   guestUser = data.players[1] || null;
 
@@ -294,26 +335,97 @@ onSnapshot(gameRef, async (snap)=>{
   playersTopDiv.textContent = guestUser ? ((guestUser===username)? `${guestUser} (You)`:`${guestUser} (Guest)`) : 'Waiting for player...';
   playersBottomDiv.textContent = (hostUser===username)? `${hostUser} (You)` : `${hostUser} (Host)`;
 
-  // Render chat with smooth auto-scroll
+  // Chat messages
   if(data.chat){
-    chatMessagesDiv.innerHTML = '';
+    chatMessagesDiv.innerHTML='';
     data.chat.forEach(msg=>{
-      const div = document.createElement('div');
-      div.classList.add('message');
-      div.classList.add(msg.user===username ? 'you':'other');
-      div.textContent = msg.text;
+      const div=document.createElement('div');
+      div.textContent = `${msg.user}: ${msg.text}`;
       chatMessagesDiv.appendChild(div);
     });
-
-    setTimeout(() => {
-      chatMessagesDiv.scrollTo({
-        top: chatMessagesDiv.scrollHeight,
-        behavior: 'smooth'
-      });
-    }, 100);
+    chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
   }
 
   renderBoard();
+});
+
+// Add joining player
+(async()=>{
+  const docSnap = await getDoc(gameRef);
+  const data = docSnap.data();
+  if(!data.players.includes(username)){
+    await updateDoc(gameRef, { players: [...data.players, username] });
+  }
+})();
+
+/* ------------ Chat ------------ */
+sendChatBtn.addEventListener('click', async ()=>{
+  const text = chatInput.value.trim();
+  if(!text) return;
+  await updateDoc(gameRef,{chat:arrayUnion({user:username,text:text})});
+  chatInput.value='';
+});
+
+/* ------------ Moves ------------ */
+chessboard.addEventListener('click', async (e)=>{
+  const sq = e.target.closest('.square');
+  if(!sq) return;
+  const row=parseInt(sq.dataset.row), col=parseInt(sq.dataset.col);
+  const piece = boardData[row][col];
+
+  if(selectedSquare && selectedSquare.row===row && selectedSquare.col===col){
+    selectedSquare=null; renderBoard(); return;
+  }
+
+  if(selectedSquare){
+    const moves = getLegalMoves(selectedSquare.row, selectedSquare.col, boardData);
+    if(moves.some(m=>m.row===row && m.col===col)){
+      const movingPiece = boardData[selectedSquare.row][selectedSquare.col];
+      boardData[row][col]=movingPiece;
+      boardData[selectedSquare.row][selectedSquare.col]='';
+      const moveText = `${username} moved ${squareToNotation(selectedSquare.row, selectedSquare.col)} to ${squareToNotation(row,col)}`;
+      moveLogDiv.textContent = moveText;
+      selectedSquare=null;
+      turn = (turn==='white')?'black':'white';
+
+      // Check checkmate/stalemate
+      if(isInCheck(boardData,turn)){
+        const status=isCheckmateOrStalemate(boardData,turn);
+        if(status==='checkmate'){
+          turnDisplay.textContent=`Checkmate! ${username} wins!`;
+          setTimeout(async ()=>{
+            boardData = getDefaultBoard();
+            turn = 'white';
+            selectedSquare = null;
+            await updateDoc(gameRef,{board:boardToObject(boardData),turn:turn});
+            turnDisplay.textContent = "New game started!";
+          },2000);
+        } else {
+          turnDisplay.textContent=`Turn: ${turn} (in check!)`;
+        }
+      } else {
+        const status=isCheckmateOrStalemate(boardData,turn);
+        if(status==='stalemate'){
+          turnDisplay.textContent=`Stalemate! Draw.`;
+          setTimeout(async ()=>{
+            boardData = getDefaultBoard();
+            turn = 'white';
+            selectedSquare = null;
+            await updateDoc(gameRef,{board:boardToObject(boardData),turn:turn});
+            turnDisplay.textContent = "New game started!";
+          },2000);
+        } else {
+          turnDisplay.textContent=`Turn: ${turn}`;
+        }
+      }
+
+      await updateDoc(gameRef, { board:boardToObject(boardData), turn:turn });
+    } else { selectedSquare=null; renderBoard(); return; }
+  } else if(piece && isMyTurn(piece)){
+    selectedSquare={row,col};
+    const moves = getLegalMoves(row,col,boardData);
+    renderBoard(moves);
+  }
 });
 </script>
 </body>
