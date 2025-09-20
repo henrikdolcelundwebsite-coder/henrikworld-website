@@ -1,302 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Home - henrikworld</title>
-<link rel="icon" type="image/png" href="favicon.png" />
-<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
-<style>
-/* Reset and base styles */
-html, body { 
-  margin:0; 
-  height:100%;
-  font-family: Arial,sans-serif; 
-  scroll-behavior:smooth; 
-  background: #000;
-  overflow: hidden; /* disable scrolling */
-}
-
-/* Top bar */
-#topBar {
-  width: 100%;
-  background-color: #ffffff; 
-  display: flex;
-  justify-content: space-between; /* left and right */
-  align-items: center;
-  padding: 5px 30px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 999;
-  height: 50px;
-  border-bottom: 2px solid #e0e0e0;
-  color: #333;
-}
-
-/* Left site name */
-#topLeft {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #333;
-  cursor: default;
-  user-select: none;
-}
-
-/* Right user info */
-#topRight {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #333;
-  margin-right: 50px;  /* moved 50px to the left */
-  cursor: pointer;
-  user-select: none;
-}
-#topRight:hover {
-  color: #ff4d4d;
-  text-decoration: underline;
-}
-
-/* Content offset */
-body { padding-top: 50px; }
-
-/* Main section */
-.main-content {
-  height: calc(100vh - 50px);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 40px;
-  padding: 20px;
-  background: black;
-  position: relative;
-  color: #ffffff;
-  overflow: hidden;
-}
-
-/* Star background */
-.main-content::before {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top:0;
-  left:0;
-  background-image: 
-    radial-gradient(2px 2px at 20px 30px, white, transparent),
-    radial-gradient(1px 1px at 40px 70px, white, transparent),
-    radial-gradient(2px 2px at 130px 80px, white, transparent),
-    radial-gradient(1px 1px at 220px 150px, white, transparent),
-    radial-gradient(2px 2px at 320px 200px, white, transparent),
-    radial-gradient(1px 1px at 420px 50px, white, transparent),
-    radial-gradient(2px 2px at 520px 300px, white, transparent),
-    radial-gradient(1px 1px at 620px 400px, white, transparent),
-    radial-gradient(2px 2px at 720px 100px, white, transparent),
-    radial-gradient(1px 1px at 820px 250px, white, transparent),
-    radial-gradient(1px 1px at 900px 320px, white, transparent),
-    radial-gradient(2px 2px at 1000px 180px, white, transparent),
-    radial-gradient(1px 1px at 1100px 400px, white, transparent),
-    radial-gradient(2px 2px at 1200px 90px, white, transparent),
-    radial-gradient(1px 1px at 1300px 260px, white, transparent),
-    radial-gradient(2px 2px at 1400px 330px, white, transparent),
-    radial-gradient(1px 1px at 1500px 150px, white, transparent),
-    radial-gradient(2px 2px at 1600px 220px, white, transparent),
-    radial-gradient(1px 1px at 1700px 380px, white, transparent),
-    radial-gradient(2px 2px at 1800px 120px, white, transparent);
-  background-size: 1800px 600px;
-  animation: starScroll 120s linear infinite;
-  z-index:0;
-}
-@keyframes starScroll {
-  from { background-position: 0 0; }
-  to { background-position: -1800px 600px; }
-}
-
-/* Welcome */
-.welcome {
-  font-size: 8rem;
-  font-weight: bold;
-  font-family: 'Dancing Script', cursive;
-  font-style: italic;
-  color: white;
-  text-align: center;
-  z-index: 1;
-}
-
-/* Chess box */
-.container { z-index:1; }
-.box { 
-  width:300px; 
-  height:200px; 
-  border-radius:10px; 
-  box-shadow:0 4px 6px rgba(0,0,0,0.2); 
-  transition:transform 0.2s; 
-  cursor:pointer; 
-  display:flex; 
-  justify-content:center; 
-  align-items:center; 
-}
-.box:hover { transform: scale(1.05); }
-#topChess {
-  background-image: url('images/chess.png');
-  background-size: cover;
-  background-position: center;
-  color: transparent;
-}
-
-/* Join game */
-.join-section { display:flex; flex-direction:column; align-items:center; gap:12px; z-index:1; }
-.join-text { font-size:1.1rem; font-weight:500; color:#ffffff; text-align:center; }
-
-/* Centered Game ID input */
-.join-lobby {
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  width:100%;
-  z-index:1;
-}
-.join-lobby input {
-  padding:15px 20px; 
-  font-size:1.2rem; 
-  border-radius:10px; 
-  border:1px solid #ccc; 
-  width:180px; 
-  text-align:center; 
-  margin:0 auto;
-  display:block;
-}
-
-/* Footer */
-footer { 
-  position: absolute;
-  bottom: 5px;
-  width: 100%;
-  text-align: center;
-  font-size: 1rem;
-  color: white;
-  z-index: 1;
-}
-
-/* Version in bottom-right */
-.version {
-  position: fixed;      
-  bottom: 10px;
-  right: 10px;
-  font-size: 1rem;
-  font-weight: bold;
-  color: white;
-  z-index: 9999;        
-  pointer-events: none; 
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-box {
+      background: white;
+      padding: 30px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      width: 300px;
+      text-align: center;
+    }
+    .login-box h2 {
+      margin-bottom: 20px;
+    }
+    .login-box input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 0;
+      box-sizing: border-box;
+    }
+    .login-box button {
+      width: 100%;
+      padding: 10px;
+      background: #0078ff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 0;
+    }
+    .login-box button:hover {
+      background: #005fcc;
+    }
+    .message {
+      margin-top: 10px;
+      color: red;
+    }
+    .message.success {
+      color: green;
+    }
+  </style>
 </head>
 <body>
 
-<!-- Top bar -->
-<div id="topBar">
-  <div id="topLeft">🌍 Henrik World</div>
-  <div id="topRight">User: <span id="usernameDisplay"></span></div>
-</div>
-
-<!-- Main -->
-<div class="main-content">
-  <div class="welcome">Welcome</div>
-
-  <div class="container">
-    <div class="box" id="topChess"></div>
+  <div class="login-box">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn">Login</button>
+    <div class="message" id="message"></div>
   </div>
 
-  <div class="join-section">
-    <div class="join-text">Enter a Code to Join a Multiplayer Game</div>
-    <div class="join-lobby">
-      <input type="text" placeholder="Game ID" id="joinCodeInput" />
-    </div>
-  </div>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.2.0/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.2.0/firebase-firestore.js";
 
-  <footer>&copy; 2025 HenrikWorld.com. All rights reserved.</footer>
-</div>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyC2x1Uaa5zXM6TWnP1yxx0r-UwpH1TYA_M",
+      authDomain: "henrikswebsite-6bb60.firebaseapp.com",
+      projectId: "henrikswebsite-6bb60",
+      storageBucket: "henrikswebsite-6bb60.firebasestorage.app",
+      messagingSenderId: "50065840517",
+      appId: "1:50065840517:web:9bc87b30f13ae2fa4fccec",
+      measurementId: "G-4BZJ31V02J"
+    };
 
-<div class="version">V1.0</div>
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-<!-- Firebase + JS -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-app.js";
-import { getFirestore, collection, addDoc, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-firestore.js";
+    const loginBtn = document.getElementById("loginBtn");
+    const messageEl = document.getElementById("message");
 
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyDmFdbny6w6noCga2YU_sVQvvoAEK-_3vY",
-  authDomain: "onlinewebsite-e55c8.firebaseapp.com",
-  projectId: "onlinewebsite-e55c8",
-  storageBucket: "onlinewebsite-e55c8.firebasestorage.app",
-  messagingSenderId: "153855517055",
-  appId: "1:153855517055:web:eee5c6739bfa16ca78fa4a",
-  measurementId: "G-6WK0BFJ0DS"
-};
+    loginBtn.addEventListener("click", async () => {
+      const usernameInput = document.getElementById("username").value.trim();
+      const passwordInput = document.getElementById("password").value.trim();
+      messageEl.textContent = "";
+      messageEl.classList.remove("success");
 
-// Init Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+      if (!usernameInput || !passwordInput) {
+        messageEl.textContent = "Please enter username and password.";
+        return;
+      }
 
-// Get username
-const username = localStorage.getItem('username');
-if (!username) { window.location.href = 'login.html'; }
-document.getElementById('usernameDisplay').textContent = username;
+      try {
+        const accountsRef = collection(db, "accounts");
+        const q = query(accountsRef, where("username", "==", usernameInput));
+        const querySnapshot = await getDocs(q);
 
-// Sign out
-document.getElementById('topRight').addEventListener('click', ()=> {
-  localStorage.removeItem('username');
-  window.location.href = 'login.html';
-});
+        if (querySnapshot.empty) {
+          messageEl.textContent = "Username not found.";
+          return;
+        }
 
-// Generate game code
-function generateCode(length=6){
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for(let i=0;i<length;i++){ result += chars.charAt(Math.floor(Math.random()*chars.length)); }
-  return result;
-}
+        let loggedIn = false;
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.password === passwordInput) {
+            loggedIn = true;
+            messageEl.textContent = `Welcome, ${data.username}! Your ID is ${data.userID}`;
+            messageEl.classList.add("success");
+          }
+        });
 
-// Create Chess game
-async function createChessGame(){
-  const code = generateCode();
-  try {
-    const docRef = await addDoc(collection(db,"games"),{
-      code: code,
-      game: "Chess",
-      players: [username],
-      board: {},
-      turn: "white",
-      createdAt: Date.now()
+        if (!loggedIn) {
+          messageEl.textContent = "Incorrect password.";
+        }
+      } catch (err) {
+        console.error(err);
+        messageEl.textContent = "Error connecting to database.";
+      }
     });
-    window.location.href = `chess.html?docId=${docRef.id}&nickname=${encodeURIComponent(username)}`;
-  } catch(e){ console.error(e); }
-}
-
-// Join existing game
-async function joinChessGame(input){
-  const code = input.value.trim().toUpperCase();
-  if(!code){ alert("Enter a game code"); return; }
-  const q = query(collection(db,"games"), where("code","==",code));
-  const querySnap = await getDocs(q);
-  if(querySnap.empty){ alert("Game not found"); return; }
-  const gameDoc = querySnap.docs[0];
-  const data = gameDoc.data();
-  if(!data.players.includes(username)){
-    await updateDoc(gameDoc.ref, { players: [...data.players, username] });
-  }
-  window.location.href = `chess.html?docId=${gameDoc.id}&nickname=${encodeURIComponent(username)}`;
-}
-
-// Events
-document.getElementById('topChess').addEventListener('click', createChessGame);
-document.getElementById('joinCodeInput').addEventListener('keydown', (e)=> {
-  if(e.key==='Enter') joinChessGame(e.target);
-});
-</script>
+  </script>
 
 </body>
 </html>
