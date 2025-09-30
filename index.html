@@ -1,74 +1,302 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sorry — Page Unavailable</title>
-  <meta name="robots" content="noindex" />
-  <style>
-    :root{
-      --bg:#0f1724;
-      --muted:#9aa4b2;
-      --accent:#6ee7b7;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Home - henrikworld</title>
+<link rel="icon" type="image/png" href="favicon.png" />
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+<style>
+/* Reset and base styles */
+html, body { 
+  margin:0; 
+  height:100%;
+  font-family: Arial,sans-serif; 
+  scroll-behavior:smooth; 
+  background: #000;
+  overflow: hidden; /* disable scrolling */
+}
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      min-height:100%;
-      background: linear-gradient(180deg,var(--bg) 0%, #071026 100%);
-      color:#e6eef6;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:24px;
-      text-align:center;
-    }
+/* Top bar */
+#topBar {
+  width: 100%;
+  background-color: #ffffff; 
+  display: flex;
+  justify-content: space-between; /* left and right */
+  align-items: center;
+  padding: 5px 30px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 999;
+  height: 50px;
+  border-bottom: 2px solid #e0e0e0;
+  color: #333;
+}
 
-    .card{
-      width:100%;
-      max-width:640px;
-      background:rgba(255,255,255,0.02);
-      border-radius:18px;
-      padding:36px;
-      box-shadow:0 8px 30px rgba(2,6,23,0.6);
-    }
+/* Left site name */
+#topLeft {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  cursor: default;
+  user-select: none;
+}
 
-    .icon{
-      width:100px;height:100px;
-      margin:0 auto 20px;
-      background:linear-gradient(135deg,#052033 30%, #0a2333 100%);
-      border-radius:16px;
-      display:flex;align-items:center;justify-content:center;
-    }
+/* Right user info */
+#topRight {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  margin-right: 50px;  /* moved 50px to the left */
+  cursor: pointer;
+  user-select: none;
+}
+#topRight:hover {
+  color: #ff4d4d;
+  text-decoration: underline;
+}
 
-    .icon svg{width:64px;height:64px}
+/* Content offset */
+body { padding-top: 50px; }
 
-    h1{margin:0;font-size:26px;letter-spacing:-0.02em}
-    p{color:var(--muted);margin:16px 0 0;line-height:1.5}
-  </style>
+/* Main section */
+.main-content {
+  height: calc(100vh - 50px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  padding: 20px;
+  background: black;
+  position: relative;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+/* Star background */
+.main-content::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top:0;
+  left:0;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, white, transparent),
+    radial-gradient(1px 1px at 40px 70px, white, transparent),
+    radial-gradient(2px 2px at 130px 80px, white, transparent),
+    radial-gradient(1px 1px at 220px 150px, white, transparent),
+    radial-gradient(2px 2px at 320px 200px, white, transparent),
+    radial-gradient(1px 1px at 420px 50px, white, transparent),
+    radial-gradient(2px 2px at 520px 300px, white, transparent),
+    radial-gradient(1px 1px at 620px 400px, white, transparent),
+    radial-gradient(2px 2px at 720px 100px, white, transparent),
+    radial-gradient(1px 1px at 820px 250px, white, transparent),
+    radial-gradient(1px 1px at 900px 320px, white, transparent),
+    radial-gradient(2px 2px at 1000px 180px, white, transparent),
+    radial-gradient(1px 1px at 1100px 400px, white, transparent),
+    radial-gradient(2px 2px at 1200px 90px, white, transparent),
+    radial-gradient(1px 1px at 1300px 260px, white, transparent),
+    radial-gradient(2px 2px at 1400px 330px, white, transparent),
+    radial-gradient(1px 1px at 1500px 150px, white, transparent),
+    radial-gradient(2px 2px at 1600px 220px, white, transparent),
+    radial-gradient(1px 1px at 1700px 380px, white, transparent),
+    radial-gradient(2px 2px at 1800px 120px, white, transparent);
+  background-size: 1800px 600px;
+  animation: starScroll 120s linear infinite;
+  z-index:0;
+}
+@keyframes starScroll {
+  from { background-position: 0 0; }
+  to { background-position: -1800px 600px; }
+}
+
+/* Welcome */
+.welcome {
+  font-size: 8rem;
+  font-weight: bold;
+  font-family: 'Dancing Script', cursive;
+  font-style: italic;
+  color: white;
+  text-align: center;
+  z-index: 1;
+}
+
+/* Chess box */
+.container { z-index:1; }
+.box { 
+  width:300px; 
+  height:200px; 
+  border-radius:10px; 
+  box-shadow:0 4px 6px rgba(0,0,0,0.2); 
+  transition:transform 0.2s; 
+  cursor:pointer; 
+  display:flex; 
+  justify-content:center; 
+  align-items:center; 
+}
+.box:hover { transform: scale(1.05); }
+#topChess {
+  background-image: url('images/chess.png');
+  background-size: cover;
+  background-position: center;
+  color: transparent;
+}
+
+/* Join game */
+.join-section { display:flex; flex-direction:column; align-items:center; gap:12px; z-index:1; }
+.join-text { font-size:1.1rem; font-weight:500; color:#ffffff; text-align:center; }
+
+/* Centered Game ID input */
+.join-lobby {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  width:100%;
+  z-index:1;
+}
+.join-lobby input {
+  padding:15px 20px; 
+  font-size:1.2rem; 
+  border-radius:10px; 
+  border:1px solid #ccc; 
+  width:180px; 
+  text-align:center; 
+  margin:0 auto;
+  display:block;
+}
+
+/* Footer */
+footer { 
+  position: absolute;
+  bottom: 5px;
+  width: 100%;
+  text-align: center;
+  font-size: 1rem;
+  color: white;
+  z-index: 1;
+}
+
+/* Version in bottom-right */
+.version {
+  position: fixed;      
+  bottom: 10px;
+  right: 10px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: white;
+  z-index: 9999;        
+  pointer-events: none; 
+}
+</style>
 </head>
 <body>
-  <main class="card" role="main" aria-labelledby="title" aria-describedby="desc">
-    <div class="icon" aria-hidden="true">
-      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect x="2" y="6" width="60" height="40" rx="6" fill="url(#g)" />
-        <circle cx="22" cy="24" r="3" fill="#fff" opacity="0.9"/>
-        <circle cx="42" cy="24" r="3" fill="#fff" opacity="0.9"/>
-        <path d="M24 36c2 3 6 3 8 0" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
-        <defs>
-          <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0" stop-color="#072033"/>
-            <stop offset="1" stop-color="#0c2a3a"/>
-          </linearGradient>
-        </defs>
-      </svg>
-    </div>
 
-    <h1 id="title">Sorry — this website is currently unavailable</h1>
-    <p id="desc">The site has been shut down and is not accessible at the moment.</p>
-  </main>
+<!-- Top bar -->
+<div id="topBar">
+  <div id="topLeft">🌍 Henrik World</div>
+  <div id="topRight">User: <span id="usernameDisplay"></span></div>
+</div>
+
+<!-- Main -->
+<div class="main-content">
+  <div class="welcome">Welcome</div>
+
+  <div class="container">
+    <div class="box" id="topChess"></div>
+  </div>
+
+  <div class="join-section">
+    <div class="join-text">Enter a Code to Join a Multiplayer Game</div>
+    <div class="join-lobby">
+      <input type="text" placeholder="Game ID" id="joinCodeInput" />
+    </div>
+  </div>
+
+  <footer>&copy; 2025 HenrikWorld.com. All rights reserved.</footer>
+</div>
+
+<div class="version">V1.0</div>
+
+<!-- Firebase + JS -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-app.js";
+import { getFirestore, collection, addDoc, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-firestore.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDmFdbny6w6noCga2YU_sVQvvoAEK-_3vY",
+  authDomain: "onlinewebsite-e55c8.firebaseapp.com",
+  projectId: "onlinewebsite-e55c8",
+  storageBucket: "onlinewebsite-e55c8.firebasestorage.app",
+  messagingSenderId: "153855517055",
+  appId: "1:153855517055:web:eee5c6739bfa16ca78fa4a",
+  measurementId: "G-6WK0BFJ0DS"
+};
+
+// Init Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Get username
+const username = localStorage.getItem('username');
+if (!username) { window.location.href = 'login.html'; }
+document.getElementById('usernameDisplay').textContent = username;
+
+// Sign out
+document.getElementById('topRight').addEventListener('click', ()=> {
+  localStorage.removeItem('username');
+  window.location.href = 'login.html';
+});
+
+// Generate game code
+function generateCode(length=6){
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for(let i=0;i<length;i++){ result += chars.charAt(Math.floor(Math.random()*chars.length)); }
+  return result;
+}
+
+// Create Chess game
+async function createChessGame(){
+  const code = generateCode();
+  try {
+    const docRef = await addDoc(collection(db,"games"),{
+      code: code,
+      game: "Chess",
+      players: [username],
+      board: {},
+      turn: "white",
+      createdAt: Date.now()
+    });
+    window.location.href = `chess.html?docId=${docRef.id}&nickname=${encodeURIComponent(username)}`;
+  } catch(e){ console.error(e); }
+}
+
+// Join existing game
+async function joinChessGame(input){
+  const code = input.value.trim().toUpperCase();
+  if(!code){ alert("Enter a game code"); return; }
+  const q = query(collection(db,"games"), where("code","==",code));
+  const querySnap = await getDocs(q);
+  if(querySnap.empty){ alert("Game not found"); return; }
+  const gameDoc = querySnap.docs[0];
+  const data = gameDoc.data();
+  if(!data.players.includes(username)){
+    await updateDoc(gameDoc.ref, { players: [...data.players, username] });
+  }
+  window.location.href = `chess.html?docId=${gameDoc.id}&nickname=${encodeURIComponent(username)}`;
+}
+
+// Events
+document.getElementById('topChess').addEventListener('click', createChessGame);
+document.getElementById('joinCodeInput').addEventListener('keydown', (e)=> {
+  if(e.key==='Enter') joinChessGame(e.target);
+});
+</script>
+
 </body>
 </html>
