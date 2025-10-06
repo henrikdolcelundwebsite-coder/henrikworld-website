@@ -1,171 +1,216 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login - henrikworld</title>
-  <link rel="icon" type="image/png" href="favicon.png" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - henrikworld.com</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body {
       margin: 0;
-      font-family: 'Arial', sans-serif;
+      background-color: black;
+      overflow: hidden;
+      position: relative;
+      font-family: Arial, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background: black;
-      overflow: hidden;
     }
-    /* STAR FIELD */
-    .stars {
+    canvas {
       position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
-      background: transparent;
-      background-image: 
-        radial-gradient(2px 2px at 20px 30px, white, transparent),
-        radial-gradient(1px 1px at 40px 70px, white, transparent),
-        radial-gradient(2px 2px at 130px 80px, white, transparent),
-        radial-gradient(1px 1px at 220px 150px, white, transparent),
-        radial-gradient(2px 2px at 320px 200px, white, transparent),
-        radial-gradient(1px 1px at 420px 50px, white, transparent),
-        radial-gradient(2px 2px at 520px 300px, white, transparent),
-        radial-gradient(1px 1px at 620px 400px, white, transparent),
-        radial-gradient(2px 2px at 720px 100px, white, transparent),
-        radial-gradient(1px 1px at 820px 250px, white, transparent),
-        radial-gradient(1px 1px at 900px 320px, white, transparent),
-        radial-gradient(2px 2px at 1000px 180px, white, transparent),
-        radial-gradient(1px 1px at 1100px 400px, white, transparent),
-        radial-gradient(2px 2px at 1200px 90px, white, transparent),
-        radial-gradient(1px 1px at 1300px 260px, white, transparent),
-        radial-gradient(2px 2px at 1400px 330px, white, transparent),
-        radial-gradient(1px 1px at 1500px 150px, white, transparent),
-        radial-gradient(2px 2px at 1600px 220px, white, transparent),
-        radial-gradient(1px 1px at 1700px 380px, white, transparent),
-        radial-gradient(2px 2px at 1800px 120px, white, transparent);
-      background-size: 1800px 600px;
-      animation: starScroll 120s linear infinite;
+      display: block;
       z-index: 0;
     }
-    @keyframes starScroll {
-      from { background-position: 0 0; }
-      to { background-position: -1800px -600px; }
-    }
-
-    .login-container {
-      background: #fff;
-      padding: 30px 25px;
-      border-radius: 15px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-      width: 100%;
-      max-width: 360px;
-      text-align: center;
-      z-index: 1;
+    .login-box {
       position: relative;
-    }
-
-    .login-container h1 {
-      margin-bottom: 25px;
-      font-size: 1.8rem;
-      color: #333;
-    }
-
-    .input-group {
-      margin-bottom: 15px;
+      background-color: rgb(240, 240, 240);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 25px;
+      padding: 60px 50px;
+      z-index: 1;
+      width: 500px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.1);
+      box-sizing: border-box;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      align-items: center;
     }
-
+    .login-box h1 {
+      margin-bottom: 50px;
+      font-size: 32px;
+      color: black;
+    }
+    .input-group {
+      position: relative;
+      width: 90%;
+      margin-bottom: 30px;
+    }
+    .input-group i {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #555;
+      font-size: 20px;
+    }
     .input-group input {
       width: 100%;
-      max-width: 280px;
-      padding: 14px 18px;
-      border-radius: 999px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
+      padding: 18px 45px 18px 20px;
+      border-radius: 50px;
+      border: 1px solid rgba(0,0,0,0.1);
       outline: none;
-      text-align: left;
+      font-size: 18px;
+      box-sizing: border-box;
+      background-color: rgba(255, 255, 255, 0.95);
+      color: black;
     }
-
     .login-btn {
-      width: 100%;
-      max-width: 280px;
-      padding: 14px;
-      color: white;
-      font-size: 1rem;
-      font-weight: bold;
+      padding: 18px 0;
+      width: 90%;
+      font-size: 20px;
       border: none;
-      border-radius: 999px;
+      border-radius: 50px;
+      color: white;
       cursor: pointer;
-      transition: 0.3s;
-      background: linear-gradient(270deg, #4CAF50, #2196F3, #2E7D32, #1976D2);
-      background-size: 600% 600%;
-      animation: earthGradient 6s ease infinite;
+      margin-top: 10px;
+      background: linear-gradient(270deg, #009955, #0077aa, #009955, #0077aa);
+      background-size: 400% 400%;
+      animation: gradientMove 5s ease infinite;
     }
-    @keyframes earthGradient {
+    @keyframes gradientMove {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-    .login-btn:hover {
-      transform: scale(1.05);
+    .version {
+      margin-top: 10px;
+      font-weight: bold;
+      color: black;
+      font-size: 16px;
     }
-    footer {
+    .copyright {
       position: absolute;
       bottom: 10px;
-      font-size: 0.8rem;
-      color: #fff;
-      z-index: 1;
+      width: 100%;
+      text-align: center;
+      color: #555;
+      font-size: 14px;
+      pointer-events: none;
+      z-index: 2;
     }
   </style>
 </head>
 <body>
-<div class="stars"></div>
-<div class="login-container">
-  <h1>🌍 HenrikWorld</h1>
-  <form id="loginForm">
+  <canvas id="starCanvas"></canvas>
+  <div class="login-box">
+    <h1>🌍 Henrik World</h1>
     <div class="input-group">
-      <input type="text" id="username" placeholder="Username" maxlength="20" required>
+      <input type="text" placeholder="Username" id="username">
+      <i class="fas fa-user"></i>
     </div>
     <div class="input-group">
-      <input type="password" id="password" placeholder="Password" minlength="6" maxlength="30" required>
+      <input type="password" placeholder="Password" id="password">
+      <i class="fas fa-lock"></i>
     </div>
-    <button type="submit" class="login-btn">Login</button>
-  </form>
-</div>
-<footer>&copy; 2025 HenrikWorld.com</footer>
-<script>
-  const loginForm = document.getElementById('loginForm');
+    <button class="login-btn" id="loginBtn">Login</button>
+    <div class="version">V2.0</div>
+  </div>
+  <div class="copyright">&copy; 2025 henrikworld.com</div>
 
-  // Hardcoded user list
-  const users = [
-    { username: "Henrik", password: "Green898" },
-    { username: "Bogeybag", password: "123456" },
-    { username: "Owenwinters99", password: "Owenwinters99" },
-    { username: "Billdozer4th", password: "Biglet67" },
-    { username: "dougalicious", password: "Douglas67" },
-    { username: "Bean1", password: "aurafarming" },
-    { username: "RHOMBUS", password: "Rhombi64" },
-    { username: "Jacob", password: "Chapman" },
-    { username: "Pon", password: "Mango67" },
-    { username: "Robin", password: "TweetTweet" }
+  <script>
+    const canvas = document.getElementById('starCanvas');
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
 
-  ];
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      initStars();
+    });
 
-  loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
+    const stars = [];
+    const starCount = 200;
 
-    const user = users.find(u => u.username === username && u.password === password);
-    if (user) {
-      alert("Login successful!");
-      localStorage.setItem('username', username);
-      window.location.href = "index.html"; // redirect
-    } else {
-      alert("Wrong username or password!");
+    function initStars() {
+      stars.length = 0;
+      for (let i = 0; i < starCount; i++) {
+        stars.push({ x: Math.random() * width, y: Math.random() * height, radius: Math.random() * 1.5, speed: Math.random() * 0.5 + 0.1 });
+      }
     }
-  });
-</script>
+
+    function animate() {
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = 'white';
+      stars.forEach(star => {
+        star.x += star.speed;
+        if (star.x > width) star.x = 0;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      requestAnimationFrame(animate);
+    }
+
+    initStars();
+    animate();
+  </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA-Kcwv7BtU6cN41WbItJM1hInjy2Q83GI",
+      authDomain: "henrikworld-818f9.firebaseapp.com",
+      projectId: "henrikworld-818f9",
+      storageBucket: "henrikworld-818f9.firebasestorage.app",
+      messagingSenderId: "977398255809",
+      appId: "1:977398255809:web:68febbb7f2cbc452064440",
+      measurementId: "G-L2CKVDT4L3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const loginBtn = document.getElementById("loginBtn");
+
+    loginBtn.addEventListener("click", async () => {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if(username === "Admin" && password === "Admin123") {
+        localStorage.setItem('username', username);
+        window.location.href = "admin.html";
+        return;
+      }
+
+      try {
+        const accountsRef = collection(db, "accounts");
+        const q = query(accountsRef, where("username", "==", username), where("password", "==", password));
+        const querySnapshot = await getDocs(q);
+
+        if(!querySnapshot.empty) {
+          localStorage.setItem('username', username);
+          window.location.href = "index.html";
+        } else {
+          alert("Invalid username or password!");
+          document.getElementById("username").value = '';
+          document.getElementById("password").value = '';
+        }
+      } catch (error) {
+        console.error("Error checking login:", error);
+        alert("An error occurred. Try again later.");
+      }
+    });
+  </script>
 </body>
 </html>
