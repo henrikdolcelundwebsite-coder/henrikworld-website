@@ -63,12 +63,10 @@
   <div class="status" id="status">Status: idle</div>
 
   <script type="module">
-    // Firebase (modular) imports
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
     import { getAnalytics } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics.js';
-    import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+    import { getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
 
-    // <-- YOUR FIREBASE CONFIG (you provided this) -->
     const firebaseConfig = {
       apiKey: "AIzaSyA-Kcwv7BtU6cN41WbItJM1hInjy2Q83GI",
       authDomain: "henrikworld-818f9.firebaseapp.com",
@@ -79,9 +77,8 @@
       measurementId: "G-L2CKVDT4L3"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
-    try { getAnalytics(app); } catch(e) { /* analytics may fail in some environments */ }
+    try { getAnalytics(app); } catch(e) {}
     const db = getFirestore(app);
 
     const editor = document.getElementById('editor');
@@ -140,86 +137,153 @@
       });
     }
 
-    // simple SHA-256 helper using Web Crypto
-    async function sha256Hex(str) {
-      const enc = new TextEncoder();
-      const data = enc.encode(str);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    function generateSalt(len = 16) {
-      const arr = new Uint8Array(len);
-      crypto.getRandomValues(arr);
-      return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    // parse lines for admin commands
+    // parse commands: create, delete, find
     function parseCommands(lines) {
-      // We'll look for sequences of lines that follow:
-      // admin/account/create/username=...
-      // admin/account/create/password=...
-      // admin/account/create/finish
-      const results = [];
-      let current = null;
+      const createAccounts = [];
+      const deleteAccounts = [];
+      const findQueries = []; // {type: 'username'|'password', value}
 
-      for (const raw of lines) {
-        const line = raw.trim();
-        if (line.startsWith('admin/account/create/username=')) {
-          if (!current) current = {};
-          current.username = line.split('=')[1] || '';
-        } else if (line.startsWith('admin/account/create/password=')) {
-          if (!current) current = {};
-          current.password = line.split('=')[1] || '';
-        } else if (line === 'admin/account/create/finish') {
-          if (current && current.username && current.password) {
-            results.push({ username: current.username, password: current.password });
-          }
-          current = null;
+      let currentCreate = null;
+      let currentDelete = null;
+
+      for (const raw of lines.map(l => l.trim())) {
+        // Create sequence
+        if (raw.startsWith('admin/account/create/username=')) {
+          currentCreate = { username: raw.split('=')[1] || '' };
+          continue;
+        }
+        if (raw.startsWith('admin/account/create/password=')) {
+          if (currentCreate) currentCreate.password = raw.split('=')[1] || '';
+          continue;
+        }
+        if (raw === 'admin/account/create/finish') {
+          if (currentCreate && currentCreate.username && currentCreate.password) createAccounts.push(currentCreate);
+          currentCreate = null;
+          continue;
+        }
+
+        // Delete sequence
+        if (raw.startsWith('admin/account/delete/username=')) {
+          currentDelete = { username: raw.split('=')[1] || '' };
+          continue;
+        }
+        if (raw === 'admin/account/delete/finish') {
+          if (currentDelete && currentDelete.username) deleteAccounts.push(currentDelete);
+          currentDelete = null;
+          continue;
+        }
+
+        // Find queries (Option A style)
+        if (raw.startsWith('admin/account/find/username=')) {
+          findQueries.push({ type: 'username', value: raw.split('=')[1] || '' });
+          continue;
+        }
+        if (raw.startsWith('admin/account/find/password=')) {
+          findQueries.push({ type: 'password', value: raw.split('=')[1] || '' });
+          continue;
+        }
+
+        // One-line lookup style (Option C) - accept as well
+        if (raw.startsWith('admin/account/lookup/username=')) {
+          findQueries.push({ type: 'username', value: raw.split('=')[1] || '' });
+          continue;
+        }
+        if (raw.startsWith('admin/account/lookup/password=')) {
+          findQueries.push({ type: 'password', value: raw.split('=')[1] || '' });
+          continue;
         }
       }
-      return results; // array of {username,password}
+
+      return { createAccounts, deleteAccounts, findQueries };
     }
 
     async function saveAccountsToFirestore(accounts) {
-      // accounts: [{username,password}, ...]
       const saved = [];
       for (const acc of accounts) {
         try {
-          const salt = generateSalt(12);
-          const pwHash = await sha256Hex(salt + acc.password);
-          const doc = { username: acc.username, passwordHash: pwHash, salt: salt, createdAt: serverTimestamp() };
-          await addDoc(collection(db, 'accounts'), doc);
+          const docRef = await addDoc(collection(db, 'accounts'), { username: acc.username, password: acc.password, createdAt: serverTimestamp() });
           saved.push(acc.username);
-        } catch (err) {
-          console.error('save failed', err);
-          // if any write fails, we continue but report later
-        }
+        } catch(e) { console.error(e); }
       }
       return saved;
+    }
+
+    async function deleteAccountsFromFirestore(accounts) {
+      const deleted = [];
+      for (const acc of accounts) {
+        try {
+          const q = query(collection(db, 'accounts'), where('username', '==', acc.username));
+          const querySnapshot = await getDocs(q);
+          querySnapshot.forEach(async (document) => { await deleteDoc(doc(db, 'accounts', document.id)); });
+          deleted.push(acc.username);
+        } catch(e) { console.error(e); }
+      }
+      return deleted;
+    }
+
+    async function findInFirestore(queries) {
+      // returns array of results per query
+      const results = [];
+      for (const q of queries) {
+        try {
+          if (q.type === 'username') {
+            const qr = query(collection(db, 'accounts'), where('username', '==', q.value));
+            const snap = await getDocs(qr);
+            const found = [];
+            snap.forEach(d => found.push({ id: d.id, username: d.data().username, password: d.data().password }));
+            results.push({ query: q, found });
+          } else if (q.type === 'password') {
+            const qr = query(collection(db, 'accounts'), where('password', '==', q.value));
+            const snap = await getDocs(qr);
+            const found = [];
+            snap.forEach(d => found.push({ id: d.id, username: d.data().username, password: d.data().password }));
+            results.push({ query: q, found });
+          }
+        } catch(e) { console.error(e); results.push({ query: q, found: [], error: e.message }); }
+      }
+      return results;
     }
 
     saveBtn.addEventListener('click', async () => {
       status.textContent = 'Status: parsing...';
       const lines = Array.from(editor.querySelectorAll('.text')).map(t => t.textContent || '');
-      const accounts = parseCommands(lines);
-      if (accounts.length === 0) {
-        status.textContent = 'Status: no valid commands found (nothing will be saved)';
-        return; // do nothing if invalid/incomplete
+      const { createAccounts, deleteAccounts, findQueries } = parseCommands(lines);
+
+      if (createAccounts.length === 0 && deleteAccounts.length === 0 && findQueries.length === 0) {
+        status.textContent = 'Status: no valid commands found (nothing will be done)';
+        return;
       }
 
-      status.textContent = 'Status: saving...';
-      const saved = await saveAccountsToFirestore(accounts);
-      if (saved.length > 0) {
-        status.textContent = `Status: saved ${saved.length} account(s): ${saved.join(', ')}`;
-        alert('Saved accounts: ' + saved.join(', '));
-      } else {
-        status.textContent = 'Status: nothing saved (writes may have failed).';
+      status.textContent = 'Status: processing...';
+
+      const saved = await saveAccountsToFirestore(createAccounts);
+      const deleted = await deleteAccountsFromFirestore(deleteAccounts);
+      const foundResults = await findInFirestore(findQueries);
+
+      let msgParts = [];
+      if (saved.length) msgParts.push(`Created: ${saved.join(', ')}`);
+      if (deleted.length) msgParts.push(`Deleted: ${deleted.join(', ')}`);
+
+      // Build readable output for foundResults
+      for (const r of foundResults) {
+        if (r.error) {
+          msgParts.push(`Query ${r.query.type}=${r.query.value} errored: ${r.error}`);
+          continue;
+        }
+        if (!r.found || r.found.length === 0) {
+          msgParts.push(`No results for ${r.query.type}=${r.query.value}`);
+          continue;
+        }
+        // show actual password(s)
+        const pairs = r.found.map(f => `${f.username} -> ${f.password}`);
+        msgParts.push(`Found for ${r.query.type}=${r.query.value}: ${pairs.join('; ')}`);
       }
+
+      const finalMsg = msgParts.join('. ') || 'No changes made.';
+      status.textContent = `Status: ${finalMsg}`;
+      alert(finalMsg);
     });
 
-    // initialize first line
     createLine(lineCount);
   </script>
 </body>
