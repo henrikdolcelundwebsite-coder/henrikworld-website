@@ -1,302 +1,226 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Home - henrikworld</title>
-<link rel="icon" type="image/png" href="favicon.png" />
-<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
-<style>
-/* Reset and base styles */
-html, body { 
-  margin:0; 
-  height:100%;
-  font-family: Arial,sans-serif; 
-  scroll-behavior:smooth; 
-  background: #000;
-  overflow: hidden; /* disable scrolling */
-}
-
-/* Top bar */
-#topBar {
-  width: 100%;
-  background-color: #ffffff; 
-  display: flex;
-  justify-content: space-between; /* left and right */
-  align-items: center;
-  padding: 5px 30px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 999;
-  height: 50px;
-  border-bottom: 2px solid #e0e0e0;
-  color: #333;
-}
-
-/* Left site name */
-#topLeft {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #333;
-  cursor: default;
-  user-select: none;
-}
-
-/* Right user info */
-#topRight {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #333;
-  margin-right: 50px;  /* moved 50px to the left */
-  cursor: pointer;
-  user-select: none;
-}
-#topRight:hover {
-  color: #ff4d4d;
-  text-decoration: underline;
-}
-
-/* Content offset */
-body { padding-top: 50px; }
-
-/* Main section */
-.main-content {
-  height: calc(100vh - 50px);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 40px;
-  padding: 20px;
-  background: black;
-  position: relative;
-  color: #ffffff;
-  overflow: hidden;
-}
-
-/* Star background */
-.main-content::before {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top:0;
-  left:0;
-  background-image: 
-    radial-gradient(2px 2px at 20px 30px, white, transparent),
-    radial-gradient(1px 1px at 40px 70px, white, transparent),
-    radial-gradient(2px 2px at 130px 80px, white, transparent),
-    radial-gradient(1px 1px at 220px 150px, white, transparent),
-    radial-gradient(2px 2px at 320px 200px, white, transparent),
-    radial-gradient(1px 1px at 420px 50px, white, transparent),
-    radial-gradient(2px 2px at 520px 300px, white, transparent),
-    radial-gradient(1px 1px at 620px 400px, white, transparent),
-    radial-gradient(2px 2px at 720px 100px, white, transparent),
-    radial-gradient(1px 1px at 820px 250px, white, transparent),
-    radial-gradient(1px 1px at 900px 320px, white, transparent),
-    radial-gradient(2px 2px at 1000px 180px, white, transparent),
-    radial-gradient(1px 1px at 1100px 400px, white, transparent),
-    radial-gradient(2px 2px at 1200px 90px, white, transparent),
-    radial-gradient(1px 1px at 1300px 260px, white, transparent),
-    radial-gradient(2px 2px at 1400px 330px, white, transparent),
-    radial-gradient(1px 1px at 1500px 150px, white, transparent),
-    radial-gradient(2px 2px at 1600px 220px, white, transparent),
-    radial-gradient(1px 1px at 1700px 380px, white, transparent),
-    radial-gradient(2px 2px at 1800px 120px, white, transparent);
-  background-size: 1800px 600px;
-  animation: starScroll 120s linear infinite;
-  z-index:0;
-}
-@keyframes starScroll {
-  from { background-position: 0 0; }
-  to { background-position: -1800px 600px; }
-}
-
-/* Welcome */
-.welcome {
-  font-size: 8rem;
-  font-weight: bold;
-  font-family: 'Dancing Script', cursive;
-  font-style: italic;
-  color: white;
-  text-align: center;
-  z-index: 1;
-}
-
-/* Chess box */
-.container { z-index:1; }
-.box { 
-  width:300px; 
-  height:200px; 
-  border-radius:10px; 
-  box-shadow:0 4px 6px rgba(0,0,0,0.2); 
-  transition:transform 0.2s; 
-  cursor:pointer; 
-  display:flex; 
-  justify-content:center; 
-  align-items:center; 
-}
-.box:hover { transform: scale(1.05); }
-#topChess {
-  background-image: url('images/chess.png');
-  background-size: cover;
-  background-position: center;
-  color: transparent;
-}
-
-/* Join game */
-.join-section { display:flex; flex-direction:column; align-items:center; gap:12px; z-index:1; }
-.join-text { font-size:1.1rem; font-weight:500; color:#ffffff; text-align:center; }
-
-/* Centered Game ID input */
-.join-lobby {
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  width:100%;
-  z-index:1;
-}
-.join-lobby input {
-  padding:15px 20px; 
-  font-size:1.2rem; 
-  border-radius:10px; 
-  border:1px solid #ccc; 
-  width:180px; 
-  text-align:center; 
-  margin:0 auto;
-  display:block;
-}
-
-/* Footer */
-footer { 
-  position: absolute;
-  bottom: 5px;
-  width: 100%;
-  text-align: center;
-  font-size: 1rem;
-  color: white;
-  z-index: 1;
-}
-
-/* Version in bottom-right */
-.version {
-  position: fixed;      
-  bottom: 10px;
-  right: 10px;
-  font-size: 1rem;
-  font-weight: bold;
-  color: white;
-  z-index: 9999;        
-  pointer-events: none; 
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — Simple Line Editor</title>
+  <style>
+    body {
+      margin: 0;
+      background: white;
+      color: black;
+      font-family: monospace;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .editor {
+      width: 80%;
+      height: 70%;
+      border: 1px solid #ccc;
+      padding: 10px;
+      overflow-y: auto;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .line {
+      display: flex;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+    .num {
+      width: 40px;
+      color: #888;
+      text-align: right;
+      padding-right: 10px;
+    }
+    .text {
+      flex: 1;
+      outline: none;
+      white-space: pre;
+    }
+    button {
+      background: #eee;
+      border: 1px solid #ccc;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-family: monospace;
+    }
+    button:hover {
+      background: #ddd;
+    }
+    .status { font-size: 13px; color: #444; }
+  </style>
 </head>
 <body>
+  <div class="editor" id="editor" aria-label="Admin command editor"></div>
+  <button id="saveBtn">Save</button>
+  <div class="status" id="status">Status: idle</div>
 
-<!-- Top bar -->
-<div id="topBar">
-  <div id="topLeft">🌍 Henrik World</div>
-  <div id="topRight">User: <span id="usernameDisplay"></span></div>
-</div>
+  <script type="module">
+    // Firebase (modular) imports
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+    import { getAnalytics } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics.js';
+    import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
 
-<!-- Main -->
-<div class="main-content">
-  <div class="welcome">Welcome</div>
+    // <-- YOUR FIREBASE CONFIG (you provided this) -->
+    const firebaseConfig = {
+      apiKey: "AIzaSyA-Kcwv7BtU6cN41WbItJM1hInjy2Q83GI",
+      authDomain: "henrikworld-818f9.firebaseapp.com",
+      projectId: "henrikworld-818f9",
+      storageBucket: "henrikworld-818f9.firebasestorage.app",
+      messagingSenderId: "977398255809",
+      appId: "1:977398255809:web:68febbb7f2cbc452064440",
+      measurementId: "G-L2CKVDT4L3"
+    };
 
-  <div class="container">
-    <div class="box" id="topChess"></div>
-  </div>
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    try { getAnalytics(app); } catch(e) { /* analytics may fail in some environments */ }
+    const db = getFirestore(app);
 
-  <div class="join-section">
-    <div class="join-text">Enter a Code to Join a Multiplayer Game</div>
-    <div class="join-lobby">
-      <input type="text" placeholder="Game ID" id="joinCodeInput" />
-    </div>
-  </div>
+    const editor = document.getElementById('editor');
+    const saveBtn = document.getElementById('saveBtn');
+    const status = document.getElementById('status');
 
-  <footer>&copy; 2025 HenrikWorld.com. All rights reserved.</footer>
-</div>
+    let lineCount = 1;
 
-<div class="version">V1.0</div>
+    function createLine(num, content = '') {
+      const line = document.createElement('div');
+      line.className = 'line';
 
-<!-- Firebase + JS -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-app.js";
-import { getFirestore, collection, addDoc, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-firestore.js";
+      const numDiv = document.createElement('div');
+      numDiv.className = 'num';
+      numDiv.textContent = num.toString().padStart(2, '0');
 
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyDmFdbny6w6noCga2YU_sVQvvoAEK-_3vY",
-  authDomain: "onlinewebsite-e55c8.firebaseapp.com",
-  projectId: "onlinewebsite-e55c8",
-  storageBucket: "onlinewebsite-e55c8.firebasestorage.app",
-  messagingSenderId: "153855517055",
-  appId: "1:153855517055:web:eee5c6739bfa16ca78fa4a",
-  measurementId: "G-6WK0BFJ0DS"
-};
+      const textDiv = document.createElement('div');
+      textDiv.className = 'text';
+      textDiv.contentEditable = true;
+      textDiv.textContent = content;
 
-// Init Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+      textDiv.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addNewLine();
+        } else if (e.key === 'Backspace' && textDiv.textContent === '') {
+          e.preventDefault();
+          deleteLine(line);
+        }
+      });
 
-// Get username
-const username = localStorage.getItem('username');
-if (!username) { window.location.href = 'login.html'; }
-document.getElementById('usernameDisplay').textContent = username;
+      line.appendChild(numDiv);
+      line.appendChild(textDiv);
+      editor.appendChild(line);
+      textDiv.focus();
+    }
 
-// Sign out
-document.getElementById('topRight').addEventListener('click', ()=> {
-  localStorage.removeItem('username');
-  window.location.href = 'login.html';
-});
+    function addNewLine() {
+      lineCount++;
+      createLine(lineCount);
+      editor.scrollTop = editor.scrollHeight;
+    }
 
-// Generate game code
-function generateCode(length=6){
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for(let i=0;i<length;i++){ result += chars.charAt(Math.floor(Math.random()*chars.length)); }
-  return result;
-}
+    function deleteLine(line) {
+      if (editor.children.length > 1) {
+        line.remove();
+        updateLineNumbers();
+      }
+    }
 
-// Create Chess game
-async function createChessGame(){
-  const code = generateCode();
-  try {
-    const docRef = await addDoc(collection(db,"games"),{
-      code: code,
-      game: "Chess",
-      players: [username],
-      board: {},
-      turn: "white",
-      createdAt: Date.now()
+    function updateLineNumbers() {
+      const lines = editor.querySelectorAll('.line');
+      lineCount = lines.length;
+      lines.forEach((line, index) => {
+        line.querySelector('.num').textContent = (index + 1).toString().padStart(2, '0');
+      });
+    }
+
+    // simple SHA-256 helper using Web Crypto
+    async function sha256Hex(str) {
+      const enc = new TextEncoder();
+      const data = enc.encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function generateSalt(len = 16) {
+      const arr = new Uint8Array(len);
+      crypto.getRandomValues(arr);
+      return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // parse lines for admin commands
+    function parseCommands(lines) {
+      // We'll look for sequences of lines that follow:
+      // admin/account/create/username=...
+      // admin/account/create/password=...
+      // admin/account/create/finish
+      const results = [];
+      let current = null;
+
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (line.startsWith('admin/account/create/username=')) {
+          if (!current) current = {};
+          current.username = line.split('=')[1] || '';
+        } else if (line.startsWith('admin/account/create/password=')) {
+          if (!current) current = {};
+          current.password = line.split('=')[1] || '';
+        } else if (line === 'admin/account/create/finish') {
+          if (current && current.username && current.password) {
+            results.push({ username: current.username, password: current.password });
+          }
+          current = null;
+        }
+      }
+      return results; // array of {username,password}
+    }
+
+    async function saveAccountsToFirestore(accounts) {
+      // accounts: [{username,password}, ...]
+      const saved = [];
+      for (const acc of accounts) {
+        try {
+          const salt = generateSalt(12);
+          const pwHash = await sha256Hex(salt + acc.password);
+          const doc = { username: acc.username, passwordHash: pwHash, salt: salt, createdAt: serverTimestamp() };
+          await addDoc(collection(db, 'accounts'), doc);
+          saved.push(acc.username);
+        } catch (err) {
+          console.error('save failed', err);
+          // if any write fails, we continue but report later
+        }
+      }
+      return saved;
+    }
+
+    saveBtn.addEventListener('click', async () => {
+      status.textContent = 'Status: parsing...';
+      const lines = Array.from(editor.querySelectorAll('.text')).map(t => t.textContent || '');
+      const accounts = parseCommands(lines);
+      if (accounts.length === 0) {
+        status.textContent = 'Status: no valid commands found (nothing will be saved)';
+        return; // do nothing if invalid/incomplete
+      }
+
+      status.textContent = 'Status: saving...';
+      const saved = await saveAccountsToFirestore(accounts);
+      if (saved.length > 0) {
+        status.textContent = `Status: saved ${saved.length} account(s): ${saved.join(', ')}`;
+        alert('Saved accounts: ' + saved.join(', '));
+      } else {
+        status.textContent = 'Status: nothing saved (writes may have failed).';
+      }
     });
-    window.location.href = `chess.html?docId=${docRef.id}&nickname=${encodeURIComponent(username)}`;
-  } catch(e){ console.error(e); }
-}
 
-// Join existing game
-async function joinChessGame(input){
-  const code = input.value.trim().toUpperCase();
-  if(!code){ alert("Enter a game code"); return; }
-  const q = query(collection(db,"games"), where("code","==",code));
-  const querySnap = await getDocs(q);
-  if(querySnap.empty){ alert("Game not found"); return; }
-  const gameDoc = querySnap.docs[0];
-  const data = gameDoc.data();
-  if(!data.players.includes(username)){
-    await updateDoc(gameDoc.ref, { players: [...data.players, username] });
-  }
-  window.location.href = `chess.html?docId=${gameDoc.id}&nickname=${encodeURIComponent(username)}`;
-}
-
-// Events
-document.getElementById('topChess').addEventListener('click', createChessGame);
-document.getElementById('joinCodeInput').addEventListener('keydown', (e)=> {
-  if(e.key==='Enter') joinChessGame(e.target);
-});
-</script>
-
+    // initialize first line
+    createLine(lineCount);
+  </script>
 </body>
 </html>
