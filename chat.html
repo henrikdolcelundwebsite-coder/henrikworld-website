@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Chat - henrikworld.com</title>
+<title>Chat - henrikworld.com2</title>
 <link rel="icon" href="favicon.png" type="image/png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -93,7 +93,8 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    min-height: 0; /* important for iOS scroll */
+    min-height: 0;
+    height: 100vh;
   }
   #chatHeader { background: #0077aa; color: white; padding: 15px; font-weight: bold; flex-shrink: 0; }
   #chatMessages {
@@ -103,7 +104,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    min-height: 0; /* allows proper scrolling on iOS */
+    min-height: 0;
   }
   .message {
     max-width: 70%;
@@ -118,6 +119,14 @@
   .message.sent { align-self: flex-end; background: #009955; color: white; }
   .message.received { align-self: flex-start; background: #e0e0e0; color: black; }
 
+  /* RED SQUARE FOR DEBUGGING */
+  #redSquare {
+    width: 100%;
+    height: 20px;
+    background: red;
+    flex-shrink: 0;
+  }
+
   /* Input area */
   #chatInputArea {
     display: flex;
@@ -126,7 +135,9 @@
     border-top: 1px solid #ccc;
     background: #fff;
     align-items: flex-end;
-    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 500;
   }
   #chatInput {
     flex: 1;
@@ -173,6 +184,7 @@
       top: 0;
       height: 100%;
       transition: left 0.3s;
+      z-index: 1002;
     }
     #friendsSidebar.show { left: 0; }
     #chatArea { width: 100%; }
@@ -185,7 +197,7 @@
     position: fixed;
     top: 15px;
     left: 80px;
-    z-index: 1002;
+    z-index: 1003;
     font-size: 24px;
     cursor: pointer;
     color: #0077aa;
@@ -208,6 +220,10 @@
   <div id="chatMessages">
     <div class="empty-state">No chat selected.</div>
   </div>
+
+  <!-- RED SQUARE FOR DEBUGGING -->
+  <div id="redSquare"></div>
+
   <div id="chatInputArea">
     <textarea id="chatInput" placeholder="Type a message..." rows="1"></textarea>
     <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
@@ -260,8 +276,6 @@ chatInput.addEventListener('input', () => resizeTextarea(chatInput));
 function scrollChatToBottom() {
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
-
-// Scroll on focus (iOS fix)
 chatInput.addEventListener("focus", scrollChatToBottom);
 
 async function loadFriends() {
