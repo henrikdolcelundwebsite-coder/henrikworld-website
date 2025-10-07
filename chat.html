@@ -38,9 +38,7 @@
     background: #005f88;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
   }
-  .home-btn i {
-    font-size: 16px;
-  }
+  .home-btn i { font-size: 16px; }
 
   /* Username display */
   #usernameDisplay {
@@ -67,7 +65,7 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    padding-top: 60px; /* space for top buttons */
+    padding-top: 60px;
     z-index: 1000;
   }
   .friend-item {
@@ -78,9 +76,7 @@
     cursor: pointer;
     gap: 12px;
   }
-  .friend-item:hover {
-    background: #f5f5f5;
-  }
+  .friend-item:hover { background: #f5f5f5; }
   .friend-item i {
     font-size: 36px;
     color: #555;
@@ -90,32 +86,14 @@
     justify-content: center;
     align-items: center;
   }
-  .friend-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .friend-name {
-    font-weight: bold;
-  }
+  .friend-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .friend-name { font-weight: bold; }
   .friend-last-msg {
     color: #888;
     font-size: 14px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-  .new-msg-badge {
-    background: #009955;
-    color: white;
-    border-radius: 50%;
-    font-size: 12px;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
   }
 
   /* Chat area */
@@ -125,12 +103,7 @@
     flex-direction: column;
     position: relative;
   }
-  #chatHeader {
-    background: #0077aa;
-    color: white;
-    padding: 15px;
-    font-weight: bold;
-  }
+  #chatHeader { background: #0077aa; color: white; padding: 15px; font-weight: bold; }
   #chatMessages {
     flex: 1;
     padding: 15px;
@@ -139,38 +112,18 @@
     flex-direction: column;
     gap: 10px;
   }
-
   .message {
     max-width: 70%;
     padding: 10px 15px;
     border-radius: 15px;
     word-wrap: break-word;
-    position: relative;
-    white-space: pre-wrap; /* allows long messages to wrap naturally */
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
     line-height: 1.4;
   }
-  .message.sent {
-    align-self: flex-end;
-    background: #009955;
-    color: white;
-  }
-  .message.received {
-    align-self: flex-start;
-    background: #e0e0e0;
-    color: black;
-  }
-  .message-timestamp {
-    font-size: 12px;
-    margin-top: 4px;
-  }
-  .message.sent .message-timestamp {
-    color: rgba(255,255,255,0.7);
-    text-align: right;
-  }
-  .message.received .message-timestamp {
-    color: rgba(0,0,0,0.5);
-    text-align: left;
-  }
+  .message.sent { align-self: flex-end; background: #009955; color: white; }
+  .message.received { align-self: flex-start; background: #e0e0e0; color: black; }
 
   /* Input area */
   #chatInputArea {
@@ -179,6 +132,7 @@
     padding: 10px 15px;
     border-top: 1px solid #ccc;
     background: #fff;
+    align-items: flex-end;
   }
   #chatInput {
     flex: 1;
@@ -190,18 +144,23 @@
     min-height: 40px;
     max-height: 120px;
     overflow-y: auto;
+    line-height: 1.4;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
   }
   #sendBtn {
     background: #0077aa;
     color: white;
     border: none;
     border-radius: 25px;
-    padding: 10px 20px;
+    padding: 10px 15px;
     cursor: pointer;
+    height: 42px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
-  #sendBtn:hover {
-    background: #005f88;
-  }
+  #sendBtn:hover { background: #005f88; }
 
   .empty-state {
     text-align: center;
@@ -210,32 +169,12 @@
     font-size: 16px;
   }
 
-  /* Date separator */
-  .date-separator {
-    text-align: center;
-    color: #666;
-    font-size: 14px;
-    margin: 10px 0;
-  }
-
   /* Mobile responsiveness */
   @media (max-width: 768px) {
-    #friendsSidebar {
-      position: absolute;
-      left: -100%;
-      top: 0;
-      height: 100%;
-      transition: left 0.3s;
-    }
-    #friendsSidebar.show {
-      left: 0;
-    }
-    #chatArea {
-      width: 100%;
-    }
-    #sidebarToggle {
-      display: block;
-    }
+    #friendsSidebar { position: absolute; left: -100%; top: 0; height: 100%; transition: left 0.3s; }
+    #friendsSidebar.show { left: 0; }
+    #chatArea { width: 100%; }
+    #sidebarToggle { display: block; }
   }
 
   /* Sidebar toggle button */
@@ -296,7 +235,6 @@ const db = getFirestore(app);
 
 const username = localStorage.getItem("username");
 if (!username) window.location.href = "login.html";
-
 document.getElementById("usernameText").textContent = username;
 
 const friendsListEl = document.getElementById("friendsList");
@@ -311,28 +249,14 @@ let selectedFriend = null;
 let chatId = null;
 let messagesUnsubscribe = null;
 
-sidebarToggle.addEventListener("click", () => {
-  friendsSidebar.classList.toggle("show");
-});
+sidebarToggle.addEventListener("click", () => friendsSidebar.classList.toggle("show"));
 
-// Format timestamp
-function formatTimestamp(date) {
-  const now = new Date();
-  const msgDate = new Date(date);
-  const optionsTime = { hour: '2-digit', minute: '2-digit' };
-  const optionsDate = { year: 'numeric', month: 'short', day: 'numeric' };
-
-  const diff = now - msgDate;
-  const oneDay = 24 * 60 * 60 * 1000;
-
-  if (diff < oneDay && now.getDate() === msgDate.getDate()) {
-    return msgDate.toLocaleTimeString([], optionsTime); // show only time
-  } else if (diff < 2 * oneDay && now.getDate() - msgDate.getDate() === 1) {
-    return "Yesterday, " + msgDate.toLocaleTimeString([], optionsTime);
-  } else {
-    return msgDate.toLocaleDateString([], optionsDate) + ", " + msgDate.toLocaleTimeString([], optionsTime);
-  }
+// Auto-resize textarea
+function resizeTextarea(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
 }
+chatInput.addEventListener('input', () => resizeTextarea(chatInput));
 
 // Load friends
 async function loadFriends() {
@@ -340,8 +264,7 @@ async function loadFriends() {
   const snap = await getDocs(q);
   if (snap.empty) return;
   const userDoc = snap.docs[0];
-  const userData = userDoc.data();
-  const friends = userData.friends || [];
+  const friends = userDoc.data().friends || [];
 
   friendsListEl.innerHTML = "";
   if (!friends.length) {
@@ -373,13 +296,9 @@ async function loadFriends() {
     const chatDocId = [username, f.username].sort().join("_");
     const chatRef = collection(db, "chats", chatDocId, "messages");
     onSnapshot(query(chatRef, orderBy("timestamp", "desc")), snap => {
-      if (snap.empty) {
-        lastMsg.textContent = "";
-        return;
-      }
+      if (snap.empty) { lastMsg.textContent = ""; return; }
       const lastMessage = snap.docs[0].data();
-      const unread = !lastMessage.readBy?.includes(username);
-      lastMsg.textContent = unread ? "New message" : lastMessage.content;
+      lastMsg.textContent = !lastMessage.readBy?.includes(username) ? "New message" : lastMessage.content;
     });
   });
 }
@@ -402,33 +321,11 @@ async function selectFriend(friend) {
       return;
     }
 
-    let lastDate = null;
     snap.docs.forEach(docSnap => {
       const msg = docSnap.data();
-      const msgDate = msg.timestamp.toDate();
-      const msgDateStr = msgDate.toDateString();
-
-      // Date separator
-      if (lastDate !== msgDateStr) {
-        const separator = document.createElement("div");
-        separator.className = "date-separator";
-        separator.textContent = formatTimestamp(msg.timestamp).split(",")[0]; // only date or "Yesterday"
-        chatMessages.appendChild(separator);
-        lastDate = msgDateStr;
-      }
-
       const div = document.createElement("div");
       div.className = "message " + (msg.sender === username ? "sent" : "received");
-
-      const content = document.createElement("div");
-      content.textContent = msg.content;
-      div.appendChild(content);
-
-      const ts = document.createElement("div");
-      ts.className = "message-timestamp";
-      ts.textContent = formatTimestamp(msg.timestamp);
-      div.appendChild(ts);
-
+      div.textContent = msg.content;
       chatMessages.appendChild(div);
 
       if (!msg.readBy?.includes(username)) {
@@ -452,22 +349,14 @@ sendBtn.addEventListener("click", async () => {
     await setDoc(chatDocRef, { participants: [username, selectedFriend] });
   });
 
-  await addDoc(messagesRef, {
-    sender: username,
-    content: text,
-    timestamp: new Date(),
-    readBy: [username]
-  });
-
+  await addDoc(messagesRef, { sender: username, content: text, timestamp: new Date(), readBy: [username] });
   chatInput.value = "";
+  resizeTextarea(chatInput);
 });
 
 // Press Enter to send
 chatInput.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault(); // prevent new line
-    sendBtn.click();
-  }
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendBtn.click(); }
 });
 
 loadFriends();
