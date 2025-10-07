@@ -315,7 +315,6 @@ function getLegalMoves(row,col,ignoreCheck=false){
     }); break;
   }
 
-  // Filter illegal moves that leave king in check
   if(!ignoreCheck){
     return moves.filter(([toR,toC])=>{
       const temp = boardState[toR][toC];
@@ -329,11 +328,19 @@ function getLegalMoves(row,col,ignoreCheck=false){
   return moves;
 }
 
-// Selection & movement
+// Selection & movement with deselect logic
 function selectSquare(square){
   const r=parseInt(square.dataset.row), c=parseInt(square.dataset.col);
   const piece=boardState[r][c];
   if(!piece || piece.color!==currentTurn) return;
+
+  if(selectedSquare === square){ 
+    // Deselect if clicking same square
+    square.classList.remove('selected');
+    selectedSquare = null;
+    return;
+  }
+
   if(selectedSquare) selectedSquare.classList.remove('selected');
   selectedSquare = square;
   square.classList.add('selected');
@@ -432,7 +439,7 @@ function botMove(){
                               :safeMoves[Math.floor(Math.random()*safeMoves.length)];
   } else { // hard
     let bestScore=-Infinity;
-    moves.forEach(m=>{const score=evaluateMove(m); if(score>bestScore){bestScore=score; move=m;}});
+    moves.forEach(m=>{const score=evaluateMove(m); if(score>bestScore){bestScore=score; move=m;}}); 
   }
 
   const fromSquare = squares[move.from[0]*8+move.from[1]];
@@ -455,7 +462,10 @@ function evaluateMove(move){
 
 // Click handlers
 squares.forEach(square=>{
-  square.addEventListener('click',()=>{if(selectedSquare && square!==selectedSquare) movePiece(square); else selectSquare(square);});
+  square.addEventListener('click',()=>{
+    if(selectedSquare && square!==selectedSquare) movePiece(square);
+    else selectSquare(square);
+  });
 });
 
 // Controls
