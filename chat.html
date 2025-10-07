@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Chat - henrikworld.com</title>
 <link rel="icon" href="favicon.png" type="image/png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -93,16 +93,17 @@
     display: flex;
     flex-direction: column;
     position: relative;
+    min-height: 0; /* important for iOS scroll */
   }
-  #chatHeader { background: #0077aa; color: white; padding: 15px; font-weight: bold; }
+  #chatHeader { background: #0077aa; color: white; padding: 15px; font-weight: bold; flex-shrink: 0; }
   #chatMessages {
     flex: 1;
     padding: 15px;
-    padding-bottom: 80px; /* leave space for input */
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    min-height: 0; /* allows proper scrolling on iOS */
   }
   .message {
     max-width: 70%;
@@ -174,17 +175,8 @@
       transition: left 0.3s;
     }
     #friendsSidebar.show { left: 0; }
-    #chatArea { width: 100%; padding-bottom: 60px; }
+    #chatArea { width: 100%; }
     #sidebarToggle { display: block; }
-    
-    /* Fix input to bottom */
-    #chatInputArea {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 1003;
-    }
   }
 
   /* Sidebar toggle button */
@@ -202,19 +194,15 @@
 </head>
 <body>
 
-<!-- Home button -->
 <a href="index.html" class="home-btn"><i class="fas fa-home"></i> Home</a>
 <i id="sidebarToggle" class="fas fa-bars"></i>
 
-<!-- Username display -->
 <div id="usernameDisplay"><i class="fas fa-user"></i> <span id="usernameText"></span></div>
 
-<!-- Friends list -->
 <div id="friendsSidebar">
   <div id="friendsList"></div>
 </div>
 
-<!-- Chat area -->
 <div id="chatArea">
   <div id="chatHeader">Select a friend</div>
   <div id="chatMessages">
@@ -273,12 +261,9 @@ function scrollChatToBottom() {
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-// Scroll when input is focused (iPad fix)
-chatInput.addEventListener("focus", () => {
-  setTimeout(scrollChatToBottom, 300);
-});
+// Scroll on focus (iOS fix)
+chatInput.addEventListener("focus", scrollChatToBottom);
 
-// Load friends
 async function loadFriends() {
   const q = query(collection(db, "accounts"), where("username", "==", username));
   const snap = await getDocs(q);
@@ -307,7 +292,6 @@ async function loadFriends() {
     lastMsg.className = "friend-last-msg";
     lastMsg.textContent = "";
     info.appendChild(lastMsg);
-
     item.appendChild(icon);
     item.appendChild(info);
     item.addEventListener("click", () => selectFriend(f.username));
@@ -323,7 +307,6 @@ async function loadFriends() {
   });
 }
 
-// Select friend
 async function selectFriend(friend) {
   selectedFriend = friend;
   chatHeader.textContent = `Chat with ${friend}`;
@@ -357,7 +340,6 @@ async function selectFriend(friend) {
   });
 }
 
-// Send message
 sendBtn.addEventListener("click", async () => {
   const text = chatInput.value.trim();
   if (!text || !selectedFriend) return;
@@ -375,7 +357,6 @@ sendBtn.addEventListener("click", async () => {
   scrollChatToBottom();
 });
 
-// Press Enter to send
 chatInput.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendBtn.click(); }
 });
