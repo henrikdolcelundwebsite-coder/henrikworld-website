@@ -34,10 +34,7 @@
     z-index: 1001;
     transition: 0.2s;
   }
-  .home-btn:hover {
-    background: #005f88;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  }
+  .home-btn:hover { background: #005f88; }
   .home-btn i { font-size: 16px; }
 
   /* Username display */
@@ -88,13 +85,7 @@
   }
   .friend-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
   .friend-name { font-weight: bold; }
-  .friend-last-msg {
-    color: #888;
-    font-size: 14px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  .friend-last-msg { color: #888; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* Chat area */
   #chatArea {
@@ -107,6 +98,7 @@
   #chatMessages {
     flex: 1;
     padding: 15px;
+    padding-bottom: 80px; /* leave space for input */
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -133,7 +125,7 @@
     border-top: 1px solid #ccc;
     background: #fff;
     align-items: flex-end;
-    flex-shrink: 0; /* prevents shrinking on iPad */
+    flex-shrink: 0;
   }
   #chatInput {
     flex: 1;
@@ -148,7 +140,7 @@
     line-height: 1.4;
     -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
-    display: block; /* ensures visible on iPad */
+    display: block;
   }
   #sendBtn {
     background: #0077aa;
@@ -174,10 +166,25 @@
 
   /* Mobile responsiveness */
   @media (max-width: 768px) {
-    #friendsSidebar { position: absolute; left: -100%; top: 0; height: 100%; transition: left 0.3s; }
+    #friendsSidebar {
+      position: absolute;
+      left: -100%;
+      top: 0;
+      height: 100%;
+      transition: left 0.3s;
+    }
     #friendsSidebar.show { left: 0; }
-    #chatArea { width: 100%; }
+    #chatArea { width: 100%; padding-bottom: 60px; }
     #sidebarToggle { display: block; }
+    
+    /* Fix input to bottom */
+    #chatInputArea {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1003;
+    }
   }
 
   /* Sidebar toggle button */
@@ -261,6 +268,16 @@ function resizeTextarea(el) {
 }
 chatInput.addEventListener('input', () => resizeTextarea(chatInput));
 
+// Scroll chat to bottom
+function scrollChatToBottom() {
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Scroll when input is focused (iPad fix)
+chatInput.addEventListener("focus", () => {
+  setTimeout(scrollChatToBottom, 300);
+});
+
 // Load friends
 async function loadFriends() {
   const q = query(collection(db, "accounts"), where("username", "==", username));
@@ -336,7 +353,7 @@ async function selectFriend(friend) {
       }
     });
 
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    scrollChatToBottom();
   });
 }
 
@@ -355,6 +372,7 @@ sendBtn.addEventListener("click", async () => {
   await addDoc(messagesRef, { sender: username, content: text, timestamp: new Date(), readBy: [username] });
   chatInput.value = "";
   resizeTextarea(chatInput);
+  scrollChatToBottom();
 });
 
 // Press Enter to send
