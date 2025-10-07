@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat - henrikworld.com</title>
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background: #f2f2f2;
+  }
+
+  /* Home button */
+  .home-btn {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    background: #0077aa;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 25px;
+    font-weight: bold;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    z-index: 1000;
+    transition: 0.2s;
+  }
+  .home-btn:hover {
+    background: #005f88;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  }
+  .home-btn i {
+    font-size: 16px;
+  }
+
+  /* Username display */
+  #usernameDisplay {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    font-weight: bold;
+    background: #0077aa;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 25px;
+    z-index: 1000;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Sidebar */
+  #friendsSidebar {
+    width: 300px;
+    background: #fff;
+    border-right: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding-top: 60px; /* leave space for home and username */
+  }
+
+  .friend-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    gap: 12px;
+  }
+  .friend-item:hover {
+    background: #f5f5f5;
+  }
+  .friend-item i {
+    font-size: 36px;
+    color: #555;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .friend-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .friend-name {
+    font-weight: bold;
+  }
+  .friend-last-msg {
+    color: #888;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .new-msg-badge {
+    background: #009955;
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* Chat area */
+  #chatArea {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  #chatHeader {
+    background: #0077aa;
+    color: white;
+    padding: 15px;
+    font-weight: bold;
+  }
+  #chatMessages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .message {
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    word-wrap: break-word;
+  }
+  .message.sent {
+    align-self: flex-end;
+    background: #009955;
+    color: white;
+  }
+  .message.received {
+    align-self: flex-start;
+    background: #e0e0e0;
+    color: black;
+  }
+
+  /* Input area */
+  #chatInputArea {
+    display: flex;
+    gap: 10px;
+    padding: 10px 15px;
+    border-top: 1px solid #ccc;
+    background: #fff;
+  }
+  #chatInput {
+    flex: 1;
+    padding: 10px 15px;
+    border-radius: 25px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+  }
+  #sendBtn {
+    background: #0077aa;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+  #sendBtn:hover {
+    background: #005f88;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    margin-top: 50px;
+    color: #888;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Home button -->
+<a href="index.html" class="home-btn"><i class="fas fa-home"></i> Home</a>
+
+<!-- Username display -->
+<div id="usernameDisplay"><i class="fas fa-user"></i> <span id="usernameText"></span></div>
+
+<!-- Friends list -->
+<div id="friendsSidebar">
+  <div id="friendsList"></div>
+</div>
+
+<!-- Chat area -->
+<div id="chatArea">
+  <div id="chatHeader">Select a friend</div>
+  <div id="chatMessages">
+    <div class="empty-state">No chat selected.</div>
+  </div>
+  <div id="chatInputArea">
+    <input type="text" id="chatInput" placeholder="Type a message..." />
+    <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs, doc, updateDoc, arrayUnion, onSnapshot, addDoc, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA-Kcwv7BtU6cN41WbItJM1hInjy2Q83GI",
+  authDomain: "henrikworld-818f9.firebaseapp.com",
+  projectId: "henrikworld-818f9",
+  storageBucket: "henrikworld-818f9.firebasestorage.app",
+  messagingSenderId: "977398255809",
+  appId: "1:977398255809:web:68febbb7f2cbc452064440",
+  measurementId: "G-L2CKVDT4L3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const username = localStorage.getItem("username");
+if (!username) window.location.href = "login.html";
+
+document.getElementById("usernameText").textContent = username;
+
+const friendsListEl = document.getElementById("friendsList");
+const chatHeader = document.getElementById("chatHeader");
+const chatMessages = document.getElementById("chatMessages");
+const chatInput = document.getElementById("chatInput");
+const sendBtn = document.getElementById("sendBtn");
+
+let selectedFriend = null;
+let chatId = null;
+let messagesUnsubscribe = null;
+
+// Load friends
+async function loadFriends() {
+  const q = query(collection(db, "accounts"), where("username", "==", username));
+  const snap = await getDocs(q);
+  if (snap.empty) return;
+  const userDoc = snap.docs[0];
+  const userData = userDoc.data();
+  const friends = userData.friends || [];
+
+  friendsListEl.innerHTML = "";
+  if (!friends.length) {
+    friendsListEl.innerHTML = `<div class="empty-state">You have no friends. Add some to start chatting!</div>`;
+    return;
+  }
+
+  friends.forEach(f => {
+    const item = document.createElement("div");
+    item.className = "friend-item";
+    const icon = document.createElement("i");
+    icon.className = "fas fa-user";
+    const info = document.createElement("div");
+    info.className = "friend-info";
+    const name = document.createElement("div");
+    name.className = "friend-name";
+    name.textContent = f.username;
+    info.appendChild(name);
+    const lastMsg = document.createElement("div");
+    lastMsg.className = "friend-last-msg";
+    lastMsg.textContent = "";
+    info.appendChild(lastMsg);
+
+    item.appendChild(icon);
+    item.appendChild(info);
+    item.addEventListener("click", () => selectFriend(f.username));
+    friendsListEl.appendChild(item);
+
+    // Listen for last message
+    const chatDocId = [username, f.username].sort().join("_");
+    const chatRef = collection(db, "chats", chatDocId, "messages");
+    onSnapshot(query(chatRef, orderBy("timestamp", "desc")), snap => {
+      if (snap.empty) {
+        lastMsg.textContent = "";
+        return;
+      }
+      const lastMessage = snap.docs[0].data();
+      const unread = !lastMessage.readBy?.includes(username);
+      lastMsg.textContent = unread ? "New message" : lastMessage.content;
+    });
+  });
+}
+
+// Select a friend
+async function selectFriend(friend) {
+  selectedFriend = friend;
+  chatHeader.textContent = `Chat with ${friend}`;
+  chatId = [username, friend].sort().join("_");
+
+  if (messagesUnsubscribe) messagesUnsubscribe();
+  chatMessages.innerHTML = "";
+
+  const chatRef = collection(db, "chats", chatId, "messages");
+  messagesUnsubscribe = onSnapshot(query(chatRef, orderBy("timestamp")), snap => {
+    chatMessages.innerHTML = "";
+    if (snap.empty) {
+      chatMessages.innerHTML = `<div class="empty-state">No messages yet. Say hello!</div>`;
+      return;
+    }
+    snap.docs.forEach(docSnap => {
+      const msg = docSnap.data();
+      const div = document.createElement("div");
+      div.className = "message " + (msg.sender === username ? "sent" : "received");
+      div.textContent = msg.content;
+      chatMessages.appendChild(div);
+      // Mark as read
+      if (!msg.readBy?.includes(username)) {
+        updateDoc(docSnap.ref, { readBy: arrayUnion(username) });
+      }
+    });
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  });
+}
+
+// Send message
+sendBtn.addEventListener("click", async () => {
+  const text = chatInput.value.trim();
+  if (!text || !selectedFriend) return;
+
+  const chatDocRef = doc(db, "chats", chatId);
+  const messagesRef = collection(chatDocRef, "messages");
+
+  // Ensure chat doc exists
+  await updateDoc(chatDocRef, { participants: arrayUnion(username, selectedFriend) }).catch(async () => {
+    await setDoc(chatDocRef, { participants: [username, selectedFriend] });
+  });
+
+  await addDoc(messagesRef, {
+    sender: username,
+    content: text,
+    timestamp: new Date(),
+    readBy: [username]
+  });
+
+  chatInput.value = "";
+});
+
+// Press Enter to send
+chatInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") sendBtn.click();
+});
+
+// Initial load
+loadFriends();
+</script>
+</body>
+</html>
