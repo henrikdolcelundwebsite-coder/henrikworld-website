@@ -31,7 +31,7 @@
     align-items: center;
     gap: 6px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    z-index: 1000;
+    z-index: 1001;
     transition: 0.2s;
   }
   .home-btn:hover {
@@ -52,7 +52,7 @@
     color: white;
     padding: 8px 15px;
     border-radius: 25px;
-    z-index: 1000;
+    z-index: 1001;
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     display: flex;
     align-items: center;
@@ -67,9 +67,9 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    padding-top: 60px; /* leave space for home and username */
+    padding-top: 60px; /* space for top buttons */
+    z-index: 1000;
   }
-
   .friend-item {
     display: flex;
     align-items: center;
@@ -123,6 +123,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    position: relative;
   }
   #chatHeader {
     background: #0077aa;
@@ -138,11 +139,15 @@
     flex-direction: column;
     gap: 10px;
   }
+
   .message {
     max-width: 70%;
     padding: 10px 15px;
     border-radius: 15px;
     word-wrap: break-word;
+    position: relative;
+    white-space: pre-wrap; /* allows long messages to wrap naturally */
+    line-height: 1.4;
   }
   .message.sent {
     align-self: flex-end;
@@ -153,6 +158,18 @@
     align-self: flex-start;
     background: #e0e0e0;
     color: black;
+  }
+  .message-timestamp {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .message.sent .message-timestamp {
+    color: rgba(255,255,255,0.7);
+    text-align: right;
+  }
+  .message.received .message-timestamp {
+    color: rgba(0,0,0,0.5);
+    text-align: left;
   }
 
   /* Input area */
@@ -169,6 +186,10 @@
     border-radius: 25px;
     border: 1px solid #ccc;
     font-size: 16px;
+    resize: none;
+    min-height: 40px;
+    max-height: 120px;
+    overflow-y: auto;
   }
   #sendBtn {
     background: #0077aa;
@@ -182,12 +203,51 @@
     background: #005f88;
   }
 
-  /* Empty state */
   .empty-state {
     text-align: center;
     margin-top: 50px;
     color: #888;
     font-size: 16px;
+  }
+
+  /* Date separator */
+  .date-separator {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin: 10px 0;
+  }
+
+  /* Mobile responsiveness */
+  @media (max-width: 768px) {
+    #friendsSidebar {
+      position: absolute;
+      left: -100%;
+      top: 0;
+      height: 100%;
+      transition: left 0.3s;
+    }
+    #friendsSidebar.show {
+      left: 0;
+    }
+    #chatArea {
+      width: 100%;
+    }
+    #sidebarToggle {
+      display: block;
+    }
+  }
+
+  /* Sidebar toggle button */
+  #sidebarToggle {
+    display: none;
+    position: fixed;
+    top: 15px;
+    left: 80px;
+    z-index: 1002;
+    font-size: 24px;
+    cursor: pointer;
+    color: #0077aa;
   }
 </style>
 </head>
@@ -195,6 +255,7 @@
 
 <!-- Home button -->
 <a href="index.html" class="home-btn"><i class="fas fa-home"></i> Home</a>
+<i id="sidebarToggle" class="fas fa-bars"></i>
 
 <!-- Username display -->
 <div id="usernameDisplay"><i class="fas fa-user"></i> <span id="usernameText"></span></div>
@@ -211,7 +272,7 @@
     <div class="empty-state">No chat selected.</div>
   </div>
   <div id="chatInputArea">
-    <input type="text" id="chatInput" placeholder="Type a message..." />
+    <textarea id="chatInput" placeholder="Type a message..." rows="1"></textarea>
     <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
   </div>
 </div>
@@ -243,10 +304,35 @@ const chatHeader = document.getElementById("chatHeader");
 const chatMessages = document.getElementById("chatMessages");
 const chatInput = document.getElementById("chatInput");
 const sendBtn = document.getElementById("sendBtn");
+const sidebarToggle = document.getElementById("sidebarToggle");
+const friendsSidebar = document.getElementById("friendsSidebar");
 
 let selectedFriend = null;
 let chatId = null;
 let messagesUnsubscribe = null;
+
+sidebarToggle.addEventListener("click", () => {
+  friendsSidebar.classList.toggle("show");
+});
+
+// Format timestamp
+function formatTimestamp(date) {
+  const now = new Date();
+  const msgDate = new Date(date);
+  const optionsTime = { hour: '2-digit', minute: '2-digit' };
+  const optionsDate = { year: 'numeric', month: 'short', day: 'numeric' };
+
+  const diff = now - msgDate;
+  const oneDay = 24 * 60 * 60 * 1000;
+
+  if (diff < oneDay && now.getDate() === msgDate.getDate()) {
+    return msgDate.toLocaleTimeString([], optionsTime); // show only time
+  } else if (diff < 2 * oneDay && now.getDate() - msgDate.getDate() === 1) {
+    return "Yesterday, " + msgDate.toLocaleTimeString([], optionsTime);
+  } else {
+    return msgDate.toLocaleDateString([], optionsDate) + ", " + msgDate.toLocaleTimeString([], optionsTime);
+  }
+}
 
 // Load friends
 async function loadFriends() {
@@ -284,7 +370,6 @@ async function loadFriends() {
     item.addEventListener("click", () => selectFriend(f.username));
     friendsListEl.appendChild(item);
 
-    // Listen for last message
     const chatDocId = [username, f.username].sort().join("_");
     const chatRef = collection(db, "chats", chatDocId, "messages");
     onSnapshot(query(chatRef, orderBy("timestamp", "desc")), snap => {
@@ -299,11 +384,12 @@ async function loadFriends() {
   });
 }
 
-// Select a friend
+// Select friend
 async function selectFriend(friend) {
   selectedFriend = friend;
   chatHeader.textContent = `Chat with ${friend}`;
   chatId = [username, friend].sort().join("_");
+  friendsSidebar.classList.remove("show");
 
   if (messagesUnsubscribe) messagesUnsubscribe();
   chatMessages.innerHTML = "";
@@ -315,17 +401,41 @@ async function selectFriend(friend) {
       chatMessages.innerHTML = `<div class="empty-state">No messages yet. Say hello!</div>`;
       return;
     }
+
+    let lastDate = null;
     snap.docs.forEach(docSnap => {
       const msg = docSnap.data();
+      const msgDate = msg.timestamp.toDate();
+      const msgDateStr = msgDate.toDateString();
+
+      // Date separator
+      if (lastDate !== msgDateStr) {
+        const separator = document.createElement("div");
+        separator.className = "date-separator";
+        separator.textContent = formatTimestamp(msg.timestamp).split(",")[0]; // only date or "Yesterday"
+        chatMessages.appendChild(separator);
+        lastDate = msgDateStr;
+      }
+
       const div = document.createElement("div");
       div.className = "message " + (msg.sender === username ? "sent" : "received");
-      div.textContent = msg.content;
+
+      const content = document.createElement("div");
+      content.textContent = msg.content;
+      div.appendChild(content);
+
+      const ts = document.createElement("div");
+      ts.className = "message-timestamp";
+      ts.textContent = formatTimestamp(msg.timestamp);
+      div.appendChild(ts);
+
       chatMessages.appendChild(div);
-      // Mark as read
+
       if (!msg.readBy?.includes(username)) {
         updateDoc(docSnap.ref, { readBy: arrayUnion(username) });
       }
     });
+
     chatMessages.scrollTop = chatMessages.scrollHeight;
   });
 }
@@ -338,7 +448,6 @@ sendBtn.addEventListener("click", async () => {
   const chatDocRef = doc(db, "chats", chatId);
   const messagesRef = collection(chatDocRef, "messages");
 
-  // Ensure chat doc exists
   await updateDoc(chatDocRef, { participants: arrayUnion(username, selectedFriend) }).catch(async () => {
     await setDoc(chatDocRef, { participants: [username, selectedFriend] });
   });
@@ -355,10 +464,12 @@ sendBtn.addEventListener("click", async () => {
 
 // Press Enter to send
 chatInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") sendBtn.click();
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault(); // prevent new line
+    sendBtn.click();
+  }
 });
 
-// Initial load
 loadFriends();
 </script>
 </body>
