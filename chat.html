@@ -133,6 +133,7 @@
     border-top: 1px solid #ccc;
     background: #fff;
     align-items: flex-end;
+    flex-shrink: 0; /* prevents shrinking on iPad */
   }
   #chatInput {
     flex: 1;
@@ -147,6 +148,7 @@
     line-height: 1.4;
     -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
+    display: block; /* ensures visible on iPad */
   }
   #sendBtn {
     background: #0077aa;
@@ -155,10 +157,11 @@
     border-radius: 25px;
     padding: 10px 15px;
     cursor: pointer;
-    height: 42px;
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-shrink: 0;
+    height: 42px;
   }
   #sendBtn:hover { background: #005f88; }
 
