@@ -45,13 +45,8 @@
       z-index: 2;
     }
 
-    /* Left: site title */
-    #headerLeft {
-      font-weight: bold;
-      font-size: 24px;
-    }
+    #headerLeft { font-weight: bold; font-size: 24px; }
 
-    /* Center: chat, friends, games buttons */
     #headerCenter {
       position: absolute;
       left: 50%;
@@ -62,35 +57,17 @@
       justify-content: center;
     }
 
-    #headerCenter button {
-      border: none;
-      background: none;
-      color: #333;
-      font-size: 22px;
-      cursor: pointer;
-    }
+    #headerCenter button { border: none; background: none; color: #333; font-size: 22px; cursor: pointer; }
+    #headerCenter button:hover { color: #0077aa; }
 
-    #headerCenter button:hover {
-      color: #0077aa;
-    }
-
-    /* Right: username only */
-    #headerRight {
-      font-weight: bold;
-      font-size: 16px;
-      color: #555;
-      cursor: pointer;
-    }
-
-    #headerRight:hover {
-      color: #0077aa;
-    }
+    #headerRight { font-weight: bold; font-size: 16px; color: #555; cursor: pointer; }
+    #headerRight:hover { color: #0077aa; }
 
     main { 
-      flex: 1; display: flex; justify-content: center; align-items: center; position: relative; z-index: 1; 
+      flex: 1; display: flex; justify-content: center; align-items: center; position: relative; z-index: 1; gap: 30px; flex-wrap: wrap;
     }
 
-    .chess-wrapper { 
+    .game-wrapper { 
       padding: 4px; border-radius: 16px; 
       background: linear-gradient(270deg, #009955, #0077aa, #009955, #0077aa); 
       background-size: 400% 400%; 
@@ -100,18 +77,18 @@
       z-index: 2; 
     }
 
-    .chess-wrapper:hover { 
+    .game-wrapper:hover { 
       transform: scale(1.03); 
       box-shadow: 0 8px 20px rgba(0,0,0,0.3); 
     }
 
-    #chessBtn { 
-      display: block; width: 400px; height: 300px; border-radius: 12px; cursor: pointer; background-color: #f9f9f9; 
+    .game-wrapper img { 
+      display: block; width: 400px; height: 300px; border-radius: 12px; cursor: pointer; 
     }
 
     @media (max-width: 500px) { 
-      #chessBtn { width: 90%; height: auto; } 
-      .chess-wrapper { padding: 3px; } 
+      .game-wrapper img { width: 90%; height: auto; } 
+      .game-wrapper { padding: 3px; } 
       header { padding: 15px 20px; }
     }
 
@@ -119,9 +96,7 @@
       width: 100%; text-align: center; padding: 10px 0; font-size: 14px; color: #555; border-top: 1px solid #ddd; background-color: #f9f9f9; z-index: 2; 
     }
 
-    footer span.version { 
-      display: block; font-weight: bold; margin-top: 4px; 
-    }
+    footer span.version { display: block; font-weight: bold; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -141,8 +116,11 @@
 </header>
 
 <main>
-  <div class="chess-wrapper">
+  <div class="game-wrapper">
     <img id="chessBtn" src="gameimages/chess.png" alt="Play Chess">
+  </div>
+  <div class="game-wrapper">
+    <img id="game2Btn" src="gameimages/game2.png" alt="Play Game 2">
   </div>
 </main>
 
@@ -172,7 +150,7 @@ const username = localStorage.getItem("username");
 if (!username) window.location.href = "login.html";
 document.getElementById("usernameText").textContent = username;
 
-// Log out by clicking username
+// Log out
 document.getElementById("headerRight").addEventListener("click", () => {
   localStorage.removeItem("username");
   window.location.href = "login.html";
@@ -194,7 +172,7 @@ window.addEventListener("load", async () => {
   }
 });
 
-// Periodic check every 5 seconds
+// Periodic check
 setInterval(async () => {
   const exists = await checkIfUserExists();
   if (!exists) {
@@ -206,6 +184,7 @@ setInterval(async () => {
 
 // Navigation buttons
 document.getElementById("chessBtn").addEventListener("click", () => window.location.href = "chess/chess.html");
+document.getElementById("game2Btn").addEventListener("click", () => window.location.href = "game2/game2code.html");
 document.getElementById("friendsBtn").addEventListener("click", () => window.location.href = "friends.html");
 document.getElementById("chatBtn").addEventListener("click", () => window.location.href = "chat.html");
 document.getElementById("gamesBtn").addEventListener("click", () => window.location.href = "index.html");
