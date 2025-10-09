@@ -17,9 +17,10 @@
       justify-content: center;
       height: 100vh;
       overflow: hidden;
+      touch-action: none; /* Prevent double-tap zoom / scrolling while playing */
     }
 
-    /* Home button (same as chat style) */
+    /* Home button */
     .home-btn {
       position: fixed;
       top: 15px;
@@ -45,10 +46,10 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 30px;
-      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 10px;
       z-index: 2;
-      position: relative;
     }
 
     #scoreboard {
@@ -59,6 +60,7 @@
       font-weight: bold;
       font-size: 16px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      text-align: center;
     }
 
     button {
@@ -77,13 +79,16 @@
     /* Game area */
     #gameContainer {
       position: relative;
-      width: 1000px;
-      height: 700px;
+      width: 90vw;
+      height: 65vh;
+      max-width: 1000px;
+      max-height: 700px;
       border: 6px solid #0077aa;
       border-radius: 12px;
       background: url("background.png") center/cover no-repeat;
       overflow: hidden;
       box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      touch-action: none;
     }
 
     #player {
@@ -93,6 +98,7 @@
       cursor: grab;
       user-drag: none;
       -webkit-user-drag: none;
+      touch-action: none;
     }
 
     .food {
@@ -107,11 +113,16 @@
       height: 40px;
     }
 
-    @media (max-width: 1100px) {
+    @media (max-width: 600px) {
       #gameContainer {
-        width: 90vw;
         height: 60vh;
+        border-width: 4px;
       }
+      #player { width: 40px; height: 40px; }
+      .food { width: 45px; height: 45px; }
+      .bad { width: 30px; height: 30px; }
+      #scoreboard { font-size: 14px; padding: 6px 14px; }
+      button { padding: 6px 12px; font-size: 14px; }
     }
   </style>
 </head>
@@ -139,22 +150,17 @@
   const resetBtn = document.getElementById("resetBtn");
 
   let score = 0;
-  let playerSize = 50;
+  let playerSize = player.offsetWidth;
   let isDragging = false;
-  let offsetX, offsetY;
+  let offsetX = 0, offsetY = 0;
 
   let highscore = parseInt(localStorage.getItem("highscore") || "0");
   highscoreDisplay.textContent = `High Score: ${highscore} KG`;
 
   const SAFE_DISTANCE = 150;
 
-  function randomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
-
-  function distance(x1, y1, x2, y2) {
-    return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-  }
+  const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const distance = (x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
 
   function spawnFood() {
     document.querySelectorAll(".food, .bad").forEach(f => f.remove());
@@ -163,40 +169,34 @@
     const playerY = parseFloat(player.style.top || "0") + player.offsetHeight / 2;
 
     const foodCount = randomInt(1, 5);
-
     for (let i = 0; i < foodCount; i++) {
       const food = document.createElement("img");
       food.src = "food.png";
       food.classList.add("food");
       let x, y;
-
       do {
         x = randomInt(0, container.clientWidth - 60);
         y = randomInt(0, container.clientHeight - 60);
       } while (distance(x, y, playerX, playerY) < SAFE_DISTANCE);
-
       food.style.left = x + "px";
       food.style.top = y + "px";
       container.appendChild(food);
     }
 
-    // Spawn bad image
     const bad = document.createElement("img");
     bad.src = "bad.png";
     bad.classList.add("bad");
-
     let bx, by;
     do {
       bx = randomInt(0, container.clientWidth - 40);
       by = randomInt(0, container.clientHeight - 40);
     } while (distance(bx, by, playerX, playerY) < SAFE_DISTANCE);
-
     bad.style.left = bx + "px";
     bad.style.top = by + "px";
     container.appendChild(bad);
   }
 
-  function checkCollision(a, b) {
+  const checkCollision = (a, b) => {
     const aRect = a.getBoundingClientRect();
     const bRect = b.getBoundingClientRect();
     return !(
@@ -205,7 +205,7 @@
       aRect.bottom < bRect.top ||
       aRect.top > bRect.bottom
     );
-  }
+  };
 
   function eatFood(food) {
     food.remove();
@@ -232,30 +232,49 @@
     player.style.width = playerSize + "px";
     player.style.height = playerSize + "px";
     scoreDisplay.textContent = `Score: ${score} KG`;
-
     document.querySelectorAll(".food, .bad").forEach(f => f.remove());
     setTimeout(spawnFood, 800);
   }
 
-  // Drag logic
+  // Mouse controls
   player.addEventListener("mousedown", (e) => {
     isDragging = true;
     offsetX = e.offsetX;
     offsetY = e.offsetY;
     player.style.cursor = "grabbing";
   });
-
   window.addEventListener("mouseup", () => {
     isDragging = false;
     player.style.cursor = "grab";
   });
+  window.addEventListener("mousemove", movePlayer);
 
-  window.addEventListener("mousemove", (e) => {
+  // Touch controls (for mobile)
+  player.addEventListener("touchstart", (e) => {
+    isDragging = true;
+    const touch = e.touches[0];
+    const rect = player.getBoundingClientRect();
+    offsetX = touch.clientX - rect.left;
+    offsetY = touch.clientY - rect.top;
+  }, { passive: false });
+
+  window.addEventListener("touchend", () => isDragging = false);
+  window.addEventListener("touchmove", (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    movePlayer(touch);
+  }, { passive: false });
+
+  function movePlayer(e) {
     if (!isDragging) return;
 
     const rect = container.getBoundingClientRect();
-    let x = e.clientX - rect.left - offsetX;
-    let y = e.clientY - rect.top - offsetY;
+    const clientX = e.clientX || e.pageX;
+    const clientY = e.clientY || e.pageY;
+
+    let x = clientX - rect.left - offsetX;
+    let y = clientY - rect.top - offsetY;
 
     x = Math.max(0, Math.min(rect.width - player.offsetWidth, x));
     y = Math.max(0, Math.min(rect.height - player.offsetHeight, y));
@@ -266,11 +285,10 @@
     document.querySelectorAll(".food").forEach(food => {
       if (checkCollision(player, food)) eatFood(food);
     });
-
     document.querySelectorAll(".bad").forEach(bad => {
-      if (checkCollision(player, bad)) hitBad(bad);
+      if (checkCollision(player, bad)) hitBad();
     });
-  });
+  }
 
   resetBtn.addEventListener("click", () => {
     score = 0;
@@ -282,9 +300,9 @@
     spawnFood();
   });
 
-  // Start
-  player.style.left = "470px";
-  player.style.top = "320px";
+  // Start position and game
+  player.style.left = "45%";
+  player.style.top = "45%";
   spawnFood();
 </script>
 </body>

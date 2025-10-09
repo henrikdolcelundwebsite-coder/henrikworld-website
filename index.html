@@ -6,265 +6,204 @@
   <title>Home - henrikworld.com</title>
   <link rel="icon" href="favicon.png" type="image/png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
   <style>
-    :root {
-      --primary: #0077aa;
-      --secondary: #009955;
-      --bg: #f7f9fc;
-      --text: #333;
-    }
-
     body {
       margin: 0;
-      font-family: 'Inter', Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
-      transition: background 0.3s ease;
-    }
-
-    /* Header */
-    header {
-      background: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px 40px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    header h1 {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--primary);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    nav {
-      display: flex;
-      gap: 20px;
-    }
-
-    nav button {
-      border: none;
-      background: none;
-      color: #555;
-      font-size: 20px;
-      cursor: pointer;
-      transition: color 0.2s ease;
-    }
-
-    nav button:hover {
-      color: var(--primary);
-    }
-
-    #headerRight {
-      font-size: 15px;
-      color: #555;
-      cursor: pointer;
-      padding: 6px 12px;
-      border-radius: 20px;
-      transition: all 0.2s ease;
-      font-weight: 500;
-    }
-
-    #headerRight:hover {
-      background: var(--primary);
-      color: white;
-    }
-
-    /* Main section */
-    main {
-      flex: 1;
-      display: grid;
-      place-items: center;
-      padding: 60px 20px;
-      gap: 40px;
-    }
-
-    .game-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 30px;
-      width: 100%;
-      max-width: 900px;
-    }
-
-    .game-card {
-      background: white;
-      border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      cursor: pointer;
     }
-
-    .game-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    }
-
-    .game-card img {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-    }
-
-    .game-card h3 {
-      text-align: center;
-      margin: 15px 0;
-      color: var(--primary);
-      font-weight: 600;
-    }
-
-    /* Footer */
-    footer {
-      text-align: center;
-      padding: 15px 0;
-      font-size: 14px;
-      color: #777;
-      background: white;
-      border-top: 1px solid #eee;
-    }
-
-    footer .version {
-      display: block;
-      margin-top: 3px;
-      color: #aaa;
-      font-size: 12px;
-    }
-
-    /* Loading overlay */
     #loadingOverlay {
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: var(--bg);
+      background-color: #f9f9f9;
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 9999;
       transition: opacity 0.5s ease;
     }
-
     .spinner {
-      width: 70px;
-      height: 70px;
-      border: 6px solid var(--primary);
-      border-top: 6px solid var(--secondary);
+      width: 80px;
+      height: 80px;
+      border: 10px solid #0077aa;
+      border-top: 10px solid #009955;
       border-radius: 50%;
-      animation: spin 1s linear infinite;
+      animation: spin 1.2s linear infinite;
     }
-
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    header {
+      width: 100%;
+      padding: 15px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      position: relative;
+      z-index: 2;
+    }
+    #headerLeft { font-weight: bold; font-size: 24px; }
+    #headerCenter {
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex; gap: 25px;
+      justify-content: center;
+    }
+    #headerCenter button {
+      border: none; background: none;
+      color: #333; font-size: 22px;
+      cursor: pointer;
+    }
+    #headerCenter button:hover { color: #0077aa; }
+    #headerRight {
+      font-weight: bold;
+      font-size: 16px;
+      color: #555;
+      cursor: pointer;
+      position: relative;
+      right: 100px; /* Move 100px to the left */
+    }
+    #headerRight:hover { color: #0077aa; }
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+    .game-wrapper {
+      padding: 4px;
+      border-radius: 16px;
+      background: linear-gradient(270deg, #009955, #0077aa, #009955, #0077aa);
+      background-size: 400% 400%;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: inline-block;
+    }
+    .game-wrapper:hover {
+      transform: scale(1.03);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+    .game-wrapper img {
+      width: 400px; height: 300px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: block;
+    }
+    @media (max-width: 500px) {
+      .game-wrapper img { width: 90%; height: auto; }
+      header { padding: 15px 20px; }
+    }
+    footer {
+      width: 100%;
+      text-align: center;
+      padding: 10px 0;
+      font-size: 14px;
+      color: #555;
+      border-top: 1px solid #ddd;
+      background-color: #f9f9f9;
+    }
+    footer span.version {
+      display: block;
+      font-weight: bold;
+      margin-top: 4px;
     }
   </style>
 </head>
 <body>
-
   <div id="loadingOverlay"><div class="spinner"></div></div>
-
   <header>
-    <h1>🌍 henrikworld.com</h1>
-
-    <nav>
-      <button id="chatBtn" title="Chat"><i class="fas fa-comment"></i></button>
-      <button id="friendsBtn" title="Friends"><i class="fas fa-users"></i></button>
-      <button id="gamesBtn" title="Games"><i class="fas fa-gamepad"></i></button>
-    </nav>
-
-    <div id="headerRight" title="Click to log out">
-      <span id="usernameText"></span>
+    <div id="headerLeft">🌍henrikworld.com</div>
+    <div id="headerCenter">
+      <button id="chatBtn"><i class="fas fa-comment"></i></button>
+      <button id="friendsBtn"><i class="fas fa-users"></i></button>
+      <button id="gamesBtn"><i class="fas fa-gamepad"></i></button>
     </div>
+    <div id="headerRight" title="Click to log out"><span id="usernameText"></span></div>
   </header>
-
   <main>
-    <div class="game-grid">
-      <div class="game-card" id="chessBtn">
-        <img src="gameimages/chess.png" alt="Play Chess">
-        <h3>Play Chess</h3>
-      </div>
-
-      <div class="game-card" id="game2Btn">
-        <img src="gameimages/game2.png" alt="Play Game 2">
-        <h3>Play Game 2</h3>
-      </div>
-    </div>
+    <div class="game-wrapper"><img id="chessBtn" src="gameimages/chess.png" alt="Play Chess"></div>
+    <div class="game-wrapper"><img id="game2Btn" src="gameimages/game2.png" alt="Play Game 2"></div>
   </main>
-
   <footer>
     &copy; 2025 henrikworld.com
     <span class="version">V2.1</span>
   </footer>
 
   <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-  import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyA-Kcwv7BtU6cN41WbItJM1hInjy2Q83GI",
-    authDomain: "henrikworld-818f9.firebaseapp.com",
-    projectId: "henrikworld-818f9",
-    storageBucket: "henrikworld-818f9.firebasestorage.app",
-    messagingSenderId: "977398255809",
-    appId: "1:977398255809:web:68febbb7f2cbc452064440",
-    measurementId: "G-L2CKVDT4L3"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyA-Kcwv7BtU6cN41WbItJM1hInjy2Q83GI",
+      authDomain: "henrikworld-818f9.firebaseapp.com",
+      projectId: "henrikworld-818f9",
+      storageBucket: "henrikworld-818f9.firebasestorage.app",
+      messagingSenderId: "977398255809",
+      appId: "1:977398255809:web:68febbb7f2cbc452064440",
+      measurementId: "G-L2CKVDT4L3"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  const username = localStorage.getItem("username");
-  if (!username) window.location.href = "login.html";
-  document.getElementById("usernameText").textContent = username;
+    const username = localStorage.getItem("username");
+    if (!username) window.location.href = "login.html";
+    document.getElementById("usernameText").textContent = username;
 
-  document.getElementById("headerRight").addEventListener("click", () => {
-    localStorage.removeItem("username");
-    window.location.href = "login.html";
-  });
-
-  async function checkIfUserExists() {
-    const q = query(collection(db, "accounts"), where("username", "==", username));
-    const snap = await getDocs(q);
-    return !snap.empty;
-  }
-
-  window.addEventListener("load", async () => {
-    const overlay = document.getElementById('loadingOverlay');
-    overlay.style.opacity = '0';
-    setTimeout(() => overlay.style.display = 'none', 500);
-
-    const exists = await checkIfUserExists();
-    if (!exists) {
-      alert("Your account no longer exists.");
+    // Logout
+    document.getElementById("headerRight").addEventListener("click", () => {
       localStorage.removeItem("username");
       window.location.href = "login.html";
-    }
-  });
+    });
 
-  setInterval(async () => {
-    const exists = await checkIfUserExists();
-    if (!exists) {
-      alert("Your account no longer exists.");
-      localStorage.removeItem("username");
-      window.location.href = "login.html";
+    async function checkIfUserExists() {
+      const q = query(collection(db, "accounts"), where("username", "==", username));
+      const snap = await getDocs(q);
+      return !snap.empty;
     }
-  }, 5000);
 
-  document.getElementById("chessBtn").addEventListener("click", () => window.location.href = "chess/chess.html");
-  document.getElementById("game2Btn").addEventListener("click", () => window.location.href = "game2/game2code.html");
-  document.getElementById("friendsBtn").addEventListener("click", () => window.location.href = "friends.html");
-  document.getElementById("chatBtn").addEventListener("click", () => window.location.href = "chat.html");
-  document.getElementById("gamesBtn").addEventListener("click", () => window.location.href = "index.html");
+    // Check user exists
+    window.addEventListener("load", async () => {
+      const exists = await checkIfUserExists();
+      if (!exists) {
+        alert("Your account no longer exists.");
+        localStorage.removeItem("username");
+        window.location.href = "login.html";
+      }
+    });
+
+    setInterval(async () => {
+      const exists = await checkIfUserExists();
+      if (!exists) {
+        alert("Your account no longer exists.");
+        localStorage.removeItem("username");
+        window.location.href = "login.html";
+      }
+    }, 5000);
+
+    // Navigation
+    document.getElementById("chessBtn").addEventListener("click", () => window.location.href = "chess/chess.html");
+    document.getElementById("game2Btn").addEventListener("click", () => window.location.href = "game2/game2code.html");
+    document.getElementById("friendsBtn").addEventListener("click", () => window.location.href = "friends.html");
+    document.getElementById("chatBtn").addEventListener("click", () => window.location.href = "chat.html");
+    document.getElementById("gamesBtn").addEventListener("click", () => window.location.href = "index.html");
+
+    window.addEventListener('load', () => {
+      const overlay = document.getElementById('loadingOverlay');
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.style.display = 'none', 500);
+    });
   </script>
 </body>
 </html>
