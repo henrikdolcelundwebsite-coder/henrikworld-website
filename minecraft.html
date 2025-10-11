@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Minecraft — Fanmade (minecraftfanmade.html)</title>
+  <style>
+    html,body{height:100%;margin:0;background:#1b1f2a;color:#ddd;font-family:Inter,system-ui,Arial}
+    #container{width:100%;height:100%;overflow:hidden;position:relative}
+    .ui {
+      position: absolute; left: 12px; top: 12px; z-index: 10; background: rgba(10,12,18,0.55); padding:10px; border-radius:8px; backdrop-filter: blur(6px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+    }
+    .ui h1{margin:0 0 6px 0;font-size:14px}
+    .ui p{margin:6px 0;font-size:12px;line-height:1.2}
+    .ui button{font-size:13px;padding:6px 8px;margin:4px;border-radius:6px;border:0;background:#2b303a;color:#fff;cursor:pointer}
+    .hint{position:absolute;right:12px;bottom:12px;z-index:10;background:rgba(0,0,0,0.35);padding:8px;border-radius:8px;font-size:12px}
+    .credit{position:absolute;left:12px;bottom:12px;z-index:10;font-size:12px;opacity:0.8}
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+
+  <div class="ui">
+    <h1>Minecraft — Fanmade</h1>
+    <p>Single-file demo using Three.js. Blocky voxel world, place/remove blocks, orbit camera.</p>
+    <div>
+      <button id="resetBtn">Reset World</button>
+      <button id="wireBtn">Toggle Wireframe</button>
+      <button id="screenshotBtn">Screenshot</button>
+    </div>
+    <p style="margin-top:8px"><strong>Left click</strong> remove block — <strong>Right click</strong> place block — <strong>Scroll</strong> zoom</p>
+  </div>
+
+  <div class="hint">Tip: try toggling wireframe for a retro look</div>
+  <div class="credit">Made with ♥ — Fanmade single-file demo</div>
+
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+    import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js';
+
+    // Scene / Renderer / Camera
+    const container = document.getElementById('container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x9fbdd8, 0.0025);
+
+    const renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    container.appendChild(renderer.domElement);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 2000);
+    camera.position.set(30,30,30);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0,6,0);
+    controls.enableDamping = true;
+
+    // Lights
+    const hemi = new THREE.HemisphereLight(0xddeeff, 0x404060, 0.8);
+    scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+    dir.position.set(50,100,50);
+    dir.castShadow = true;
+    scene.add(dir);
+
+    // Voxel management
+    const BLOCK_SIZE = 1;
+    const world = new Map(); // key -> mesh
+    const blockGroup = new THREE.Group();
+    scene.add(blockGroup);
+
+    // Basic block textures created on-the-fly using tiny canvases for pixelated look
+    function makeTex(pixelFunc){
+      const size = 16;
+      const cnv = document.createElement('canvas');
+      cnv.width = cnv.height = size;
+      const ctx = cnv.getContext('2d');
+      const img = ctx.createImageData(size,size);
+      for(let y=0;y<size;y++){
+        for(let x=0;x<size;x++){
+          const i = (y*size + x) * 4;
+          const [r,g,b,a] = pixelFunc(x,y,size);
+          img.data[i] = r; img.data[i+1] = g; img.data[i+2] = b; img.data[i+3] = a;
+        }
+      }
+      ctx.putImageData(img,0,0);
+      const tex = new THREE.CanvasTexture(cnv);
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestMipMapNearestFilter;
+      tex.generateMipmaps = true;
+      tex.encoding = THREE.sRGBEncoding;
+      return tex;
+    }
+
+    const textures = {
+      grassTop: makeTex((x,y,size)=>{ // green checker
+        const g = (x+y)%2==0?118:142; return [80,g,30,255];
+      }),
+      dirt: makeTex((x,y,size)=>{ const v = 90 + ((x*y)%5)*3; return [120,v,66,255]; }),
+      stone: makeTex((x,y,size)=>{ const v = 110 + ((x*y)%6)*6; return [130,v,v,255]; }),
+      water: makeTex((x,y,size)=>{ return [40,120,200,200]; }),
+      wood: makeTex((x,y,size)=>{ const s = (Math.floor(x/4)+Math.floor(y/4))%2?120:100; return [s,70,45,255]; }),
+      leaf: makeTex((x,y,size)=>{ const g = 100 + ((x*y)%7)*8; return [50,g,30,220]; })
+    };
+
+    const materials = {
+      grassTop: new THREE.MeshLambertMaterial({map:textures.grassTop}),
+      dirt: new THREE.MeshLambertMaterial({map:textures.dirt}),
+      stone: new THREE.MeshLambertMaterial({map:textures.stone}),
+      water: new THREE.MeshLambertMaterial({map:textures.water, transparent:true, opacity:0.85}),
+      wood: new THREE.MeshLambertMaterial({map:textures.wood}),
+      leaf: new THREE.MeshLambertMaterial({map:textures.leaf, transparent:true, opacity:0.95})
+    };
+
+    // Cube geometry (shared)
+    const cubeGeo = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+
+    function keyFor(x,y,z){return `${x},${y},${z}`}
+
+    function addBlock(x,y,z, type){
+      const mat = chooseMaterial(type, x,y,z);
+      const mesh = new THREE.Mesh(cubeGeo, mat);
+      mesh.position.set(x*BLOCK_SIZE + 0.5*BLOCK_SIZE, y*BLOCK_SIZE + 0.5*BLOCK_SIZE, z*BLOCK_SIZE + 0.5*BLOCK_SIZE);
+      mesh.userData = {x,y,z,type};
+      blockGroup.add(mesh);
+      world.set(keyFor(x,y,z), mesh);
+      return mesh;
+    }
+
+    function removeBlock(x,y,z){
+      const k = keyFor(x,y,z);
+      const m = world.get(k);
+      if(m){ blockGroup.remove(m); if(m.geometry) m.geometry.dispose(); if(m.material && m.material.map) m.material.map.dispose(); world.delete(k); }
+    }
+
+    function chooseMaterial(type,x,y,z){
+      // reuse materials but return clones where we need unique map offsets (not necessary here)
+      switch(type){
+        case 'grass': return materials.grassTop;
+        case 'dirt': return materials.dirt;
+        case 'stone': return materials.stone;
+        case 'water': return materials.water;
+        case 'wood': return materials.wood;
+        case 'leaf': return materials.leaf;
+        default: return materials.dirt;
+      }
+    }
+
+    // deterministic pseudo-random function (fract(sin()) style)
+    function prng(x,y,seed=43758.5453){
+      const v = Math.sin(x*12.9898 + y*78.233) * seed;
+      return v - Math.floor(v);
+    }
+
+    function generateTerrain(radius=16){
+      // Clear existing
+      for(const k of Array.from(world.keys())) removeFromWorld(k);
+      // create simple heightmap
+      const size = radius;
+      for(let x=-size; x<size; x++){
+        for(let z=-size; z<size; z++){
+          // layered noise: combination of sin + prng
+          const hBase = Math.floor((Math.abs(Math.sin(x*0.12 + z*0.09)) * 3.0) );
+          const hNoise = Math.floor(prng(x*13.7,z*7.3) * 4);
+          const height = Math.max(1, hBase + hNoise);
+          for(let y=0;y<height;y++){
+            if(y < height-2) addBlock(x,y,z,'dirt');
+            else addBlock(x,y,z,'grass');
+          }
+          // small trees randomly
+          if(prng(x,z) > 0.86){
+            const trunkHeight = 3 + Math.floor(prng(x*2+1,z*3+2)*2);
+            for(let t=0;t<trunkHeight;t++) addBlock(x,height+t,z,'wood');
+            // leaves
+            for(let lx=-2;lx<=2;lx++) for(let lz=-2;lz<=2;lz++){
+              const ly = height+trunkHeight-1;
+              if(Math.abs(lx)+Math.abs(lz) < 3) addBlock(x+lx,ly,lz+z,'leaf');
+              if(Math.abs(lx)+Math.abs(lz) < 2) addBlock(x+lx,ly+1,z+lz,'leaf');
+            }
+          }
+        }
+      }
+
+      // create a small water lake at y=1
+      for(let x=-6;x<=6;x++) for(let z=-6;z<=6;z++){
+        addBlock(x,0,z,'water');
+      }
+    }
+
+    function removeFromWorld(k){
+      const [x,y,z] = k.split(',').map(Number);
+      removeBlock(x,y,z);
+    }
+
+    // Build the initial world
+    generateTerrain(16);
+
+    // Raycaster & mouse interaction
+    const ray = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    function getIntersect(event){
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      ray.setFromCamera(mouse, camera);
+      const intersects = ray.intersectObjects(blockGroup.children);
+      return intersects[0] || null;
+    }
+
+    renderer.domElement.addEventListener('pointerdown', (ev)=>{
+      ev.preventDefault();
+      const inter = getIntersect(ev);
+      if(!inter) return;
+      const p = inter.point;
+      const face = inter.face;
+      const obj = inter.object;
+      const {x,y,z} = obj.userData;
+      if(ev.button === 0){ // left: remove
+        removeBlock(x,y,z);
+      } else if(ev.button === 2){ // right: place
+        // compute normal-based neighbor
+        const nx = Math.round(p.x - obj.position.x + obj.userData.x*0); // not used
+        const normal = face.normal;
+        const px = x + Math.round(normal.x);
+        const py = y + Math.round(normal.y);
+        const pz = z + Math.round(normal.z);
+        // place dirt by default
+        if(!world.has(keyFor(px,py,pz))) addBlock(px,py,pz,'dirt');
+      }
+    });
+
+    // prevent context menu on right click
+    window.addEventListener('contextmenu', (e)=>e.preventDefault());
+
+    // UI buttons
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      // clear
+      for(const k of Array.from(world.keys())) removeFromWorld(k);
+      generateTerrain(16);
+    });
+
+    let wire = false;
+    document.getElementById('wireBtn').addEventListener('click', ()=>{
+      wire = !wire;
+      blockGroup.traverse((m)=>{ if(m.isMesh) m.material.wireframe = wire; });
+    });
+
+    document.getElementById('screenshotBtn').addEventListener('click', ()=>{
+      renderer.domElement.toBlob((b)=>{
+        const url = URL.createObjectURL(b);
+        const a = document.createElement('a'); a.href = url; a.download = 'minecraftfanmade.png'; a.click(); URL.revokeObjectURL(url);
+      });
+    });
+
+    // simple animation loop
+    const clock = new THREE.Clock();
+    function animate(){
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Resize handling
+    window.addEventListener('resize', ()=>{
+      camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Helpful: center camera on highest block
+    function centerCamera(){
+      camera.position.set(30,30,30); controls.target.set(0,6,0);
+    }
+    centerCamera();
+
+    // small memory-clean helpers
+    window.addEventListener('beforeunload', ()=>{
+      renderer.dispose();
+    });
+  </script>
+</body>
+</html>

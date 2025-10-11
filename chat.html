@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat - henrikworld.com</title>
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f4f6f8;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.home-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: #0077aa;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 25px;
+  font-weight: bold;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  transition: 0.2s;
+  z-index: 1000;
+}
+.home-btn:hover { background: #005f88; }
+
+header {
+  text-align: center;
+  padding: 15px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 250px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar h2 {
+  font-size: 18px;
+  text-align: center;
+  padding: 10px 0;
+  background: #0077aa;
+  color: white;
+  margin: 0;
+}
+
+.friend-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.friend {
+  padding: 10px 15px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: 0.2s;
+}
+
+.friend:hover { background: #f0f0f0; }
+.friend.active { background: #d7efff; }
+
+.friend-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.friend i { font-size: 32px; color: #555; }
+.friend span { font-size: 16px; flex:1; }
+
+.friend .new-msg {
+  font-size: 12px;
+  color: #009955;
+  font-weight: bold;
+  margin-left: auto;
+}
+
+.friend .last-msg {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.chat-area {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-header {
+  background: #0077aa;
+  color: white;
+  padding: 12px;
+  font-size: 18px;
+  text-align: center;
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message {
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  line-height: 1.4;
+  font-size: 15px;
+  word-wrap: break-word;
+  position: relative;
+}
+
+.message.sent {
+  align-self: flex-end;
+  background: #0077aa;
+  color: white;
+}
+
+.message.received {
+  align-self: flex-start;
+  background: #f0f0f0;
+  color: #333;
+}
+
+.message .time {
+  font-size: 10px;
+  color: rgba(0,0,0,0.4);
+  position: absolute;
+  bottom: -14px;
+  right: 10px;
+}
+
+.chat-input {
+  display: flex;
+  padding: 12px;
+  border-top: 1px solid #ddd;
+  background: #fafafa;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 25px;
+  outline: none;
+}
+
+.chat-input button {
+  margin-left: 10px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 25px;
+  background: #009955;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.chat-input button:hover { background: #007733; }
+
+.no-chat {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  font-size: 18px;
+}
+
+@media(max-width:800px){
+  main{flex-direction:column;gap:10px;}
+  .sidebar{width:100%;height:200px;}
+  .chat-area{height:calc(100% - 220px);}
+}
+</style>
+</head>
+<body>
+<a href="index.html" class="home-btn"><i class="fas fa-home"></i> Home</a>
+<header>Chat</header>
+<main>
+  <div class="sidebar">
+    <h2>Friends</h2>
+    <div class="friend-list" id="friendList"></div>
+  </div>
+
+  <div class="chat-area">
+    <div class="chat-header" id="chatHeader">Select a friend</div>
+    <div class="messages" id="messages">
+      <div class="no-chat">No chat selected</div>
+    </div>
+    <div class="chat-input">
+      <input type="text" id="messageInput" placeholder="Type a message..." disabled>
+      <button id="sendBtn" disabled><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import { getFirestore, collection, getDocs, query, where, addDoc, orderBy, onSnapshot, Timestamp, limit } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA-Kcwv7BtU6cN41WbItJM1hInjy2Q83GI",
+  authDomain: "henrikworld-818f9.firebaseapp.com",
+  projectId: "henrikworld-818f9",
+  storageBucket: "henrikworld-818f9.firebasestorage.app",
+  messagingSenderId: "977398255809",
+  appId: "1:977398255809:web:68febbb7f2cbc452064440",
+  measurementId: "G-L2CKVDT4L3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const username = localStorage.getItem("username");
+if(!username) window.location.href="login.html";
+
+const friendList = document.getElementById("friendList");
+const chatHeader = document.getElementById("chatHeader");
+const messagesDiv = document.getElementById("messages");
+const messageInput = document.getElementById("messageInput");
+const sendBtn = document.getElementById("sendBtn");
+
+let activeFriend = null;
+let unsubscribe = null;
+let friendsData = [];
+let lastSeen = JSON.parse(localStorage.getItem('lastSeen') || '{}'); // Persisted
+
+async function getCurrentUserDoc() {
+  const q = query(collection(db,"accounts"), where("username","==",username));
+  const snap = await getDocs(q);
+  if(snap.empty) return null;
+  return snap.docs[0];
+}
+
+async function loadFriends() {
+  const userDoc = await getCurrentUserDoc();
+  if(!userDoc) return;
+  const data = userDoc.data();
+  const friends = data.friends || [];
+
+  friendsData = await Promise.all(friends.map(async f => {
+    const chatId = [username, f.username].sort().join("_");
+    const messagesRef = collection(db,"chats",chatId,"messages");
+    const lastMsgSnap = await getDocs(query(messagesRef, orderBy("timestamp","desc"), limit(1)));
+    const lastMsg = lastMsgSnap.empty ? null : lastMsgSnap.docs[0].data();
+    if(!lastSeen[f.username]) lastSeen[f.username] = new Date(0);
+    return { username: f.username, lastMsg, hasNew: false };
+  }));
+
+  localStorage.setItem('lastSeen', JSON.stringify(lastSeen));
+  renderFriendList();
+}
+
+function renderFriendList(){
+  friendsData.sort((a,b)=>{
+    if(a.hasNew && !b.hasNew) return -1;
+    if(!a.hasNew && b.hasNew) return 1;
+    if(!a.lastMsg && b.lastMsg) return 1;
+    if(a.lastMsg && !b.lastMsg) return -1;
+    if(!a.lastMsg && !b.lastMsg) return 0;
+    return b.lastMsg.timestamp.toMillis() - a.lastMsg.timestamp.toMillis();
+  });
+
+  friendList.innerHTML="";
+  friendsData.forEach(f=>{
+    const div = document.createElement("div");
+    div.className="friend";
+    div.innerHTML=`
+      <div class="friend-name">
+        <i class="fas fa-user"></i>
+        <span>${f.username}</span>
+        ${f.hasNew?'<span class="new-msg">New</span>':''}
+      </div>
+      ${f.lastMsg && !f.hasNew?`<div class="last-msg">${f.lastMsg.text}</div>`:''}
+    `;
+    div.addEventListener("click",()=>selectFriend(f.username,div));
+    friendList.appendChild(div);
+  });
+}
+
+function selectFriend(friendName,element){
+  activeFriend = friendName;
+  lastSeen[friendName] = new Date();
+  localStorage.setItem('lastSeen', JSON.stringify(lastSeen));
+
+  const friendObj = friendsData.find(f=>f.username===friendName);
+  if(friendObj) friendObj.hasNew=false;
+
+  document.querySelectorAll(".friend").forEach(f=>f.classList.remove("active"));
+  element.classList.add("active");
+
+  chatHeader.textContent = `Chat with ${friendName}`;
+  messageInput.disabled=false;
+  sendBtn.disabled=false;
+
+  renderFriendList();
+  loadMessages(friendName);
+}
+
+function loadMessages(friendName){
+  if(unsubscribe) unsubscribe();
+  const chatId = [username, friendName].sort().join("_");
+  const messagesRef = collection(db,"chats",chatId,"messages");
+  const q = query(messagesRef, orderBy("timestamp"));
+
+  messagesDiv.innerHTML=`<div class="no-chat">Loading chat...</div>`;
+
+  unsubscribe = onSnapshot(q,snapshot=>{
+    messagesDiv.innerHTML="";
+    if(snapshot.empty){
+      messagesDiv.innerHTML=`<div class="no-chat">No messages yet</div>`;
+      return;
+    }
+
+    snapshot.forEach(doc=>{
+      const msg = doc.data();
+      const time = msg.timestamp ? msg.timestamp.toDate() : new Date();
+      const timeStr = time.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      const div = document.createElement("div");
+      div.className="message "+(msg.sender===username?"sent":"received");
+      div.innerHTML=`${msg.text}<span class="time">${timeStr}</span>`;
+      messagesDiv.appendChild(div);
+
+      // mark as new only if chat not active
+      if(msg.sender!==username && activeFriend !== friendName){
+        if(time > new Date(lastSeen[friendName])){
+          const friendObj = friendsData.find(f=>f.username===friendName);
+          if(friendObj) friendObj.hasNew=true;
+        }
+      }
+    });
+
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    renderFriendList();
+  });
+}
+
+async function sendMessage(){
+  const text = messageInput.value.trim();
+  if(!text||!activeFriend) return;
+
+  const chatId = [username, activeFriend].sort().join("_");
+  const messagesRef = collection(db,"chats",chatId,"messages");
+
+  await addDoc(messagesRef,{
+    sender: username,
+    text,
+    timestamp: Timestamp.fromDate(new Date())
+  });
+
+  lastSeen[activeFriend]=new Date();
+  localStorage.setItem('lastSeen', JSON.stringify(lastSeen));
+
+  const friendObj = friendsData.find(f=>f.username===activeFriend);
+  if(friendObj) friendObj.hasNew=false;
+
+  renderFriendList();
+  messageInput.value="";
+}
+
+sendBtn.addEventListener("click",sendMessage);
+messageInput.addEventListener("keypress", e=>{ if(e.key==="Enter") sendMessage(); });
+
+loadFriends();
+</script>
+</body>
+</html>

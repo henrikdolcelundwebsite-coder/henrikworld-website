@@ -1,142 +1,290 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Panel</title>
-<style>
-  body {
-    margin: 0;
-    background-color: #121212;
-    color: #ffffff;
-    font-family: monospace;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
-
-  .terminal {
-    width: 400px;
-  }
-
-  textarea {
-    width: 100%;
-    height: 120px;
-    background-color: #1e1e1e;
-    color: #ffffff;
-    border: 1px solid #333;
-    border-radius: 4px;
-    padding: 10px;
-    font-family: monospace;
-    font-size: 14px;
-    resize: none;
-  }
-
-  button {
-    width: 100%;
-    margin-top: 10px;
-    padding: 10px;
-    font-family: monospace;
-    font-size: 14px;
-    cursor: pointer;
-    background-color: #0af;
-    border: none;
-    border-radius: 4px;
-    color: #fff;
-  }
-
-  button:hover {
-    background-color: #08c;
-  }
-
-  .message {
-    margin-top: 10px;
-    font-size: 14px;
-    display: none;
-  }
-
-  .message.success {
-    color: #8ef08e;
-    display: block;
-  }
-
-  .message.error {
-    color: #f08e8e;
-    display: block;
-  }
-
-  .message.info {
-    color: #8e9ef0;
-    display: block;
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — henrikworld.com</title>
+  <style>
+    body {
+      margin: 0;
+      background: white;
+      color: black;
+      font-family: monospace;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .editor {
+      width: 80%;
+      height: 70%;
+      border: 1px solid #ccc;
+      padding: 10px;
+      overflow-y: auto;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .line {
+      display: flex;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+    .num {
+      width: 40px;
+      color: #888;
+      text-align: right;
+      padding-right: 10px;
+    }
+    .text {
+      flex: 1;
+      outline: none;
+      white-space: pre;
+    }
+    button {
+      background: #eee;
+      border: 1px solid #ccc;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-family: monospace;
+    }
+    button:hover {
+      background: #ddd;
+    }
+    .status { font-size: 13px; color: #444; }
+  </style>
 </head>
 <body>
-
-<div class="terminal">
-  <textarea id="codeInput" placeholder="Enter your code here..."></textarea>
+  <div class="editor" id="editor" aria-label="Admin command editor"></div>
   <button id="saveBtn">Save</button>
-  <div class="message" id="message"></div>
-</div>
+  <div class="status" id="status">Status: idle</div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js";
-  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-firestore.js";
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+    import { getAnalytics } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics.js';
+    import { getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAMk8qcZl_VGk-4sz8Z8uXPWnOFyXbiH-8",
-    authDomain: "henrikworldonline.firebaseapp.com",
-    projectId: "henrikworldonline",
-    storageBucket: "henrikworldonline.firebasestorage.app",
-    messagingSenderId: "87537574197",
-    appId: "1:87537574197:web:1febedd14bc819150a2c7c",
-    measurementId: "G-6ZGQ9E87P7"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyA-Kcwv7BtU6cN41WbItJM1hInjy2Q83GI",
+      authDomain: "henrikworld-818f9.firebaseapp.com",
+      projectId: "henrikworld-818f9",
+      storageBucket: "henrikworld-818f9.firebasestorage.app",
+      messagingSenderId: "977398255809",
+      appId: "1:977398255809:web:68febbb7f2cbc452064440",
+      measurementId: "G-L2CKVDT4L3"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    try { getAnalytics(app); } catch(e) {}
+    const db = getFirestore(app);
 
-  const saveBtn = document.getElementById('saveBtn');
-  const codeInput = document.getElementById('codeInput');
-  const message = document.getElementById('message');
+    const editor = document.getElementById('editor');
+    const saveBtn = document.getElementById('saveBtn');
+    const status = document.getElementById('status');
 
-  function showMessage(text, type) {
-    message.textContent = text;
-    message.className = `message ${type}`;
-  }
+    let lineCount = 1;
 
-  saveBtn.addEventListener('click', async () => {
-    showMessage("Processing...", "info");
+    function createLine(num, content = '') {
+      const line = document.createElement('div');
+      line.className = 'line';
 
-    const lines = codeInput.value.split('\n').map(line => line.trim());
+      const numDiv = document.createElement('div');
+      numDiv.className = 'num';
+      numDiv.textContent = num.toString().padStart(2, '0');
 
-    if (lines.length !== 2) {
-      showMessage("Error: Enter exactly 2 lines.", "error");
-      return;
+      const textDiv = document.createElement('div');
+      textDiv.className = 'text';
+      textDiv.contentEditable = true;
+      textDiv.textContent = content;
+
+      textDiv.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addNewLine();
+        } else if (e.key === 'Backspace' && textDiv.textContent === '') {
+          e.preventDefault();
+          deleteLine(line);
+        }
+      });
+
+      line.appendChild(numDiv);
+      line.appendChild(textDiv);
+      editor.appendChild(line);
+      textDiv.focus();
     }
 
-    const usernameMatch = lines[0].match(/^admin\/account\/create\/username=(.+)$/);
-    const passwordMatch = lines[1].match(/^admin\/account\/create\/password=(.+)$/);
-
-    if (!usernameMatch || !passwordMatch) {
-      showMessage("Error: Code format is incorrect.", "error");
-      return;
+    function addNewLine() {
+      lineCount++;
+      createLine(lineCount);
+      editor.scrollTop = editor.scrollHeight;
     }
 
-    const username = usernameMatch[1];
-    const password = passwordMatch[1];
-
-    try {
-      await addDoc(collection(db, "accounts"), { username, password });
-      showMessage(`Account "${username}" created successfully!`, "success");
-      codeInput.value = '';
-    } catch (error) {
-      console.error(error);
-      showMessage("Error saving account.", "error");
+    function deleteLine(line) {
+      if (editor.children.length > 1) {
+        line.remove();
+        updateLineNumbers();
+      }
     }
-  });
-</script>
 
+    function updateLineNumbers() {
+      const lines = editor.querySelectorAll('.line');
+      lineCount = lines.length;
+      lines.forEach((line, index) => {
+        line.querySelector('.num').textContent = (index + 1).toString().padStart(2, '0');
+      });
+    }
+
+    // parse commands: create, delete, find
+    function parseCommands(lines) {
+      const createAccounts = [];
+      const deleteAccounts = [];
+      const findQueries = []; // {type: 'username'|'password', value}
+
+      let currentCreate = null;
+      let currentDelete = null;
+
+      for (const raw of lines.map(l => l.trim())) {
+        // Create sequence
+        if (raw.startsWith('admin/account/create/username=')) {
+          currentCreate = { username: raw.split('=')[1] || '' };
+          continue;
+        }
+        if (raw.startsWith('admin/account/create/password=')) {
+          if (currentCreate) currentCreate.password = raw.split('=')[1] || '';
+          continue;
+        }
+        if (raw === 'admin/account/create/finish') {
+          if (currentCreate && currentCreate.username && currentCreate.password) createAccounts.push(currentCreate);
+          currentCreate = null;
+          continue;
+        }
+
+        // Delete sequence
+        if (raw.startsWith('admin/account/delete/username=')) {
+          currentDelete = { username: raw.split('=')[1] || '' };
+          continue;
+        }
+        if (raw === 'admin/account/delete/finish') {
+          if (currentDelete && currentDelete.username) deleteAccounts.push(currentDelete);
+          currentDelete = null;
+          continue;
+        }
+
+        // Find queries (Option A style)
+        if (raw.startsWith('admin/account/find/username=')) {
+          findQueries.push({ type: 'username', value: raw.split('=')[1] || '' });
+          continue;
+        }
+        if (raw.startsWith('admin/account/find/password=')) {
+          findQueries.push({ type: 'password', value: raw.split('=')[1] || '' });
+          continue;
+        }
+
+        // One-line lookup style (Option C) - accept as well
+        if (raw.startsWith('admin/account/lookup/username=')) {
+          findQueries.push({ type: 'username', value: raw.split('=')[1] || '' });
+          continue;
+        }
+        if (raw.startsWith('admin/account/lookup/password=')) {
+          findQueries.push({ type: 'password', value: raw.split('=')[1] || '' });
+          continue;
+        }
+      }
+
+      return { createAccounts, deleteAccounts, findQueries };
+    }
+
+    async function saveAccountsToFirestore(accounts) {
+      const saved = [];
+      for (const acc of accounts) {
+        try {
+          const docRef = await addDoc(collection(db, 'accounts'), { username: acc.username, password: acc.password, createdAt: serverTimestamp() });
+          saved.push(acc.username);
+        } catch(e) { console.error(e); }
+      }
+      return saved;
+    }
+
+    async function deleteAccountsFromFirestore(accounts) {
+      const deleted = [];
+      for (const acc of accounts) {
+        try {
+          const q = query(collection(db, 'accounts'), where('username', '==', acc.username));
+          const querySnapshot = await getDocs(q);
+          querySnapshot.forEach(async (document) => { await deleteDoc(doc(db, 'accounts', document.id)); });
+          deleted.push(acc.username);
+        } catch(e) { console.error(e); }
+      }
+      return deleted;
+    }
+
+    async function findInFirestore(queries) {
+      // returns array of results per query
+      const results = [];
+      for (const q of queries) {
+        try {
+          if (q.type === 'username') {
+            const qr = query(collection(db, 'accounts'), where('username', '==', q.value));
+            const snap = await getDocs(qr);
+            const found = [];
+            snap.forEach(d => found.push({ id: d.id, username: d.data().username, password: d.data().password }));
+            results.push({ query: q, found });
+          } else if (q.type === 'password') {
+            const qr = query(collection(db, 'accounts'), where('password', '==', q.value));
+            const snap = await getDocs(qr);
+            const found = [];
+            snap.forEach(d => found.push({ id: d.id, username: d.data().username, password: d.data().password }));
+            results.push({ query: q, found });
+          }
+        } catch(e) { console.error(e); results.push({ query: q, found: [], error: e.message }); }
+      }
+      return results;
+    }
+
+    saveBtn.addEventListener('click', async () => {
+      status.textContent = 'Status: parsing...';
+      const lines = Array.from(editor.querySelectorAll('.text')).map(t => t.textContent || '');
+      const { createAccounts, deleteAccounts, findQueries } = parseCommands(lines);
+
+      if (createAccounts.length === 0 && deleteAccounts.length === 0 && findQueries.length === 0) {
+        status.textContent = 'Status: no valid commands found (nothing will be done)';
+        return;
+      }
+
+      status.textContent = 'Status: processing...';
+
+      const saved = await saveAccountsToFirestore(createAccounts);
+      const deleted = await deleteAccountsFromFirestore(deleteAccounts);
+      const foundResults = await findInFirestore(findQueries);
+
+      let msgParts = [];
+      if (saved.length) msgParts.push(`Created: ${saved.join(', ')}`);
+      if (deleted.length) msgParts.push(`Deleted: ${deleted.join(', ')}`);
+
+      // Build readable output for foundResults
+      for (const r of foundResults) {
+        if (r.error) {
+          msgParts.push(`Query ${r.query.type}=${r.query.value} errored: ${r.error}`);
+          continue;
+        }
+        if (!r.found || r.found.length === 0) {
+          msgParts.push(`No results for ${r.query.type}=${r.query.value}`);
+          continue;
+        }
+        // show actual password(s)
+        const pairs = r.found.map(f => `${f.username} -> ${f.password}`);
+        msgParts.push(`Found for ${r.query.type}=${r.query.value}: ${pairs.join('; ')}`);
+      }
+
+      const finalMsg = msgParts.join('. ') || 'No changes made.';
+      status.textContent = `Status: ${finalMsg}`;
+      alert(finalMsg);
+    });
+
+    createLine(lineCount);
+  </script>
 </body>
 </html>
