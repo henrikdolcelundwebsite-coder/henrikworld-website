@@ -2,24 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Website Down</title>
-  <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #0f172a;
-      color: #f8fafc;
-      font-family: Arial, Helvetica, sans-serif;
-      text-align: center;
-      font-size: 1.5rem;
-    }
-  </style>
+  <title>Local Chat Board</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div>Sorry, this website is down and will be up soon.</div>
+  <h1>Local Chat Board</h1>
+
+  <div id="chat">
+    <div id="messages"></div>
+    <form id="message-form">
+      <input type="text" id="name" placeholder="Your name" required>
+      <input type="text" id="message" placeholder="Your message" required>
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <div id="offline" style="display:none;">
+    <h2>⚠️ Servers are down</h2>
+    <p>Start the server to use the chat.</p>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

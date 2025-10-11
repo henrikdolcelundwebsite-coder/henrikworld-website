@@ -1,57 +1,48 @@
-// Your Firebase config (already yours)
-const firebaseConfig = {
-  apiKey: "AIzaSyAwKFoP1NW_hxwRpQvToogweW4xX3ohfBE",
-  authDomain: "guestbook-testwebsite.firebaseapp.com",
-  projectId: "guestbook-testwebsite",
-  storageBucket: "guestbook-testwebsite.firebasestorage.app",
-  messagingSenderId: "88207016737",
-  appId: "1:88207016737:web:ec2424ff7362622394f460"
-};
+const chatDiv = document.getElementById('chat');
+const offlineDiv = document.getElementById('offline');
+const messagesDiv = document.getElementById('messages');
+const form = document.getElementById('message-form');
+const nameInput = document.getElementById('name');
+const messageInput = document.getElementById('message');
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+let socket;
 
-// Reference Firestore
-const db = firebase.firestore();
+async function init() {
+  try {
+    const res = await fetch('/messages');
+    const messages = await res.json();
+    messages.forEach(addMessage);
 
-// HTML elements
-const form = document.getElementById("messageForm");
-const container = document.getElementById("messagesContainer");
+    chatDiv.style.display = 'block';
+    offlineDiv.style.display = 'none';
 
-// Helper: format timestamp
-function formatDate(ts) {
-  const date = new Date(ts);
-  return date.toLocaleString(); // e.g., "9/6/2025, 3:45:12 PM"
+    // WebSocket for live updates
+    socket = io();
+    socket.on('new-message', addMessage);
+
+  } catch (err) {
+    chatDiv.style.display = 'none';
+    offlineDiv.style.display = 'block';
+  }
 }
 
-// Submit a new message
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const name = document.getElementById("name").value.trim();
-  const message = document.getElementById("message").value.trim();
+function addMessage({ name, message }) {
+  const p = document.createElement('p');
+  p.textContent = `${name}: ${message}`;
+  messagesDiv.appendChild(p);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
 
-  if (name && message) {
-    db.collection("guestbook").add({
-      name,
-      message,
-      timestamp: Date.now()
-    }).then(() => form.reset());
-  }
+// Send new message
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = { name: nameInput.value, message: messageInput.value };
+  await fetch('/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(msg)
+  });
+  messageInput.value = '';
 });
 
-// Display messages in real-time
-db.collection("guestbook").orderBy("timestamp", "desc")
-  .onSnapshot((snapshot) => {
-    container.innerHTML = "";
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      const div = document.createElement("div");
-      div.classList.add("message");
-      div.innerHTML = `
-        <span class="name">${data.name}</span>
-        <span class="timestamp">${formatDate(data.timestamp)}</span>
-        <p>${data.message}</p>
-      `;
-      container.appendChild(div);
-    });
-  });
+init();
