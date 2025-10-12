@@ -10,6 +10,7 @@ body {background:#f5f1ea;font-family:monospace;display:flex;flex-direction:colum
 #usernameDisplay{font-weight:bold;cursor:pointer;}
 #boardContainer{display:flex;flex-direction:column;align-items:center;}
 #whiteName,#blackName{font-weight:bold;margin:5px;}
+#turnDisplay{font-weight:bold;margin:5px;color:blue;}
 #chessBoard{display:grid;grid-template-columns:repeat(8,60px);grid-template-rows:repeat(8,60px);border:2px solid #8b5e3c;box-shadow:0 0 10px rgba(0,0,0,0.2);}
 .square{position:relative;width:60px;height:60px;display:flex;justify-content:center;align-items:center;cursor:pointer;}
 .light{background-color:#f0d9b5;}
@@ -26,6 +27,10 @@ body {background:#f5f1ea;font-family:monospace;display:flex;flex-direction:colum
 #status{font-weight:bold;margin:5px;color:red;}
 #gameControls{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
 #currentCode{font-weight:bold;}
+
+/* Promotion modal */
+#promotionModal {display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border:2px solid #8b5e3c;box-shadow:0 0 10px rgba(0,0,0,0.5);}
+#promotionModal button {margin:5px;padding:5px 10px;font-family:monospace;}
 </style>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -61,7 +66,9 @@ let selectedCoord=null;
 let legalMoves=[];
 let isHost=false;
 let playerColor='white';
+let promotionTarget=null;
 
+// --- Load user ---
 function loadUser(){
   const savedUser = JSON.parse(localStorage.getItem("user"));
   if(!savedUser || !savedUser.username) window.location.href="login.html";
@@ -69,7 +76,7 @@ function loadUser(){
   document.getElementById("usernameDisplay").onclick = () => { localStorage.removeItem("user"); window.location.href="login.html"; };
 }
 
-// --- Generate Legal Moves ---
+// --- Legal moves ---
 function getLegalMoves(coord, board) {
     const piece = board[coord];
     if (!piece) return [];
@@ -142,8 +149,9 @@ function getLegalMoves(coord, board) {
     return moves;
 }
 
-// --- Board Rendering ---
+// --- Board ---
 function createBoard(position){
+  document.getElementById('turnDisplay').textContent = `Turn: ${turn}`;
   const board=document.getElementById('chessBoard'); board.innerHTML='';
   for(let r=0;r<8;r++){for(let f=0;f<8;f++){
     const square=document.createElement('div'); square.classList.add('square'); if((r+f)%2===0)square.classList.add('light'); else square.classList.add('dark');
@@ -158,8 +166,9 @@ function createBoard(position){
   }}
 }
 
-// --- Handle Clicks ---
+// --- Clicks ---
 function handleClick(coord){
+  if(turn!==playerColor) return;
   const gameRef=ref(db,`games/${gameCode}`);
   get(gameRef).then(snapshot=>{
     const data = snapshot.val(); if(!data) return;
@@ -172,12 +181,13 @@ function handleClick(coord){
     } else {
       if(coord===selectedCoord){selectedCoord=null; legalMoves=[];}
       else if(legalMoves.includes(coord)){
-        board[coord]=board[selectedCoord]; delete board[selectedCoord];
-        if(board[coord].includes('pawn')&&(coord[1]==='8'||coord[1]==='1')) board[coord]=board[coord].replace('pawn','queen');
-        set(ref(db,`games/${gameCode}/board`),board);
-        turn=(turn==='white')?'black':'white';
-        set(ref(db,`games/${gameCode}/turn`),turn);
-        selectedCoord=null; legalMoves=[];
+        // Check for promotion
+        if(board[selectedCoord].includes('pawn') && (coord[1]==='8'||coord[1]==='1')){
+          promotionTarget = {from:selectedCoord,to:coord,color:playerColor};
+          document.getElementById('promotionModal').style.display='block';
+          return;
+        }
+        movePiece(board, selectedCoord, coord);
       } else {
         selectedCoord=null; legalMoves=[];
       }
@@ -186,7 +196,28 @@ function handleClick(coord){
   });
 }
 
-// --- Game Management ---
+function movePiece(board, from, to, promotion=''){
+  let piece = board[from];
+  if(promotion) piece = `${playerColor}-${promotion}.png`;
+  board[to]=piece; delete board[from];
+  turn=(turn==='white')?'black':'white';
+  set(ref(db,`games/${gameCode}/board`),board);
+  set(ref(db,`games/${gameCode}/turn`),turn);
+  selectedCoord=null; legalMoves=[];
+}
+
+// --- Promotion buttons ---
+function promotePiece(choice){
+  const gameRef=ref(db,`games/${gameCode}`);
+  get(gameRef).then(snapshot=>{
+    const board={...snapshot.val().board};
+    movePiece(board, promotionTarget.from, promotionTarget.to, choice);
+    promotionTarget=null;
+    document.getElementById('promotionModal').style.display='none';
+  });
+}
+
+// --- Game setup ---
 function generateCode(){
   gameCode=Math.random().toString(36).substring(2,8).toUpperCase();
   isHost=true;
@@ -196,7 +227,7 @@ function generateCode(){
   document.getElementById('currentCode').textContent=gameCode;
   document.getElementById('whiteName').textContent=username;
   document.getElementById('blackName').textContent='Waiting...';
-  listenBoard(); listenChat();
+  listenBoard(); listenChat(); listenPlayers();
 }
 
 function joinGame(){
@@ -208,19 +239,29 @@ function joinGame(){
     if(!data.black) set(ref(db,`games/${joinCode}/black`),username);
     gameCode=joinCode;
     playerColor='black';
-    document.getElementById('whiteName').textContent=data.white;
-    document.getElementById('blackName').textContent=data.black||username;
-    listenBoard(); listenChat();
+    listenBoard(); listenChat(); listenPlayers();
   });
 }
 
-// --- Firebase Listeners ---
+// --- Listeners ---
 function listenBoard(){
   if(!gameCode) return;
   const gameRef=ref(db,`games/${gameCode}/board`);
   onValue(gameRef,(snapshot)=>{
     const board=snapshot.val();
     createBoard(board);
+  });
+  const turnRef = ref(db, `games/${gameCode}/turn`);
+  onValue(turnRef, snapshot => { turn = snapshot.val(); document.getElementById('turnDisplay').textContent = `Turn: ${turn}`; });
+}
+
+function listenChat(){
+  if(!gameCode) return;
+  const chatRef=ref(db,`games/${gameCode}/chat`);
+  onValue(chatRef,(snapshot)=>{
+    const msgs=snapshot.val(); const chatDiv=document.getElementById('chatMessages'); chatDiv.innerHTML='';
+    for(const key in msgs){const m=msgs[key]; const p=document.createElement('div'); p.textContent=`${m.user}: ${m.message}`; chatDiv.appendChild(p);}
+    chatDiv.scrollTop=chatDiv.scrollHeight;
   });
 }
 
@@ -231,13 +272,12 @@ function sendChat(){
   input.value='';
 }
 
-function listenChat(){
-  if(!gameCode) return;
-  const chatRef=ref(db,`games/${gameCode}/chat`);
-  onValue(chatRef,(snapshot)=>{
-    const msgs=snapshot.val(); const chatDiv=document.getElementById('chatMessages'); chatDiv.innerHTML='';
-    for(const key in msgs){const m=msgs[key]; const p=document.createElement('div'); p.textContent=`${m.user}: ${m.message}`; chatDiv.appendChild(p);}
-    chatDiv.scrollTop=chatDiv.scrollHeight;
+function listenPlayers(){
+  const gameRef=ref(db,`games/${gameCode}`);
+  onValue(gameRef, snapshot=>{
+    const data = snapshot.val();
+    if(data.white) document.getElementById('whiteName').textContent=data.white;
+    if(data.black) document.getElementById('blackName').textContent=data.black;
   });
 }
 
@@ -262,6 +302,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 </div>
 
 <div id="status"></div>
+<div id="turnDisplay">Turn: white</div>
 
 <div id="boardContainer">
   <div id="whiteName">White</div>
@@ -275,6 +316,14 @@ window.addEventListener('DOMContentLoaded',()=>{
     <input type="text" id="chatInputField" placeholder="Type a message"/>
     <button id="sendChatBtn">Send</button>
   </div>
+</div>
+
+<div id="promotionModal">
+  <p>Choose promotion:</p>
+  <button onclick="promotePiece('queen')">Queen</button>
+  <button onclick="promotePiece('rook')">Rook</button>
+  <button onclick="promotePiece('bishop')">Bishop</button>
+  <button onclick="promotePiece('knight')">Knight</button>
 </div>
 </body>
 </html>
