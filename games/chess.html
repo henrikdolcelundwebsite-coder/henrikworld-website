@@ -29,9 +29,24 @@ body {background:#f5f1ea;font-family:monospace;display:flex;flex-direction:colum
 #currentCode{font-weight:bold;}
 
 /* Promotion modal */
-#promotionModal {display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border:2px solid #8b5e3c;box-shadow:0 0 10px rgba(0,0,0,0.5);}
-#promotionModal button {margin:5px;padding:5px 10px;font-family:monospace;}
+#promotionModal {
+  display:none;
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:white;
+  padding:20px;
+  border:2px solid #8b5e3c;
+  box-shadow:0 0 10px rgba(0,0,0,0.5);
+  text-align:center;
+  z-index:999;
+}
+#promotionChoices {display:flex;gap:10px;justify-content:center;}
+#promotionChoices button {border:none;background:none;cursor:pointer;padding:0;}
+#promotionChoices img:hover {transform:scale(1.1);transition:0.2s;}
 </style>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, push, get } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
@@ -74,6 +89,45 @@ function loadUser(){
   if(!savedUser || !savedUser.username) window.location.href="login.html";
   document.getElementById("usernameDisplay").textContent = savedUser.username;
   document.getElementById("usernameDisplay").onclick = () => { localStorage.removeItem("user"); window.location.href="login.html"; };
+}
+
+// --- Helper functions for check/checkmate ---
+function findKing(color, board) {
+  for (const coord in board) {
+    if (board[coord] === `${color}-king.png`) return coord;
+  }
+  return null;
+}
+
+function isSquareAttacked(target, byColor, board) {
+  for (const from in board) {
+    const piece = board[from];
+    if (!piece.startsWith(byColor)) continue;
+    const moves = getLegalMoves(from, board);
+    if (moves.includes(target)) return true;
+  }
+  return false;
+}
+
+function isInCheck(color, board) {
+  const kingPos = findKing(color, board);
+  if (!kingPos) return false;
+  const enemyColor = color === "white" ? "black" : "white";
+  return isSquareAttacked(kingPos, enemyColor, board);
+}
+
+function hasLegalMoves(color, board) {
+  for (const from in board) {
+    if (!board[from].startsWith(color)) continue;
+    const moves = getLegalMoves(from, board);
+    for (const to of moves) {
+      const testBoard = { ...board };
+      testBoard[to] = testBoard[from];
+      delete testBoard[from];
+      if (!isInCheck(color, testBoard)) return true;
+    }
+  }
+  return false;
 }
 
 // --- Legal moves ---
@@ -146,7 +200,15 @@ function getLegalMoves(coord, board) {
         });
     }
 
-    return moves;
+    // --- Prevent moves that leave your king in check ---
+    const safeMoves = [];
+    for (const move of moves) {
+      const testBoard = { ...board };
+      testBoard[move] = testBoard[coord];
+      delete testBoard[coord];
+      if (!isInCheck(color, testBoard)) safeMoves.push(move);
+    }
+    return safeMoves;
 }
 
 // --- Board ---
@@ -182,9 +244,9 @@ function handleClick(coord){
       if(coord===selectedCoord){selectedCoord=null; legalMoves=[];}
       else if(legalMoves.includes(coord)){
         // Check for promotion
-        if(board[selectedCoord].includes('pawn') && (coord[1]==='8'||coord[1]==='1')){
-          promotionTarget = {from:selectedCoord,to:coord,color:playerColor};
-          document.getElementById('promotionModal').style.display='block';
+        if (board[selectedCoord].includes('pawn') && (coord[1] === '8' || coord[1] === '1')) {
+          promotionTarget = { from: selectedCoord, to: coord, color: playerColor };
+          showPromotionOptions(playerColor);
           return;
         }
         movePiece(board, selectedCoord, coord);
@@ -198,22 +260,65 @@ function handleClick(coord){
 
 function movePiece(board, from, to, promotion=''){
   let piece = board[from];
-  if(promotion) piece = `${playerColor}-${promotion}.png`;
-  board[to]=piece; delete board[from];
-  turn=(turn==='white')?'black':'white';
-  set(ref(db,`games/${gameCode}/board`),board);
-  set(ref(db,`games/${gameCode}/turn`),turn);
-  selectedCoord=null; legalMoves=[];
+  if (promotion) piece = `${playerColor}-${promotion}.png`;
+  board[to] = piece;
+  delete board[from];
+
+  const enemyColor = (playerColor === 'white') ? 'black' : 'white';
+
+  // Switch turn
+  turn = (turn === 'white') ? 'black' : 'white';
+
+  // Update board in Firebase
+  set(ref(db, `games/${gameCode}/board`), board);
+  set(ref(db, `games/${gameCode}/turn`), turn);
+
+  // --- Check detection ---
+  const statusDiv = document.getElementById("status");
+  if (isInCheck(enemyColor, board)) {
+    if (!hasLegalMoves(enemyColor, board)) {
+      statusDiv.textContent = `CHECKMATE! ${playerColor.toUpperCase()} wins!`;
+      document.getElementById("chessBoard").style.pointerEvents = "none";
+    } else {
+      statusDiv.textContent = `${enemyColor.toUpperCase()} is in CHECK!`;
+    }
+  } else {
+    statusDiv.textContent = '';
+  }
+
+  selectedCoord = null;
+  legalMoves = [];
 }
 
 // --- Promotion buttons ---
-function promotePiece(choice){
-  const gameRef=ref(db,`games/${gameCode}`);
-  get(gameRef).then(snapshot=>{
-    const board={...snapshot.val().board};
+function showPromotionOptions(color) {
+  const modal = document.getElementById('promotionModal');
+  const choicesDiv = document.getElementById('promotionChoices');
+  choicesDiv.innerHTML = ''; // clear old buttons
+
+  const pieces = ['queen', 'rook', 'bishop', 'knight'];
+  pieces.forEach(piece => {
+    const btn = document.createElement('button');
+    const img = document.createElement('img');
+    img.src = `chessimages/${color}-${piece}.png`;
+    img.alt = piece;
+    img.width = 50;
+    img.height = 50;
+    btn.appendChild(img);
+    btn.onclick = () => promotePiece(piece);
+    choicesDiv.appendChild(btn);
+  });
+
+  modal.style.display = 'block';
+}
+
+function promotePiece(choice) {
+  const gameRef = ref(db, `games/${gameCode}`);
+  get(gameRef).then(snapshot => {
+    const board = { ...snapshot.val().board };
     movePiece(board, promotionTarget.from, promotionTarget.to, choice);
-    promotionTarget=null;
-    document.getElementById('promotionModal').style.display='none';
+    promotionTarget = null;
+    document.getElementById('promotionModal').style.display = 'none';
   });
 }
 
@@ -267,63 +372,61 @@ function listenChat(){
 
 function sendChat(){
   const input=document.getElementById('chatInputField'); const msg=input.value.trim(); if(!msg) return;
-  const username=JSON.parse(localStorage.getItem('user'))?.username||'Guest';
+  const username=JSON.parse(localStorage.getItem('user')).username;
   push(ref(db,`games/${gameCode}/chat`),{user:username,message:msg});
   input.value='';
 }
 
 function listenPlayers(){
   const gameRef=ref(db,`games/${gameCode}`);
-  onValue(gameRef, snapshot=>{
-    const data = snapshot.val();
-    if(data.white) document.getElementById('whiteName').textContent=data.white;
-    if(data.black) document.getElementById('blackName').textContent=data.black;
+  onValue(gameRef,(snapshot)=>{
+    const data=snapshot.val(); if(!data)return;
+    document.getElementById('whiteName').textContent=data.white||'White';
+    document.getElementById('blackName').textContent=data.black||'Black';
   });
 }
 
-window.addEventListener('DOMContentLoaded',()=>{
+window.onload = () => {
   loadUser();
-  document.getElementById('generateBtn').addEventListener('click',generateCode);
-  document.getElementById('joinBtn').addEventListener('click',joinGame);
-  document.getElementById('sendChatBtn').addEventListener('click',sendChat);
-});
+  createBoard(initialPosition);
+  document.getElementById('createBtn').onclick=generateCode;
+  document.getElementById('joinBtn').onclick=joinGame;
+  document.getElementById('sendBtn').onclick=sendChat;
+};
 </script>
 </head>
 <body>
 <div id="topBar">
-  <div id="usernameDisplay">Loading...</div>
+  <div id="usernameDisplay"></div>
 </div>
 
 <div id="gameControls">
-<button id="generateBtn">Generate Game Code</button>
-<span>Code: <span id="currentCode">---</span></span>
-<input type="text" id="joinInput" placeholder="Enter Game Code"/>
-<button id="joinBtn">Join Game</button>
+  <button id="createBtn">Create Game</button>
+  <input id="joinInput" placeholder="Enter code">
+  <button id="joinBtn">Join Game</button>
+  <span id="currentCode"></span>
 </div>
-
-<div id="status"></div>
-<div id="turnDisplay">Turn: white</div>
 
 <div id="boardContainer">
   <div id="whiteName">White</div>
-  <div id="chessBoard"></div>
   <div id="blackName">Black</div>
+  <div id="turnDisplay">Turn: white</div>
+  <div id="status"></div>
+  <div id="chessBoard"></div>
 </div>
 
 <div id="chatBox">
   <div id="chatMessages"></div>
   <div id="chatInput">
-    <input type="text" id="chatInputField" placeholder="Type a message"/>
-    <button id="sendChatBtn">Send</button>
+    <input id="chatInputField" placeholder="Type message...">
+    <button id="sendBtn">Send</button>
   </div>
 </div>
 
 <div id="promotionModal">
   <p>Choose promotion:</p>
-  <button onclick="promotePiece('queen')">Queen</button>
-  <button onclick="promotePiece('rook')">Rook</button>
-  <button onclick="promotePiece('bishop')">Bishop</button>
-  <button onclick="promotePiece('knight')">Knight</button>
+  <div id="promotionChoices"></div>
 </div>
+
 </body>
 </html>
