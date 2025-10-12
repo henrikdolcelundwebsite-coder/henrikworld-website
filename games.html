@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Games - henrikworld.com</title>
+<style>
+body {
+  background: white;
+  font-family: monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+}
+#topBar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid #ccc;
+  box-sizing: border-box;
+}
+button.top-btn {
+  padding: 6px 12px;
+  font-family: monospace;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  transition: background-color 0.2s ease;
+}
+button.top-btn:hover {
+  background-color: #f5f5f5;
+}
+#usernameDisplay {
+  font-weight: bold;
+}
+#content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+#content button {
+  padding: 12px 24px;
+  font-size: 16px;
+}
+</style>
+<script>
+function goBack() {
+  window.location.href = "index.html";
+}
+function goToChess() {
+  window.location.href = "games/chess.html";
+}
+
+function loadUser() {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  const usernameDisplay = document.getElementById("usernameDisplay");
+  if (!savedUser || !savedUser.username) {
+    window.location.href = "login.html";
+    return;
+  }
+  usernameDisplay.textContent = savedUser.username;
+  usernameDisplay.addEventListener("click", () => {
+    localStorage.removeItem("user");
+    window.location.href = "login.html";
+  });
+}
+
+window.addEventListener("DOMContentLoaded", loadUser);
+</script>
+</head>
+<body>
+<div id="topBar">
+  <button class="top-btn" onclick="goBack()">Back</button>
+  <div id="usernameDisplay">Loading...</div>
+</div>
+
+<div id="content">
+  <button onclick="goToChess()">Play Chess</button>
+</div>
+</body>
+</html>

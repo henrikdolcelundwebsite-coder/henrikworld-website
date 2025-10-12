@@ -1,108 +1,181 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Admin — henrikworld.com</title>
-<style>
-  body {
-    margin: 0;
-    background: white;
-    color: black;
-    font-family: monospace;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    gap: 10px;
-  }
-  textarea {
-    width: 80%;
-    max-width: 600px;
-    height: 120px;
-    font-family: monospace;
-    font-size: 16px;
-    line-height: 1.5;
-    padding: 10px;
-    border: 1px solid #ccc;
-    resize: none;
-  }
-  button {
-    width: 80%;
-    max-width: 600px;
-    padding: 10px;
-    font-family: monospace;
-    font-size: 14px;
-    cursor: pointer;
-    background: #eee;
-    border: 1px solid #ccc;
-  }
-  button:hover { background: #ddd; }
-  .status { font-size: 13px; color: #444; width: 80%; max-width: 600px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home - henrikworld.com</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <style>
+    body {
+      font-family: monospace;
+      background-color: white;
+      color: black;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      opacity: 0;
+      animation: fadeInBody 0.7s ease-in-out forwards;
+    }
+
+    @keyframes fadeInBody {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    #topBar {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      opacity: 0;
+      animation: fadeInUp 0.6s ease-out 0.3s forwards;
+    }
+
+    button.top-btn {
+      background-color: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-family: monospace;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button.top-btn:hover {
+      background-color: #f5f5f5;
+    }
+
+    #usernameDisplay {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background-color: white;
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      opacity: 0;
+      transform: translateY(-10px);
+      animation: fadeInUp 0.6s ease-out 0.3s forwards;
+    }
+
+    #usernameDisplay:hover {
+      background-color: #f5f5f5;
+    }
+
+    #welcomeMessage {
+      font-size: 18px;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeInUp 0.6s ease-out 0.5s forwards;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
+      authDomain: "henrikworldonline-a726f.firebaseapp.com",
+      projectId: "henrikworldonline-a726f",
+      storageBucket: "henrikworldonline-a726f.firebasestorage.app",
+      messagingSenderId: "1060990020059",
+      appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
+      measurementId: "G-VQNK4YN1C5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function checkLogin() {
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+      if (!savedUser || !savedUser.username || !savedUser.password) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      const username = savedUser.username;
+      const password = savedUser.password;
+
+      if (username === "Admin" && password === "Admin123") {
+        displayUser(username);
+        return;
+      }
+
+      try {
+        const q = query(
+          collection(db, "accounts"),
+          where("username", "==", username),
+          where("password", "==", password)
+        );
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+          localStorage.removeItem("user");
+          window.location.href = "login.html";
+          return;
+        }
+
+        displayUser(username);
+      } catch (e) {
+        console.error("Error verifying user:", e);
+        localStorage.removeItem("user");
+        window.location.href = "login.html";
+      }
+    }
+
+    function displayUser(username) {
+      document.getElementById("usernameDisplay").textContent = username;
+      document.getElementById("welcomeMessage").textContent = `Welcome, ${username}!`;
+    }
+
+    function signOut() {
+      localStorage.removeItem("user");
+      window.location.href = "login.html";
+    }
+
+    function goChat() {
+      window.location.href = "chat.html";
+    }
+
+    function goFriends() {
+      window.location.href = "friends.html";
+    }
+
+    function goGames() {
+      window.location.href = "games.html"; // Create this page later
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("usernameDisplay").addEventListener("click", signOut);
+      document.getElementById("chatBtn").addEventListener("click", goChat);
+      document.getElementById("friendsBtn").addEventListener("click", goFriends);
+      document.getElementById("gamesBtn").addEventListener("click", goGames);
+      checkLogin();
+    });
+  </script>
 </head>
 <body>
+  <div id="topBar">
+    <button id="chatBtn" class="top-btn">Chat</button>
+    <button id="friendsBtn" class="top-btn">Friends</button>
+    <button id="gamesBtn" class="top-btn">Games</button>
+  </div>
 
-<textarea id="editor" placeholder="Enter commands here:  
-Line 1: admin/account/create/username=USERNAME
-Line 2: admin/account/create/password=PASSWORD"></textarea>
-<button id="saveBtn">Save</button>
-<div class="status" id="status">Status: idle</div>
-
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.6.1/firebase-firestore.js';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAMk8qcZl_VGk-4sz8Z8uXPWnOFyXbiH-8",
-  authDomain: "henrikworldonline.firebaseapp.com",
-  projectId: "henrikworldonline",
-  storageBucket: "henrikworldonline.firebasestorage.app",
-  messagingSenderId: "87537574197",
-  appId: "1:87537574197:web:1febedd14bc819150a2c7c",
-  measurementId: "G-6ZGQ9E87P7"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-const editor = document.getElementById('editor');
-const saveBtn = document.getElementById('saveBtn');
-const status = document.getElementById('status');
-
-function parseLines(lines) {
-  if (lines.length !== 2) return null;
-  const usernameMatch = lines[0].match(/^admin\/account\/create\/username=(.+)$/);
-  const passwordMatch = lines[1].match(/^admin\/account\/create\/password=(.+)$/);
-  if (!usernameMatch || !passwordMatch) return null;
-  return { username: usernameMatch[1], password: passwordMatch[1] };
-}
-
-async function saveAccount(account) {
-  try {
-    await addDoc(collection(db, 'accounts'), { username: account.username, password: account.password, createdAt: serverTimestamp() });
-    return true;
-  } catch(e) { console.error(e); return false; }
-}
-
-saveBtn.addEventListener('click', async () => {
-  status.textContent = 'Status: processing...';
-  const lines = editor.value.split('\n').map(l => l.trim());
-  const account = parseLines(lines);
-  if (!account) {
-    status.textContent = 'Status: Error — invalid format. Enter username then password.';
-    return;
-  }
-  const success = await saveAccount(account);
-  if (success) {
-    status.textContent = `Status: Account "${account.username}" created successfully!`;
-    editor.value = '';
-  } else {
-    status.textContent = 'Status: Error saving account.';
-  }
-});
-</script>
-
+  <div id="usernameDisplay">Loading...</div>
+  <div id="welcomeMessage">Loading...</div>
 </body>
 </html>

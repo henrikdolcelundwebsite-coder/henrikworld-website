@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multiplayer Chess</title>
+<style>
+body {background:#f5f1ea;font-family:monospace;display:flex;flex-direction:column;align-items:center;margin:0;padding:20px;}
+#topBar {width:100%;display:flex;justify-content:flex-end;align-items:center;margin-bottom:10px;}
+#usernameDisplay{font-weight:bold;cursor:pointer;}
+#boardContainer{display:flex;flex-direction:column;align-items:center;}
+#whiteName,#blackName{font-weight:bold;margin:5px;}
+#chessBoard{display:grid;grid-template-columns:repeat(8,60px);grid-template-rows:repeat(8,60px);border:2px solid #8b5e3c;box-shadow:0 0 10px rgba(0,0,0,0.2);}
+.square{position:relative;width:60px;height:60px;display:flex;justify-content:center;align-items:center;cursor:pointer;}
+.light{background-color:#f0d9b5;}
+.dark{background-color:#b58863;}
+.piece{width:50px;height:50px;pointer-events:none;}
+.coord{font-size:10px;position:absolute;bottom:2px;right:2px;color:rgba(0,0,0,0.5);}
+.highlight{background-color:#add8e6 !important;}
+.legal-move{background-color:rgba(0,0,255,0.3);}
+#chatBox{width:500px;height:200px;border:1px solid #ccc;display:flex;flex-direction:column;padding:5px;overflow:hidden;background:white;margin-top:10px;}
+#chatMessages{flex:1;overflow-y:auto;margin-bottom:5px;}
+#chatInput{display:flex;gap:5px;}
+#chatInput input{flex:1;padding:5px;font-family:monospace;}
+#chatInput button{padding:5px 10px;font-family:monospace;}
+#status{font-weight:bold;margin:5px;color:red;}
+#gameControls{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+#currentCode{font-weight:bold;}
+</style>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, push, get } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:"AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
+  authDomain:"henrikworldonline-a726f.firebaseapp.com",
+  projectId:"henrikworldonline-a726f",
+  storageBucket:"henrikworldonline-a726f.firebasestorage.app",
+  messagingSenderId:"1060990020059",
+  appId:"1:1060990020059:web:35e9816d249cd32d97dffe",
+  measurementId:"G-VQNK4YN1C5",
+  databaseURL:"https://henrikworldonline-a726f-default-rtdb.europe-west1.firebasedatabase.app"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const files=['a','b','c','d','e','f','g','h'];
+const ranks=[8,7,6,5,4,3,2,1];
+
+const initialPosition={
+  a1:'white-rook.png',b1:'white-knight.png',c1:'white-bishop.png',d1:'white-queen.png',e1:'white-king.png',f1:'white-bishop.png',g1:'white-knight.png',h1:'white-rook.png',
+  a2:'white-pawn.png',b2:'white-pawn.png',c2:'white-pawn.png',d2:'white-pawn.png',e2:'white-pawn.png',f2:'white-pawn.png',g2:'white-pawn.png',h2:'white-pawn.png',
+  a7:'black-pawn.png',b7:'black-pawn.png',c7:'black-pawn.png',d7:'black-pawn.png',e7:'black-pawn.png',f7:'black-pawn.png',g7:'black-pawn.png',h7:'black-pawn.png',
+  a8:'black-rook.png',b8:'black-knight.png',c8:'black-bishop.png',d8:'black-queen.png',e8:'black-king.png',f8:'black-bishop.png',g8:'black-knight.png',h8:'black-rook.png'
+};
+
+let gameCode='';
+let turn='white';
+let selectedCoord=null;
+let legalMoves=[];
+let isHost=false;
+let playerColor='white';
+
+function loadUser(){
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  if(!savedUser || !savedUser.username) window.location.href="login.html";
+  document.getElementById("usernameDisplay").textContent = savedUser.username;
+  document.getElementById("usernameDisplay").onclick = () => { localStorage.removeItem("user"); window.location.href="login.html"; };
+}
+
+// --- Generate Legal Moves ---
+function getLegalMoves(coord, board) {
+    const piece = board[coord];
+    if (!piece) return [];
+    const color = piece.startsWith('white') ? 'white' : 'black';
+    const enemyColor = color === 'white' ? 'black' : 'white';
+    const file = coord[0];
+    const rank = parseInt(coord[1]);
+    const moves = [];
+
+    const addMove = (f, r) => {
+        if (f < 'a' || f > 'h' || r < 1 || r > 8) return false;
+        const c = f + r;
+        if (!board[c]) { moves.push(c); return true; }
+        if (board[c].startsWith(enemyColor)) { moves.push(c); return false; }
+        return false;
+    };
+
+    if (piece.includes('pawn')) {
+        const dir = color === 'white' ? 1 : -1;
+        const front = file + (rank + dir);
+        if (!board[front]) moves.push(front);
+        if ((color === 'white' && rank === 2) || (color === 'black' && rank === 7)) {
+            const doubleFront = file + (rank + dir*2);
+            if (!board[front] && !board[doubleFront]) moves.push(doubleFront);
+        }
+        ['-1','1'].forEach(d => {
+            const f2 = String.fromCharCode(file.charCodeAt(0) + parseInt(d));
+            const c = f2 + (rank + dir);
+            if (board[c] && board[c].startsWith(enemyColor)) moves.push(c);
+        });
+    } else if (piece.includes('rook')) {
+        const directions = [[1,0],[-1,0],[0,1],[0,-1]];
+        directions.forEach(([dx,dy])=>{
+            let x = file.charCodeAt(0), y = rank;
+            while(true){
+                x+=dx; y+=dy;
+                if(!addMove(String.fromCharCode(x),y)) break;
+            }
+        });
+    } else if (piece.includes('bishop')) {
+        const directions = [[1,1],[1,-1],[-1,1],[-1,-1]];
+        directions.forEach(([dx,dy])=>{
+            let x=file.charCodeAt(0), y=rank;
+            while(true){
+                x+=dx; y+=dy;
+                if(!addMove(String.fromCharCode(x),y)) break;
+            }
+        });
+    } else if (piece.includes('queen')) {
+        const directions = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+        directions.forEach(([dx,dy])=>{
+            let x=file.charCodeAt(0), y=rank;
+            while(true){
+                x+=dx; y+=dy;
+                if(!addMove(String.fromCharCode(x),y)) break;
+            }
+        });
+    } else if (piece.includes('knight')) {
+        const offsets = [[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]];
+        offsets.forEach(([dx,dy])=>{
+            addMove(String.fromCharCode(file.charCodeAt(0)+dx),rank+dy);
+        });
+    } else if (piece.includes('king')) {
+        const offsets = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+        offsets.forEach(([dx,dy])=>{
+            addMove(String.fromCharCode(file.charCodeAt(0)+dx),rank+dy);
+        });
+    }
+
+    return moves;
+}
+
+// --- Board Rendering ---
+function createBoard(position){
+  const board=document.getElementById('chessBoard'); board.innerHTML='';
+  for(let r=0;r<8;r++){for(let f=0;f<8;f++){
+    const square=document.createElement('div'); square.classList.add('square'); if((r+f)%2===0)square.classList.add('light'); else square.classList.add('dark');
+    const coord=files[f]+ranks[r];
+    const coordElem=document.createElement('div'); coordElem.classList.add('coord'); coordElem.textContent=coord;
+    square.appendChild(coordElem);
+    if(position[coord]){ const pieceImg=document.createElement('img'); pieceImg.src=`chessimages/${position[coord]}`; pieceImg.classList.add('piece'); square.appendChild(pieceImg);}
+    if(selectedCoord===coord)square.classList.add('highlight'); 
+    if(legalMoves.includes(coord)) square.classList.add('legal-move');
+    square.onclick = ()=> handleClick(coord);
+    board.appendChild(square);
+  }}
+}
+
+// --- Handle Clicks ---
+function handleClick(coord){
+  const gameRef=ref(db,`games/${gameCode}`);
+  get(gameRef).then(snapshot=>{
+    const data = snapshot.val(); if(!data) return;
+    const board={...data.board};
+    const piece=board[coord];
+    if(!selectedCoord){
+      if(!piece || !piece.startsWith(playerColor)) return;
+      selectedCoord = coord;
+      legalMoves = getLegalMoves(coord, board);
+    } else {
+      if(coord===selectedCoord){selectedCoord=null; legalMoves=[];}
+      else if(legalMoves.includes(coord)){
+        board[coord]=board[selectedCoord]; delete board[selectedCoord];
+        if(board[coord].includes('pawn')&&(coord[1]==='8'||coord[1]==='1')) board[coord]=board[coord].replace('pawn','queen');
+        set(ref(db,`games/${gameCode}/board`),board);
+        turn=(turn==='white')?'black':'white';
+        set(ref(db,`games/${gameCode}/turn`),turn);
+        selectedCoord=null; legalMoves=[];
+      } else {
+        selectedCoord=null; legalMoves=[];
+      }
+    }
+    createBoard(board);
+  });
+}
+
+// --- Game Management ---
+function generateCode(){
+  gameCode=Math.random().toString(36).substring(2,8).toUpperCase();
+  isHost=true;
+  const username=JSON.parse(localStorage.getItem('user'))?.username||'White';
+  playerColor='white';
+  set(ref(db,`games/${gameCode}`),{board:initialPosition,white:username,black:'',turn:'white',chat:{}});
+  document.getElementById('currentCode').textContent=gameCode;
+  document.getElementById('whiteName').textContent=username;
+  document.getElementById('blackName').textContent='Waiting...';
+  listenBoard(); listenChat();
+}
+
+function joinGame(){
+  const joinCode=document.getElementById('joinInput').value.toUpperCase();
+  const username=JSON.parse(localStorage.getItem('user'))?.username||'Black';
+  const gameRef=ref(db,`games/${joinCode}`);
+  get(gameRef).then(snapshot=>{
+    const data=snapshot.val(); if(!data) return alert('Game not found');
+    if(!data.black) set(ref(db,`games/${joinCode}/black`),username);
+    gameCode=joinCode;
+    playerColor='black';
+    document.getElementById('whiteName').textContent=data.white;
+    document.getElementById('blackName').textContent=data.black||username;
+    listenBoard(); listenChat();
+  });
+}
+
+// --- Firebase Listeners ---
+function listenBoard(){
+  if(!gameCode) return;
+  const gameRef=ref(db,`games/${gameCode}/board`);
+  onValue(gameRef,(snapshot)=>{
+    const board=snapshot.val();
+    createBoard(board);
+  });
+}
+
+function sendChat(){
+  const input=document.getElementById('chatInputField'); const msg=input.value.trim(); if(!msg) return;
+  const username=JSON.parse(localStorage.getItem('user'))?.username||'Guest';
+  push(ref(db,`games/${gameCode}/chat`),{user:username,message:msg});
+  input.value='';
+}
+
+function listenChat(){
+  if(!gameCode) return;
+  const chatRef=ref(db,`games/${gameCode}/chat`);
+  onValue(chatRef,(snapshot)=>{
+    const msgs=snapshot.val(); const chatDiv=document.getElementById('chatMessages'); chatDiv.innerHTML='';
+    for(const key in msgs){const m=msgs[key]; const p=document.createElement('div'); p.textContent=`${m.user}: ${m.message}`; chatDiv.appendChild(p);}
+    chatDiv.scrollTop=chatDiv.scrollHeight;
+  });
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  loadUser();
+  document.getElementById('generateBtn').addEventListener('click',generateCode);
+  document.getElementById('joinBtn').addEventListener('click',joinGame);
+  document.getElementById('sendChatBtn').addEventListener('click',sendChat);
+});
+</script>
+</head>
+<body>
+<div id="topBar">
+  <div id="usernameDisplay">Loading...</div>
+</div>
+
+<div id="gameControls">
+<button id="generateBtn">Generate Game Code</button>
+<span>Code: <span id="currentCode">---</span></span>
+<input type="text" id="joinInput" placeholder="Enter Game Code"/>
+<button id="joinBtn">Join Game</button>
+</div>
+
+<div id="status"></div>
+
+<div id="boardContainer">
+  <div id="whiteName">White</div>
+  <div id="chessBoard"></div>
+  <div id="blackName">Black</div>
+</div>
+
+<div id="chatBox">
+  <div id="chatMessages"></div>
+  <div id="chatInput">
+    <input type="text" id="chatInputField" placeholder="Type a message"/>
+    <button id="sendChatBtn">Send</button>
+  </div>
+</div>
+</body>
+</html>

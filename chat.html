@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chat</title>
+<style>
+  body { font-family: monospace; background:white; color:black; margin:0; padding:0; height:100vh; display:flex; flex-direction:column; }
+  #topBar { display:flex; justify-content:space-between; padding:10px 15px; border-bottom:1px solid #ccc; background:white; z-index:1; }
+  #backBtn { background:white; border:1px solid #ccc; border-radius:4px; padding:6px 12px; cursor:pointer; }
+  #backBtn:hover { background:#f5f5f5; }
+  #usernameDisplay { border:1px solid #ccc; border-radius:4px; padding:6px 12px; }
+
+  #chatContainer { display:flex; flex:1; overflow:hidden; }
+  #friendsList { width:25%; border-right:1px solid #ccc; overflow-y:auto; padding:10px; box-sizing:border-box; }
+  #friendsList div { padding:6px; border-bottom:1px solid #eee; cursor:pointer; display:flex; flex-direction:column; }
+  #friendsList div:hover, #friendsList .active { background:#f5f5f5; }
+  .latestMsg { font-size:12px; color:#555; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  #chatArea { flex:1; display:flex; flex-direction:column; padding:10px; box-sizing:border-box; overflow:hidden; }
+
+  #messages { flex:1; overflow-y:auto; margin-bottom:10px; }
+  .message { margin-bottom:6px; }
+  .message .meta { font-size:10px; color:#888; }
+  #messageForm { display:flex; gap:5px; }
+  #messageInput { flex:1; padding:8px; border:1px solid #ccc; border-radius:4px; }
+  #sendBtn { padding:8px 12px; border:1px solid #ccc; border-radius:4px; background:white; cursor:pointer; }
+  #sendBtn:hover { background:#f5f5f5; }
+</style>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+import {
+  getFirestore, collection, query, where, getDocs,
+  addDoc, orderBy, onSnapshot, Timestamp
+} from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
+  authDomain: "henrikworldonline-a726f.firebaseapp.com",
+  projectId: "henrikworldonline-a726f",
+  storageBucket: "henrikworldonline-a726f.firebasestorage.app",
+  messagingSenderId: "1060990020059",
+  appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
+  measurementId: "G-VQNK4YN1C5"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let currentUser = null;
+let activeFriend = null;
+let activeChatId = null;
+let messagesListener = null;
+let friendsMap = {};
+
+// --- Load current user ---
+async function loadUser() {
+  const saved = JSON.parse(localStorage.getItem("user"));
+  if (!saved || !saved.username) { window.location.href="login.html"; return; }
+  currentUser = saved.username;
+  document.getElementById("usernameDisplay").textContent = currentUser;
+  await loadFriends();
+  subscribeAllMessages();
+}
+
+// --- Friends List ---
+async function loadFriends() {
+  const q = query(collection(db,"friendships"), where("status","==","accepted"));
+  const snapshot = await getDocs(q);
+  const friends = snapshot.docs
+    .map(d => d.data())
+    .filter(f => f.user1 === currentUser || f.user2 === currentUser)
+    .map(f => f.user1 === currentUser ? f.user2 : f.user1);
+
+  // General Chat first, then actual friends
+  friendsMap = {"General Chat": {latestMsg:"", timestamp:0}};
+  friends.forEach(f => friendsMap[f] = {latestMsg:"", timestamp:0});
+
+  renderFriends();
+}
+
+function subscribeAllMessages() {
+  onSnapshot(collection(db,"messages"), snapshot => {
+    snapshot.docChanges().forEach(change => {
+      const m = change.doc.data();
+      const friend = m.from===currentUser ? m.to : m.from;
+      if (!friendsMap[friend]) return; // ignore non-friends
+      const time = m.timestamp?.toDate()?.getTime() || 0;
+      if (time > friendsMap[friend].timestamp) {
+        friendsMap[friend].latestMsg = m.message;
+        friendsMap[friend].timestamp = time;
+      }
+    });
+    renderFriends();
+  });
+}
+
+function renderFriends() {
+  const friendsList = document.getElementById("friendsList");
+  const sortedFriends = Object.keys(friendsMap).sort((a,b)=>{
+    return friendsMap[b].timestamp - friendsMap[a].timestamp;
+  });
+  friendsList.innerHTML = sortedFriends.map(f=>{
+    const friend = friendsMap[f];
+    return `<div onclick="selectFriend('${f}', this)">
+      ${f} <span class="latestMsg">${friend.latestMsg}</span>
+    </div>`;
+  }).join("");
+}
+
+// --- Private / General Chat ---
+function selectFriend(friend, el) {
+  activeFriend = friend;
+  Array.from(document.getElementById("friendsList").children).forEach(d=>d.classList.remove("active"));
+  el.classList.add("active");
+
+  if (friend === "General Chat") {
+    activeChatId = "general";
+    loadGeneralChat();
+  } else {
+    activeChatId = [currentUser, activeFriend].sort().join("_");
+    loadMessages();
+  }
+}
+
+function loadMessages() {
+  if (!activeFriend) return;
+  if (messagesListener) messagesListener();
+  const messagesDiv = document.getElementById("messages");
+  messagesDiv.innerHTML = "";
+  const q = query(collection(db,"messages"), where("chatId","==",activeChatId), orderBy("timestamp"));
+  messagesListener = onSnapshot(q, snapshot => {
+    messagesDiv.innerHTML = snapshot.docs.map(d=>{
+      const m = d.data();
+      const time = m.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      const sender = m.from===currentUser?"You":m.from;
+      return `<div class="message"><strong>${sender}:</strong> ${m.message}<div class="meta">${time}</div></div>`;
+    }).join("");
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  });
+}
+
+// General chat listener
+const generalCollection = collection(db,"generalMessages");
+function loadGeneralChat() {
+  const messagesDiv = document.getElementById("messages");
+  if (messagesListener) messagesListener();
+  messagesListener = onSnapshot(
+    query(generalCollection, orderBy("timestamp")),
+    snapshot => {
+      messagesDiv.innerHTML = snapshot.docs.map(d=>{
+        const m = d.data();
+        const time = m.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        return `<div class="message"><strong>${m.from}:</strong> ${m.message}<div class="meta">${time}</div></div>`;
+      }).join("");
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+  );
+}
+
+// Send message (private or general)
+async function sendMessage() {
+  const input = document.getElementById("messageInput");
+  if (!activeFriend || !input.value.trim()) return;
+
+  if (activeFriend === "General Chat") {
+    await addDoc(generalCollection, {
+      from: currentUser,
+      message: input.value.trim(),
+      timestamp: Timestamp.now()
+    });
+  } else {
+    await addDoc(collection(db,"messages"), {
+      chatId: activeChatId,
+      from: currentUser,
+      to: activeFriend,
+      message: input.value.trim(),
+      timestamp: Timestamp.now()
+    });
+  }
+  input.value="";
+}
+
+// --- Event Listeners ---
+window.selectFriend = selectFriend;
+window.addEventListener("DOMContentLoaded",()=>{
+  document.getElementById("backBtn").addEventListener("click",()=>window.location.href="index.html");
+  document.getElementById("sendBtn").addEventListener("click", sendMessage);
+  document.getElementById("messageInput").addEventListener("keydown",(e)=>{
+    if(e.key==="Enter") sendMessage();
+  });
+  loadUser();
+});
+</script>
+</head>
+<body>
+<div id="topBar">
+  <button id="backBtn">Back</button>
+  <div id="usernameDisplay">Loading...</div>
+</div>
+
+<div id="chatContainer">
+  <div id="friendsList"></div>
+  <div id="chatArea">
+    <div id="messages"></div>
+    <div id="messageForm">
+      <input type="text" id="messageInput" placeholder="Type a message..." />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
