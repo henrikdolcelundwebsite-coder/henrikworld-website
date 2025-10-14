@@ -3,179 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home - henrikworld.com</title>
-  <link rel="icon" type="image/png" href="favicon.png" />
+  <title>Website Down</title>
   <style>
     body {
-      font-family: monospace;
-      background-color: white;
-      color: black;
       margin: 0;
-      padding: 0;
       height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
-      text-align: center;
-      opacity: 0;
-      animation: fadeInBody 0.7s ease-in-out forwards;
-    }
-
-    @keyframes fadeInBody {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    #topBar {
-      position: absolute;
-      top: 10px;
-      width: 100%;
-      display: flex;
       justify-content: center;
-      gap: 10px;
-      opacity: 0;
-      animation: fadeInUp 0.6s ease-out 0.3s forwards;
-    }
-
-    button.top-btn {
-      background-color: white;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 6px 12px;
-      font-family: monospace;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-
-    button.top-btn:hover {
-      background-color: #f5f5f5;
-    }
-
-    #usernameDisplay {
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      background-color: white;
-      border: 1px solid #ccc;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      opacity: 0;
-      transform: translateY(-10px);
-      animation: fadeInUp 0.6s ease-out 0.3s forwards;
-    }
-
-    #usernameDisplay:hover {
-      background-color: #f5f5f5;
-    }
-
-    #welcomeMessage {
-      font-size: 18px;
-      opacity: 0;
-      transform: translateY(10px);
-      animation: fadeInUp 0.6s ease-out 0.5s forwards;
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); }
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: Arial, Helvetica, sans-serif;
+      text-align: center;
+      font-size: 1.5rem;
     }
   </style>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
-      authDomain: "henrikworldonline-a726f.firebaseapp.com",
-      projectId: "henrikworldonline-a726f",
-      storageBucket: "henrikworldonline-a726f.firebasestorage.app",
-      messagingSenderId: "1060990020059",
-      appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
-      measurementId: "G-VQNK4YN1C5"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    async function checkLogin() {
-      const savedUser = JSON.parse(localStorage.getItem("user"));
-      if (!savedUser || !savedUser.username || !savedUser.password) {
-        window.location.href = "login.html";
-        return;
-      }
-
-      const username = savedUser.username;
-      const password = savedUser.password;
-
-      if (username === "Admin" && password === "Admin123") {
-        displayUser(username);
-        return;
-      }
-
-      try {
-        const q = query(
-          collection(db, "accounts"),
-          where("username", "==", username),
-          where("password", "==", password)
-        );
-        const snapshot = await getDocs(q);
-        if (snapshot.empty) {
-          localStorage.removeItem("user");
-          window.location.href = "login.html";
-          return;
-        }
-
-        displayUser(username);
-      } catch (e) {
-        console.error("Error verifying user:", e);
-        localStorage.removeItem("user");
-        window.location.href = "login.html";
-      }
-    }
-
-    function displayUser(username) {
-      document.getElementById("usernameDisplay").textContent = username;
-      document.getElementById("welcomeMessage").textContent = `Welcome, ${username}!`;
-    }
-
-    function signOut() {
-      localStorage.removeItem("user");
-      window.location.href = "login.html";
-    }
-
-    function goChat() {
-      window.location.href = "chat.html";
-    }
-
-    function goFriends() {
-      window.location.href = "friends.html";
-    }
-
-    function goGames() {
-      window.location.href = "games.html"; // Create this page later
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("usernameDisplay").addEventListener("click", signOut);
-      document.getElementById("chatBtn").addEventListener("click", goChat);
-      document.getElementById("friendsBtn").addEventListener("click", goFriends);
-      document.getElementById("gamesBtn").addEventListener("click", goGames);
-      checkLogin();
-    });
-  </script>
 </head>
 <body>
-  <div id="topBar">
-    <button id="chatBtn" class="top-btn">Chat</button>
-    <button id="friendsBtn" class="top-btn">Friends</button>
-    <button id="gamesBtn" class="top-btn">Games</button>
-  </div>
-
-  <div id="usernameDisplay">Loading...</div>
-  <div id="welcomeMessage">Loading...</div>
+  <div>Sorry, this website is down and will be up soon.</div>
 </body>
 </html>
