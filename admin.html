@@ -1,101 +1,224 @@
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-  import { 
-    getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc, setDoc 
-  } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
-    authDomain: "henrikworldonline-a726f.firebaseapp.com",
-    projectId: "henrikworldonline-a726f",
-    storageBucket: "henrikworldonline-a726f.firebasestorage.app",
-    messagingSenderId: "1060990020059",
-    appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
-    measurementId: "G-VQNK4YN1C5"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  function updateLineNumbers() {
-    const code = document.getElementById("codeArea").value;
-    const lines = code.split("\n").length;
-    let numbers = "";
-    for (let i = 1; i <= lines; i++) numbers += i + "\n";
-    document.getElementById("lineNumbers").textContent = numbers;
-  }
-
-  async function processAdminCommand() {
-    const code = document.getElementById("codeArea").value.trim();
-    const lines = code.split("\n");
-    if (lines.length === 0) { alert("Write a command!"); return; }
-
-    const firstLine = lines[0].trim();
-
-    // === ACCOUNT CREATION ===
-    if (/admin\/account\/create\/username=/i.test(firstLine) && lines.length >= 2) {
-      const username = firstLine.match(/username=(.*)/i)[1].trim();
-      const password = lines[1].match(/password=(.*)/i)[1].trim();
-      if (!username || !password) { alert("Username or password cannot be empty."); return; }
-
-      try {
-        await addDoc(collection(db, "accounts"), { username, password, timestamp: new Date() });
-        alert(`Account created!\nUsername: ${username}\nPassword: ${password}`);
-        document.getElementById("codeArea").value = "";
-        updateLineNumbers();
-      } catch(e) { console.error(e); alert("Failed to create account"); }
-      return;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - henrikworld.com</title>
+  <style>
+    body {
+      font-family: monospace;
+      background-color: white;
+      color: black;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-sizing: border-box;
     }
 
-    // === ACCOUNT DELETION ===
-    if (/admin\/account\/delete\/username=/i.test(firstLine)) {
-      const username = firstLine.match(/username=(.*)/i)[1].trim();
-      if (!username) { alert("Username cannot be empty."); return; }
-
-      try {
-        const q = query(collection(db, "accounts"), where("username", "==", username));
-        const snapshot = await getDocs(q);
-        if (snapshot.empty) {
-          alert(`No account found with username: ${username}`);
-          return;
-        }
-        snapshot.forEach(async s => await deleteDoc(doc(db, "accounts", s.id)));
-        alert(`Deleted account(s) with username: ${username}`);
-        document.getElementById("codeArea").value = "";
-        updateLineNumbers();
-      } catch(e) { console.error(e); alert("Failed to delete account"); }
-      return;
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
     }
 
-    // === SITE SHUTDOWN ===
-    if (/admin\/site\/shutdown\//i.test(firstLine)) {
-      const value = firstLine.match(/shutdown\/(true|false)/i);
-      if (!value) { alert("Use admin/site/shutdown/true or /false"); return; }
+    .editor-container {
+      display: flex;
+      width: 100%;
+      max-width: 800px;
+      height: 150px;
+      border: 1px solid #ccc;
+      overflow: hidden;
+    }
 
-      const shutdownState = value[1].toLowerCase() === "true";
-      try {
-        // Save flag in Firestore (single document)
-        await setDoc(doc(db, "config", "siteStatus"), {
-          shutdown: shutdownState,
-          updated: new Date()
-        });
-        alert(`Site shutdown status set to: ${shutdownState}`);
-        document.getElementById("codeArea").value = "";
-        updateLineNumbers();
-      } catch (e) {
-        console.error(e);
-        alert("Failed to update site status.");
+    .line-numbers {
+      background-color: #f0f0f0;
+      padding: 10px;
+      text-align: right;
+      user-select: none;
+      color: #666;
+      flex-shrink: 0;
+    }
+
+    #codeArea {
+      width: 100%;
+      border: none;
+      padding: 10px;
+      resize: none;
+      outline: none;
+      font-family: monospace;
+      font-size: 14px;
+      line-height: 1.4em;
+      white-space: pre;
+      overflow: auto;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      background-color: white;
+      color: black;
+    }
+
+    button:hover {
+      background-color: #f5f5f5;
+    }
+
+    @media (max-width: 600px) {
+      .editor-container {
+        flex-direction: column;
       }
-      return;
+      .line-numbers {
+        text-align: left;
+        width: 100%;
+      }
+    }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+    import { 
+      getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc, setDoc 
+    } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+
+    // 🔥 Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
+      authDomain: "henrikworldonline-a726f.firebaseapp.com",
+      projectId: "henrikworldonline-a726f",
+      storageBucket: "henrikworldonline-a726f.firebasestorage.app",
+      messagingSenderId: "1060990020059",
+      appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
+      measurementId: "G-VQNK4YN1C5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 🧾 Line numbers
+    function updateLineNumbers() {
+      const code = document.getElementById("codeArea").value;
+      const lines = code.split("\n").length;
+      let numbers = "";
+      for (let i = 1; i <= lines; i++) numbers += i + "\n";
+      document.getElementById("lineNumbers").textContent = numbers;
     }
 
-    alert("Unknown command. Use create, delete, or site/shutdown.");
-  }
+    // ⚙️ Command processor
+    async function processAdminCommand() {
+      const code = document.getElementById("codeArea").value.trim();
+      const lines = code.split("\n");
+      if (lines.length === 0 || !lines[0].trim()) { 
+        alert("Write a command!"); 
+        return; 
+      }
 
-  window.addEventListener("DOMContentLoaded", () => {
-    const codeArea = document.getElementById("codeArea");
-    codeArea.addEventListener("input", updateLineNumbers);
-    document.getElementById("saveBtn").addEventListener("click", processAdminCommand);
-    updateLineNumbers();
-  });
-</script>
+      const firstLine = lines[0].trim();
+
+      // === CREATE ACCOUNT ===
+      if (/admin\/account\/create\/username=/i.test(firstLine) && lines.length >= 2) {
+        const username = firstLine.match(/username=(.*)/i)[1].trim();
+        const password = lines[1].match(/password=(.*)/i)[1].trim();
+        if (!username || !password) { 
+          alert("Username or password cannot be empty."); 
+          return; 
+        }
+
+        try {
+          await addDoc(collection(db, "accounts"), { 
+            username, 
+            password, 
+            timestamp: new Date() 
+          });
+          alert(`✅ Account created!\nUsername: ${username}\nPassword: ${password}`);
+          document.getElementById("codeArea").value = "";
+          updateLineNumbers();
+        } catch(e) { 
+          console.error(e); 
+          alert("❌ Failed to create account."); 
+        }
+        return;
+      }
+
+      // === DELETE ACCOUNT ===
+      if (/admin\/account\/delete\/username=/i.test(firstLine)) {
+        const username = firstLine.match(/username=(.*)/i)[1].trim();
+        if (!username) { alert("Username cannot be empty."); return; }
+
+        try {
+          const q = query(collection(db, "accounts"), where("username", "==", username));
+          const snapshot = await getDocs(q);
+          if (snapshot.empty) {
+            alert(`⚠️ No account found with username: ${username}`);
+            return;
+          }
+          for (const s of snapshot.docs) {
+            await deleteDoc(doc(db, "accounts", s.id));
+          }
+          alert(`🗑️ Deleted account(s) with username: ${username}`);
+          document.getElementById("codeArea").value = "";
+          updateLineNumbers();
+        } catch(e) { 
+          console.error(e); 
+          alert("❌ Failed to delete account."); 
+        }
+        return;
+      }
+
+      // === SITE SHUTDOWN CONTROL ===
+      if (/admin\/site\/shutdown\//i.test(firstLine)) {
+        const match = firstLine.match(/shutdown\/(true|false)/i);
+        if (!match) { 
+          alert("Use admin/site/shutdown/true or admin/site/shutdown/false"); 
+          return; 
+        }
+
+        const shutdownState = match[1].toLowerCase() === "true";
+        try {
+          await setDoc(doc(db, "config", "siteStatus"), {
+            shutdown: shutdownState,
+            updated: new Date()
+          });
+          alert(`🚨 Site shutdown status set to: ${shutdownState}`);
+          document.getElementById("codeArea").value = "";
+          updateLineNumbers();
+        } catch (e) {
+          console.error(e);
+          alert("❌ Failed to update site shutdown status.");
+        }
+        return;
+      }
+
+      alert("Unknown command. Use create, delete, or site/shutdown.");
+    }
+
+    // 🧠 Page setup
+    window.addEventListener("DOMContentLoaded", () => {
+      const codeArea = document.getElementById("codeArea");
+      codeArea.addEventListener("input", updateLineNumbers);
+      document.getElementById("saveBtn").addEventListener("click", processAdminCommand);
+      updateLineNumbers();
+    });
+  </script>
+</head>
+<body>
+  <h1>Admin</h1>
+
+  <div class="editor-container">
+    <pre class="line-numbers" id="lineNumbers">1</pre>
+    <textarea id="codeArea" placeholder="Examples:
+Line 1: admin/account/create/username=USERNAME
+Line 2: password=PASSWORD
+
+Line 1: admin/account/delete/username=USERNAME
+
+Line 1: admin/site/shutdown/true
+Line 1: admin/site/shutdown/false"></textarea>
+  </div>
+
+  <button id="saveBtn">Execute</button>
+</body>
+</html>
