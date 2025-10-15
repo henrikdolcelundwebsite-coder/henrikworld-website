@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/png" href="favicon.png" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Games - henrikworld.com</title>
 <style>
@@ -77,6 +78,10 @@ function goToRhombusEater() {
   window.location.href = "game2/game2code.html";
 }
 
+function goToBlackJack() {
+  window.location.href = "blackjack/blackjack.html";
+}
+
 function loadUser() {
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const usernameDisplay = document.getElementById("usernameDisplay");
@@ -103,6 +108,7 @@ window.addEventListener("DOMContentLoaded", loadUser);
 <div id="content">
   <button class="game-btn" onclick="goToChess()">Chess</button>
   <button class="game-btn" onclick="goToRhombusEater()">Rhombus Eater</button>
+  <button class="game-btn" onclick="goToBlackJack()">Black Jack</button>
 </div>
 </body>
 </html>

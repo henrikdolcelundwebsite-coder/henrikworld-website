@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../favicon.png" type="image/png">
+<title>Blackjack - henrikworld.com</title>
+<link rel="icon" href="favicon.png" type="image/png">
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: white; /* Main page background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+#gameContainer {
+  text-align: center;
+  border: 2px solid #333;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  max-width: 500px;
+  width: 100%;
+  background-color: rgb(28, 87, 14); /* Green table background */
+  color: white; /* Makes text readable on green */
+}
+
+h1 {
+  margin-bottom: 10px;
+}
+
+.hand-container {
+  margin: 15px 0;
+}
+
+.hand {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.hand img {
+  width: 60px;
+  height: 80px;
+  border-radius: 5px;
+}
+
+.hand-value {
+  margin-top: 5px;
+  font-weight: bold;
+}
+
+button {
+  margin: 5px;
+  padding: 8px 15px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 5px;
+  border: 1px solid #333;
+  background-color: white;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background-color: #f0f0f0;
+}
+
+#message {
+  margin-top: 15px;
+  font-weight: bold;
+  color: yellow; /* Optional: makes messages visible on green */
+}
+</style>
+</head>
+<body>
+<div id="gameContainer">
+  <h1>Blackjack</h1>
+
+  <div class="hand-container">
+    <strong>Dealer:</strong>
+    <div class="hand" id="dealerHand"></div>
+    <div class="hand-value" id="dealerValue">Value: ?</div>
+  </div>
+
+  <div class="hand-container">
+    <strong>You:</strong>
+    <div class="hand" id="playerHand"></div>
+    <div class="hand-value" id="playerValue">Value: 0</div>
+  </div>
+
+  <div>
+    <button id="hitBtn">Hit</button>
+    <button id="standBtn">Stand</button>
+    <button id="restartBtn" style="display:none;">Restart</button>
+  </div>
+
+  <div id="message"></div>
+</div>
+
+<script>
+const suits = ["clubs","diamonds","hearts","spades"];
+const values = ["2","3","4","5","6","7","8","9","10","jack","queen","king","ace"];
+let deck=[], playerHand=[], dealerHand=[];
+
+// Create deck
+function createDeck(){
+  deck=[];
+  for(const s of suits){
+    for(const v of values){
+      deck.push({name:v+'_of_'+s,value:getCardValue(v)});
+    }
+  }
+  shuffle(deck);
+}
+
+// Shuffle deck
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+// Card value
+function getCardValue(v){
+  if(["jack","queen","king"].includes(v)) return 10;
+  if(v==="ace") return 11;
+  return parseInt(v);
+}
+
+// Deal card
+function dealCard(hand){ const c=deck.pop(); hand.push(c); return c; }
+
+// Display hand
+function displayHand(hand,containerId,hideSecond=false){
+  const container=document.getElementById(containerId);
+  container.innerHTML='';
+  hand.forEach((card,i)=>{
+    const img=document.createElement('img');
+    img.src='images/'+card.name+'.png';
+    if(hideSecond && i===1) img.style.opacity=0; 
+    container.appendChild(img);
+  });
+}
+
+// Hand value with Ace logic
+function handValue(hand){
+  let sum=hand.reduce((a,c)=>a+c.value,0);
+  let aces=hand.filter(c=>c.value===11).length;
+  while(sum>21 && aces>0){ sum-=10; aces--; }
+  return sum;
+}
+
+// Update displayed values
+function updateValues(revealDealer=false){
+  document.getElementById('playerValue').textContent="Value: "+handValue(playerHand);
+  if(revealDealer) document.getElementById('dealerValue').textContent="Value: "+handValue(dealerHand);
+  else document.getElementById('dealerValue').textContent="Value: "+dealerHand[0].value;
+}
+
+// Check player
+function checkPlayerStatus(){
+  const pv=handValue(playerHand);
+  if(pv>21){ endGame("You busted! Dealer wins."); revealDealer(); }
+  if(pv===21) stand();
+}
+
+// End game
+function endGame(msg){
+  document.getElementById('message').textContent=msg;
+  document.getElementById('hitBtn').disabled=true;
+  document.getElementById('standBtn').disabled=true;
+  document.getElementById('restartBtn').style.display='inline-block';
+}
+
+// Player stands
+function stand(){
+  document.getElementById('hitBtn').disabled=true;
+  document.getElementById('standBtn').disabled=true;
+  dealerTurn();
+}
+
+// Dealer turn
+function dealerTurn(){
+  revealDealer();
+  let interval=setInterval(()=>{
+    if(handValue(dealerHand)<17){
+      dealCard(dealerHand);
+      displayHand(dealerHand,'dealerHand');
+      updateValues(true);
+    } else {
+      clearInterval(interval);
+      const playerVal=handValue(playerHand);
+      const dealerVal=handValue(dealerHand);
+      if(dealerVal>21) endGame("Dealer busted! You win!");
+      else if(dealerVal>playerVal) endGame("Dealer wins!");
+      else if(dealerVal<playerVal) endGame("You win!");
+      else endGame("It's a tie!");
+    }
+  },500);
+}
+
+// Reveal dealer
+function revealDealer(){ displayHand(dealerHand,'dealerHand',false); updateValues(true); }
+
+// Start game
+function startGame(){
+  deck=[]; playerHand=[]; dealerHand=[];
+  document.getElementById('message').textContent='';
+  document.getElementById('hitBtn').disabled=false;
+  document.getElementById('standBtn').disabled=false;
+  document.getElementById('restartBtn').style.display='none';
+  createDeck();
+  dealCard(playerHand); dealCard(playerHand);
+  dealCard(dealerHand); dealCard(dealerHand);
+  displayHand(playerHand,'playerHand');
+  displayHand(dealerHand,'dealerHand',true);
+  updateValues();
+}
+
+// Button events
+document.getElementById('hitBtn').addEventListener('click',()=>{
+  dealCard(playerHand);
+  displayHand(playerHand,'playerHand');
+  updateValues();
+  checkPlayerStatus();
+});
+document.getElementById('standBtn').addEventListener('click',stand);
+document.getElementById('restartBtn').addEventListener('click',startGame);
+
+startGame();
+</script>
+</body>
+</html>
