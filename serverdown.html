@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Server Down - henrikworld.com</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <style>
+    body {
+      font-family: monospace;
+      background-color: white;
+      color: black;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      opacity: 0;
+      animation: fadeInBody 0.7s ease-in-out forwards;
+    }
+
+    @keyframes fadeInBody {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-bottom: 8px;
+      opacity: 0;
+      animation: fadeInUp 0.6s ease-out 0.3s forwards;
+    }
+
+    p {
+      font-size: 16px;
+      opacity: 0;
+      animation: fadeInUp 0.6s ease-out 0.5s forwards;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Sign-in box at the bottom */
+    #signin {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      animation: fadeInUp 0.6s ease-out 0.8s forwards;
+    }
+
+    input[type="password"] {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-family: monospace;
+      font-size: 14px;
+      outline: none;
+      width: 180px;
+      transition: border-color 0.2s ease;
+    }
+
+    input[type="password"]:focus {
+      border-color: #888;
+    }
+
+    button {
+      background-color: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-family: monospace;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #f5f5f5;
+    }
+
+    #error {
+      position: absolute;
+      bottom: 60px;
+      font-size: 13px;
+      color: red;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sorry, the servers are down.</h1>
+  <p>They will be back up as soon as possible.</p>
+
+  <div id="error">Incorrect code.</div>
+
+  <div id="signin">
+    <input type="password" id="accessCode" placeholder="Enter access code">
+    <button id="submitBtn">Sign In</button>
+  </div>
+
+  <script>
+    const correctCode = "Hen20111*";
+
+    document.getElementById("submitBtn").addEventListener("click", () => {
+      const entered = document.getElementById("accessCode").value.trim();
+      const error = document.getElementById("error");
+
+      if (entered === correctCode) {
+        window.location.href = "admin.html";
+      } else {
+        error.style.opacity = "1";
+        setTimeout(() => error.style.opacity = "0", 2000);
+      }
+    });
+
+    // Allow pressing Enter to submit
+    document.getElementById("accessCode").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        document.getElementById("submitBtn").click();
+      }
+    });
+  </script>
+</body>
+</html>
