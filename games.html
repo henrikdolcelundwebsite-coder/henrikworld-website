@@ -82,6 +82,10 @@ function goToBlackJack() {
   window.location.href = "blackjack/blackjack.html";
 }
 
+function goToPuzzle() {
+  window.location.href = "puzzle/puzzle.html";
+}
+
 function loadUser() {
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const usernameDisplay = document.getElementById("usernameDisplay");
@@ -109,6 +113,7 @@ window.addEventListener("DOMContentLoaded", loadUser);
   <button class="game-btn" onclick="goToChess()">Chess</button>
   <button class="game-btn" onclick="goToRhombusEater()">Rhombus Eater</button>
   <button class="game-btn" onclick="goToBlackJack()">Black Jack</button>
+  <button class="game-btn" onclick="goToPuzzle()">Puzzle</button>
 </div>
 </body>
 </html>
