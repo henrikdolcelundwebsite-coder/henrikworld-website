@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Five Nights at Ethan's</title>
+<style>
+html,body{height:100%;margin:0;background:#000;font-family:Inter,system-ui,Segoe UI,Roboto;color:#ddd;overflow:hidden}
+.game-area{position:relative;width:90vw;height:90vh;margin:auto;top:5vh;display:flex;align-items:center;justify-content:center;background:#000;border-radius:12px;box-shadow:0 0 30px rgba(0,0,0,0.7)}
+canvas#gameCanvas{width:100%;height:100%;border-radius:12px;image-rendering:pixelated}
+.overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;font-family:monospace;font-size:18px;color:#b4e6b4;text-shadow:0 0 4px #0f0;height:40px}
+.bottombar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;font-family:monospace;font-size:18px;color:#b4e6b4;text-shadow:0 0 4px #0f0;}
+.close-btn{position:absolute;top:10px;right:14px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.1);color:#ddd;border-radius:4px;padding:2px 8px;cursor:pointer;pointer-events:auto}
+.nav-btns{display:flex;gap:8px;pointer-events:auto}
+.nav-btns button{background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.1);color:#ddd;border-radius:4px;padding:4px 10px;cursor:pointer}
+#useCamsBtn{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.1);color:#ddd;border-radius:6px;padding:10px 20px;font-size:16px;cursor:pointer;display:block;pointer-events:auto}
+#fadeOverlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#000;opacity:1;pointer-events:auto;display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;font-family:monospace;font-size:60px;transition:opacity 2s ease;z-index:5;}
+#fadeText{animation:flicker 1s infinite alternate;}
+@keyframes flicker{0%{opacity:1;}100%{opacity:0.6;}}
+#startScreen{position:absolute;top:0;left:0;width:100%;height:100%;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;font-family:monospace;z-index:10;}
+#startScreen div{font-size:60px;margin-bottom:40px;}
+#startScreen button{font-size:24px;padding:10px 20px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="game-area">
+  <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+  <div class="overlay" id="camOverlay" style="display:none;">
+    <div class="topbar">
+      <div id="camLabel">CAM A</div>
+    </div>
+    <div class="bottombar">
+      <div id="clock">12:00 AM</div>
+      <div class="nav-btns">
+        <button id="prevBtn">◀ Prev</button>
+        <button id="nextBtn">Next ▶</button>
+      </div>
+    </div>
+    <div class="close-btn" id="closeBtn">✖</div>
+  </div>
+
+  <button id="useCamsBtn">USE CAMS</button>
+  <div id="fadeOverlay"><div id="fadeText">Night 1</div></div>
+
+  <div id="startScreen">
+    <div id="startText">Five Nights at Ethan's</div>
+    <button id="startBtn">Start Game</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const rooms = ['A','B','C','D','E'];
+let currentRoomIndex = 0;
+let camMode = false;
+let currentRoomImage = new Image();
+currentRoomImage.src = 'assets/office.png';
+
+let running = false;
+let lastTick = 0;
+let frameInterval = 1000 / 12;
+let gameMinutes = 0;
+let totalMinutes = 360;
+const params = {pix:3, noise:0.5, scanlines:true, vignette:true};
+
+const camLabel = document.getElementById('camLabel');
+const officeImage = new Image();
+officeImage.src = 'assets/office.png';
+
+const officeDuration = 500;
+const jumpscareDuration = 1000;
+let currentNight = 1;
+
+const people = [
+  { name: 'billy', room: 0, lastSeenRoom: 0, regular: new Image(), jumpscare: new Image(), position: {}, justMoved: false, bigInRoomUntilSwitch: false, visible: true },
+  { name: 'ethan', room: 0, lastSeenRoom: 0, regular: new Image(), jumpscare: new Image(), position: {}, justMoved: false, bigInRoomUntilSwitch: false, visible: true },
+  { name: 'george', room: 1, lastSeenRoom: 1, regular: new Image(), jumpscare: new Image(), position: {}, justMoved: false, bigInRoomUntilSwitch: false, visible: true }
+];
+
+people.forEach(p => {
+  p.regular.src = `assets/people/${p.name}/regular.png`;
+  p.jumpscare.src = `assets/people/${p.name}/jumpscare.png`;
+  p.position[p.room] = randomPositionNonOverlap(p.room);
+});
+
+function randomPositionNonOverlap(roomIndex){
+  let tries = 0;
+  let pos;
+  do{
+    pos = {x: Math.random()*0.8+0.1, y: Math.random()*0.8+0.1};
+    tries++;
+  } while(people.some(p => p.room===roomIndex && p.position[roomIndex] && Math.abs(p.position[roomIndex].x - pos.x)<0.15 && Math.abs(p.position[roomIndex].y - pos.y)<0.15) && tries<50);
+  return pos;
+}
+
+function movePeopleFromRoom(roomIndex){
+  people.forEach(p=>{
+    if(p.room === roomIndex){
+      if(Math.floor(Math.random() * 5) === 0){
+        let newRoom;
+        do { newRoom = Math.floor(Math.random() * rooms.length); } while(newRoom === roomIndex);
+        p.room = newRoom;
+        p.justMoved = true;
+        p.bigInRoomUntilSwitch = false;
+        p.visible = false;
+        if(!p.position[newRoom]) p.position[newRoom] = randomPositionNonOverlap(newRoom);
+      }
+    }
+  });
+}
+
+function loadRoom(index){
+  currentRoomIndex = index;
+  currentRoomImage.src = `assets/rooms/${rooms[currentRoomIndex]}/room.png`;
+  camLabel.textContent = `CAM ${rooms[currentRoomIndex]} - Night ${currentNight}`;
+
+  people.forEach(p=>{
+    if(p.room === currentRoomIndex){
+      if(p.justMoved){
+        p.justMoved = false;
+        p.visible = false;
+        setTimeout(()=>{ p.bigInRoomUntilSwitch = true; p.visible = true; }, 500);
+      } else {
+        p.visible = true;
+      }
+      p.lastSeenRoom = currentRoomIndex;
+    } else {
+      p.bigInRoomUntilSwitch = false;
+    }
+  });
+}
+
+function nextRoom(){ 
+  movePeopleFromRoom(currentRoomIndex);
+  loadRoom((currentRoomIndex+1)%rooms.length); 
+}
+function prevRoom(){ 
+  movePeopleFromRoom(currentRoomIndex);
+  loadRoom((currentRoomIndex-1+rooms.length)%rooms.length); 
+}
+
+function makeNoise(w,h,intensity){
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const g=c.getContext('2d'); 
+  const id=g.createImageData(w,h); const d=id.data;
+  for(let i=0;i<d.length;i+=4){const v=(Math.random()*255)|0; d[i]=d[i+1]=d[i+2]=v; d[i+3]=(intensity*255)|0;}
+  g.putImageData(id,0,0); return c;
+}
+
+function renderPeople() {
+  people.forEach(p=>{
+    if(p.room === currentRoomIndex && p.visible){
+      const pos = p.position[currentRoomIndex];
+      if(p.bigInRoomUntilSwitch){
+        ctx.drawImage(p.regular, 0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.drawImage(p.regular, pos.x*canvas.width - 100, pos.y*canvas.height - 100, 200, 200);
+      }
+    }
+  });
+}
+
+function renderFrame(){
+  ctx.imageSmoothingEnabled=false;
+  if(camMode){ 
+    const small=document.createElement('canvas'); small.width=canvas.width/params.pix; small.height=canvas.height/params.pix;
+    const sctx=small.getContext('2d'); sctx.drawImage(currentRoomImage,0,0,small.width,small.height);
+    ctx.drawImage(small,0,0,canvas.width,canvas.height);
+    renderPeople();
+
+    if(params.vignette){
+      const g=ctx.createRadialGradient(canvas.width/2, canvas.height/2, canvas.width*0.2, canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height));
+      g.addColorStop(0,'rgba(0,0,0,0)');
+      g.addColorStop(1,'rgba(0,0,0,0.45)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+
+    if(params.scanlines){
+      ctx.save(); ctx.globalAlpha = 0.12;
+      for(let y=0;y<canvas.height;y+=2){
+        ctx.fillStyle=(y%4===0?'rgba(0,0,0,0.06)':'rgba(255,255,255,0.01)');
+        ctx.fillRect(0,y,canvas.width,1);
+      }
+      ctx.restore();
+    }
+
+    if(params.noise>0){
+      const n = makeNoise(canvas.width, canvas.height, params.noise);
+      ctx.globalAlpha = params.noise*0.9; 
+      ctx.drawImage(n,0,0); 
+      ctx.globalAlpha = 1;
+    }
+
+  } else {
+    ctx.drawImage(currentRoomImage,0,0,canvas.width,canvas.height);
+  }
+}
+
+function getCurrentTimeString() {
+    const hh = Math.floor(gameMinutes / 60);
+    const mm = Math.floor(gameMinutes % 60);
+    const label = hh===0 ? '12' : hh;
+    const ampm = hh < 6 ? 'AM' : 'PM';
+    return label + ':' + String(mm).padStart(2,'0') + ' ' + ampm;
+}
+
+function loop(ts){
+  if(!running) return;
+  if(!lastTick) lastTick=ts;
+  const dt=ts-lastTick;
+  if(dt<frameInterval){requestAnimationFrame(loop);return;}
+  lastTick=ts;
+
+  gameMinutes += (dt/1000)/0.5;
+
+  if(gameMinutes >= totalMinutes){
+    gameMinutes = 0;
+    if(currentNight < 5){
+      currentNight++;
+    } else {
+      currentNight = 1;
+    }
+    const fade = document.getElementById('fadeOverlay');
+    const fadeText = document.getElementById('fadeText');
+    fadeText.textContent = `Night ${currentNight}`;
+    fade.style.display = 'flex';
+    fade.style.opacity = 1;
+    setTimeout(()=>{
+      fade.style.opacity = 0;
+      setTimeout(()=>{ fade.style.display = 'none'; }, 2000);
+    }, 1500);
+  }
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  renderFrame();
+  if(camMode) updateClockDisplay();
+  requestAnimationFrame(loop);
+}
+
+function updateClockDisplay(){
+  const timeStr = getCurrentTimeString();
+  document.getElementById('clock').textContent = timeStr;
+  return timeStr;
+}
+
+// Event handlers
+document.getElementById('closeBtn').onclick = () => {
+    const missed = people.filter(p => !p.bigInRoomUntilSwitch && p.lastSeenRoom !== p.room);
+    camMode = false;
+    document.getElementById('camOverlay').style.display='none';
+    document.getElementById('useCamsBtn').style.display='block';
+    running = false;
+
+    currentRoomImage.src = 'assets/office.png';
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(officeImage, 0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#b4e6b4';
+    ctx.font = '36px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(getCurrentTimeString(), canvas.width - 20, 50);
+
+    if(missed.length > 0){
+        setTimeout(()=>{
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            missed.forEach(p=>{
+                ctx.drawImage(p.jumpscare, 0, 0, canvas.width, canvas.height);
+            });
+            setTimeout(()=>{
+                currentNight = 1;
+                location.reload();
+            }, jumpscareDuration);
+        }, officeDuration);
+    } else {
+        running = true;
+    }
+};
+
+document.getElementById('useCamsBtn').onclick = () => {
+    camMode=true;
+    document.getElementById('camOverlay').style.display='flex';
+    document.getElementById('useCamsBtn').style.display='none';
+    loadRoom(currentRoomIndex);
+};
+document.getElementById('nextBtn').onclick=nextRoom;
+document.getElementById('prevBtn').onclick=prevRoom;
+
+// Start screen with scary flicker
+document.getElementById('startBtn').onclick = () => {
+  const startScreen = document.getElementById('startScreen');
+  const startText = document.getElementById('startText');
+
+  // Flicker effect
+  let flickerCount = 0;
+  const flickerInterval = setInterval(()=>{
+    startText.style.opacity = Math.random() * 0.5 + 0.5;
+    flickerCount++;
+    if(flickerCount > 10){
+      clearInterval(flickerInterval);
+      startScreen.style.display = 'none';
+      const fade = document.getElementById('fadeOverlay');
+      const fadeText = document.getElementById('fadeText');
+      fadeText.textContent = `Night ${currentNight}`;
+      fade.style.display = 'flex';
+      fade.style.opacity = 1;
+      setTimeout(()=>{
+        fade.style.opacity = 0;
+        setTimeout(()=>{ fade.style.display = 'none'; }, 2000);
+      }, 1500);
+      running = true;
+      requestAnimationFrame(loop);
+    }
+  }, 80);
+};
+</script>
+</body>
+</html>

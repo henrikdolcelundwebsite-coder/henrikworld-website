@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CamTest — Low‑Quality Security Camera Effect</title>
+  <style>
+    :root{--bg:#0b0b0b;--ui:#111;--accent:#6ebf6e}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#050505);color:#ddd;font-family:Inter,Segoe UI,Roboto,system-ui}
+    .wrap{display:grid;grid-template-columns:1fr 320px;gap:18px;padding:18px;align-items:start}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);padding:12px;border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,0.6)}
+    canvas#out{width:100%;height:auto;display:block;border-radius:8px;image-rendering:pixelated}
+    video{display:none}
+    .controls{display:flex;flex-direction:column;gap:8px}
+    label{display:flex;align-items:center;gap:8px}
+    input[type=range]{width:100%}
+    .small{font-size:12px;color:#aaa}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+    .btn{background:var(--ui);border:1px solid rgba(255,255,255,0.04);padding:8px 10px;border-radius:8px;color:#ddd;cursor:pointer}
+    .btn.mid{padding:4px 6px}
+    .footer{font-size:12px;color:#999;margin-top:8px}
+    .notice{font-size:13px;color:#ffb86b}
+    .seed{font-size:11px;color:#888}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="topbar">
+        <div>
+          <strong>CamTest — Security Camera Effect</strong>
+          <div class="small">Low-res, scanlines, noise, timestamp & flicker</div>
+        </div>
+        <div>
+          <button class="btn" id="snap">📸 Snapshot</button>
+          <button class="btn" id="toggleCam">Start Camera</button>
+        </div>
+      </div>
+
+      <video id="src" autoplay playsinline></video>
+      <canvas id="out" width="640" height="480"></canvas>
+
+      <div class="footer">Tip: run on localhost or a secure origin to allow webcam access. If camera is blocked you can upload a file in the controls.</div>
+    </div>
+
+    <aside class="card">
+      <div class="controls">
+        <label><input type="file" id="upload" accept="image/*,video/*"> Upload fallback</label>
+        <label><input type="checkbox" id="grain" checked> Add noise / grain</label>
+        <label><input type="checkbox" id="scanlines" checked> Scanlines</label>
+        <label><input type="checkbox" id="vignette" checked> Vignette</label>
+        <label><input type="checkbox" id="greenTint"> Night-vision green tint</label>
+        <label><input type="checkbox" id="pixelate" checked> Pixelate (low res)</label>
+        <label>Pixelation level <input type="range" id="pix" min="2" max="16" value="8"></label>
+        <label>FPS (render) <input type="range" id="fps" min="1" max="30" value="12"></label>
+        <label>Noise intensity <input type="range" id="noise" min="0" max="1" step="0.01" value="0.25"></label>
+        <label><input type="checkbox" id="flicker" checked> Random flicker / glitch</label>
+        <label><input type="checkbox" id="timestamp" checked> Show timestamp</label>
+        <div class="notice">Made to evoke old security cam vibes — no copyrighted art included.</div>
+        <div class="seed">Session id: <span id="sid"></span></div>
+      </div>
+    </aside>
+  </div>
+
+<script>
+// CamTest — single-file: capture -> canvas -> effects
+const video = document.getElementById('src');
+const out = document.getElementById('out');
+const ctx = out.getContext('2d');
+let stream=null;
+let width=320, height=240; // base low-res
+let running=false;
+let lastTick=0;
+let frameInterval=1000/12;
+
+const params = {
+  grain: true,
+  scanlines: true,
+  vignette: true,
+  green: false,
+  pixelate: true,
+  pixLevel: 8,
+  fps: 12,
+  noise: 0.25,
+  flicker: true,
+  timestamp: true
+};
+
+// UI bindings
+function $(id){return document.getElementById(id)}
+$('grain').onchange = e => params.grain = e.target.checked;
+$('scanlines').onchange = e => params.scanlines = e.target.checked;
+$('vignette').onchange = e => params.vignette = e.target.checked;
+$('greenTint').onchange = e => params.green = e.target.checked;
+$('pixelate').onchange = e => params.pixelate = e.target.checked;
+$('pix').oninput = e => params.pixLevel = Number(e.target.value);
+$('fps').oninput = e => {params.fps = Number(e.target.value); frameInterval = 1000/params.fps}
+$('noise').oninput = e => params.noise = Number(e.target.value);
+$('flicker').onchange = e => params.flicker = e.target.checked;
+$('timestamp').onchange = e => params.timestamp = e.target.checked;
+
+$('upload').onchange = function(e){
+  const f = e.target.files[0];
+  if(!f) return;
+  const url = URL.createObjectURL(f);
+  if(f.type.startsWith('video')){
+    video.src = url; video.play();
+  } else {
+    // load image into an offscreen video-like element
+    const img = new Image(); img.onload = ()=>{
+      // draw static image to video-equivalent by painting to canvas each frame
+      // store as offscreen canvas
+      const off = document.createElement('canvas'); off.width=img.width; off.height=img.height; const octx=off.getContext('2d'); octx.drawImage(img,0,0);
+      video._imgCanvas = off;
+    };
+    img.src = url;
+  }
+}
+
+$('toggleCam').onclick = async function(){
+  if(stream){
+    // stop
+    stream.getTracks().forEach(t=>t.stop()); stream=null; video.srcObject=null; this.textContent='Start Camera';
+    running=false; return;
+  }
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
+    video.srcObject = stream; await video.play(); $('toggleCam').textContent='Stop Camera';
+    if(!running){ running=true; requestAnimationFrame(loop); }
+  }catch(err){
+    alert('Camera access failed. You can upload an image or video file in the controls.');
+    console.error(err);
+  }
+}
+
+$('snap').onclick = function(){
+  const data = out.toDataURL('image/png');
+  const a = document.createElement('a'); a.href=data; a.download='camtest-snap.png'; a.click();
+}
+
+// session id
+$('sid').textContent = Math.random().toString(36).slice(2,9);
+
+// utility: draw noise
+function drawNoise(w,h,intensity){
+  const img = ctx.createImageData(w,h);
+  const d = img.data;
+  const amount = Math.floor(intensity * 255);
+  for(let i=0;i<d.length;i+=4){
+    const v = (Math.random()*255)|0;
+    d[i]=d[i+1]=d[i+2]=v; d[i+3]= (Math.random()<0.02?255: (Math.random()*20 + 120));
+  }
+  const tmp = document.createElement('canvas'); tmp.width=w; tmp.height=h; tmp.getContext('2d').putImageData(img,0,0);
+  return tmp;
+}
+
+function tintImage(srcCanvas, mode){
+  const c = document.createElement('canvas'); c.width=srcCanvas.width; c.height=srcCanvas.height; const g=c.getContext('2d');
+  g.drawImage(srcCanvas,0,0);
+  const id = g.getImageData(0,0,c.width,c.height);
+  const d = id.data;
+  for(let i=0;i<d.length;i+=4){
+    if(mode==='green'){
+      const r=d[i], gch=d[i+1], b=d[i+2];
+      // convert to greyscale then bias green
+      const grey = (0.3*r + 0.59*gch + 0.11*b)|0;
+      d[i]= (grey*0.1)|0; d[i+1]= (grey*1.1)|0; d[i+2]=(grey*0.1)|0;
+    }
+  }
+  g.putImageData(id,0,0);
+  return c;
+}
+
+function loop(ts){
+  if(!running && !video.src) return; // stopped
+  if(!lastTick) lastTick=ts;
+  const dt = ts - lastTick;
+  if(dt < frameInterval){ requestAnimationFrame(loop); return; }
+  lastTick = ts;
+
+  // source draw size - intentionally small for pixelation
+  const baseW = width; const baseH = height;
+  // if video._imgCanvas exists (uploaded image), draw from that
+  if(video._imgCanvas){
+    // draw the uploaded image at base size
+    ctx.clearRect(0,0,out.width,out.height);
+    // create tmp canvas
+    const tmp=document.createElement('canvas'); tmp.width=baseW; tmp.height=baseH; const tctx=tmp.getContext('2d');
+    tctx.drawImage(video._imgCanvas,0,0,baseW,baseH);
+    renderFrame(tmp);
+  } else {
+    // draw video frame to offscreen at low-res
+    const tmp=document.createElement('canvas'); tmp.width=baseW; tmp.height=baseH; const tctx=tmp.getContext('2d');
+    if(video.videoWidth && video.videoHeight){
+      // maintain aspect
+      const ar = video.videoWidth / video.videoHeight;
+      let drawW = baseW, drawH = baseH;
+      if(ar > 1){ drawH = Math.round(baseW / ar); }
+      else { drawW = Math.round(baseH * ar); }
+      tctx.drawImage(video, 0, 0, drawW, drawH);
+    } else {
+      // blank
+      tctx.fillStyle='#000'; tctx.fillRect(0,0,baseW,baseH);
+    }
+    renderFrame(tmp);
+  }
+
+  requestAnimationFrame(loop);
+}
+
+function renderFrame(srcCanvas){
+  // apply pixelation by scaling
+  const outW = Math.max(320, srcCanvas.width*2);
+  const outH = Math.max(240, srcCanvas.height*2);
+  out.width = outW; out.height = outH;
+
+  // pixelate option: draw scaled up nearest neighbor
+  if(params.pixelate){
+    const pix = Math.max(2, Math.floor(params.pixLevel));
+    // reduce resolution
+    const small = document.createElement('canvas'); small.width = Math.max(2, Math.floor(srcCanvas.width / pix)); small.height = Math.max(2, Math.floor(srcCanvas.height / pix));
+    small.getContext('2d').imageSmoothingEnabled = false;
+    small.getContext('2d').drawImage(srcCanvas,0,0,small.width,small.height);
+    // scale back up
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(small, 0, 0, out.width, out.height);
+  } else {
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(srcCanvas, 0, 0, out.width, out.height);
+  }
+
+  // optional tint (night-vision)
+  if(params.green){
+    // make a temporary canvas and tint
+    const tinted = tintImage(out, 'green');
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.drawImage(tinted,0,0);
+  }
+
+  // vignette
+  if(params.vignette){
+    const g = ctx.createRadialGradient(out.width/2,out.height/2, out.width*0.2, out.width/2,out.height/2, Math.max(out.width,out.height));
+    g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,0.45)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,out.width,out.height);
+  }
+
+  // scanlines
+  if(params.scanlines){
+    ctx.save(); ctx.globalAlpha = 0.12; const step=2;
+    for(let y=0;y<out.height;y+=step){ ctx.fillStyle = (y%4===0? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.01)'); ctx.fillRect(0,y,out.width,1); }
+    ctx.restore();
+  }
+
+  // grain / static
+  if(params.grain){
+    const noiseCanvas = drawNoise(out.width, out.height, params.noise);
+    ctx.globalAlpha = params.noise * 0.9;
+    ctx.drawImage(noiseCanvas, 0, 0, out.width, out.height);
+    ctx.globalAlpha = 1;
+  }
+
+  // flicker / glitch (random bright frames, horizontal tear)
+  if(params.flicker && Math.random() < 0.06){
+    // sudden bright flash
+    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(255,255,255,0.06)'; ctx.fillRect(0,0,out.width,out.height); ctx.restore();
+  }
+  if(params.flicker && Math.random() < 0.02){
+    // horizontal shear
+    const y = Math.random()*out.height; const h = 4 + Math.random()*20; const shift = (Math.random()-0.5)*40;
+    const piece = ctx.getImageData(0,y,out.width,h);
+    ctx.clearRect(0,y,out.width,h);
+    ctx.putImageData(piece, shift, y);
+  }
+
+  // subtle chromatic aberration
+  ctx.globalCompositeOperation='lighter';
+  ctx.globalAlpha = 0.03;
+  ctx.drawImage(out, -1, 0, out.width, out.height);
+  ctx.drawImage(out, 1, 0, out.width, out.height);
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation='source-over';
+
+  // timestamp
+  if(params.timestamp){
+    const now = new Date();
+    const ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0')
+      + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+    ctx.font = Math.round(out.height*0.028) + 'px monospace';
+    ctx.fillStyle = 'rgba(180,230,180,0.95)';
+    ctx.fillText(ts, 10, out.height - 10);
+  }
+
+  // add small UI overlay text
+  ctx.font = '12px monospace'; ctx.fillStyle='rgba(200,200,200,0.25)'; ctx.fillText('CAM A - ID:'+document.getElementById('sid').textContent, 10, 16);
+}
+
+// start a simple auto-run with a static fallback (so page shows something)
+(function init(){
+  running=true; // will render uploaded image or black until camera
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
