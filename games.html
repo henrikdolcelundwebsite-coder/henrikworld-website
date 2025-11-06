@@ -40,6 +40,7 @@ button.top-btn:hover {
 }
 #usernameDisplay {
   font-weight: bold;
+  cursor: pointer;
 }
 #content {
   flex: 1;
@@ -65,42 +66,88 @@ button.top-btn:hover {
   transform: scale(1.05);
 }
 </style>
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+
+// 🔥 Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
+  authDomain: "henrikworldonline-a726f.firebaseapp.com",
+  projectId: "henrikworldonline-a726f",
+  storageBucket: "henrikworldonline-a726f.firebasestorage.app",
+  messagingSenderId: "1060990020059",
+  appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
+  measurementId: "G-VQNK4YN1C5"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 function goBack() {
   window.location.href = "index.html";
 }
 
-function goToChess() {
-  window.location.href = "chess/chess.html";
-}
+// All possible games
+const allGames = {
+  chess: { label: "Chess", path: "chess/chess.html" },
+  rhombus: { label: "Rhombus Eater", path: "game2/game2code.html" },
+  blackjack: { label: "Black Jack", path: "blackjack/blackjack.html" },
+  puzzle: { label: "Puzzle", path: "puzzle/puzzle.html" },
+  ethan: { label: "Five Nights At Ethan's (Beta)", path: "5nightsatethans/ethangame.html" }
+};
 
-function goToRhombusEater() {
-  window.location.href = "game2/game2code.html";
-}
-
-function goToBlackJack() {
-  window.location.href = "blackjack/blackjack.html";
-}
-
-function goToPuzzle() {
-  window.location.href = "puzzle/puzzle.html";
-}
-
-function goToEthan() {
-  window.location.href = "5nightsatethans/ethangame.html";
-}
-
-function loadUser() {
+// Load username and fetch allowed games
+async function loadUser() {
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const usernameDisplay = document.getElementById("usernameDisplay");
   if (!savedUser || !savedUser.username) {
     window.location.href = "login.html";
     return;
   }
-  usernameDisplay.textContent = savedUser.username;
+
+  const username = savedUser.username;
+  usernameDisplay.textContent = username;
   usernameDisplay.addEventListener("click", () => {
     localStorage.removeItem("user");
     window.location.href = "login.html";
+  });
+
+  // Get allowed games
+  const userGames = new Set();
+
+  // Individual access
+  const q1 = query(collection(db, "gameAccess"), where("username", "==", username));
+  const snap1 = await getDocs(q1);
+  snap1.forEach(doc => userGames.add(doc.data().game));
+
+  // Global access
+  const q2 = query(collection(db, "gameAccess"), where("username", "==", "all"));
+  const snap2 = await getDocs(q2);
+  snap2.forEach(doc => userGames.add(doc.data().game));
+
+  renderGames([...userGames]);
+}
+
+// Render allowed games only
+function renderGames(allowedGames) {
+  const content = document.getElementById("content");
+  content.innerHTML = "";
+
+  if (allowedGames.length === 0) {
+    content.innerHTML = "<p>No games available for your account.</p>";
+    return;
+  }
+
+  allowedGames.forEach(g => {
+    const info = allGames[g.toLowerCase()];
+    if (info) {
+      const btn = document.createElement("button");
+      btn.className = "game-btn";
+      btn.textContent = info.label;
+      btn.onclick = () => (window.location.href = info.path);
+      content.appendChild(btn);
+    }
   });
 }
 
@@ -114,11 +161,7 @@ window.addEventListener("DOMContentLoaded", loadUser);
 </div>
 
 <div id="content">
-  <button class="game-btn" onclick="goToChess()">Chess</button>
-  <button class="game-btn" onclick="goToRhombusEater()">Rhombus Eater</button>
-  <button class="game-btn" onclick="goToBlackJack()">Black Jack</button>
-  <button class="game-btn" onclick="goToPuzzle()">Puzzle</button>
-  <button class="game-btn" onclick="goToEthan()">Five Nights At Ethans (Beta)</button>
+  <p>Loading your games...</p>
 </div>
 </body>
 </html>

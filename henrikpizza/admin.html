@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Henrik Pizza Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<style>
+body {
+    font-family: 'Cinzel', serif;
+    background: #fef5e6;
+    color: rgb(36,36,36);
+    margin: 0;
+    padding: 20px;
+}
+
+h1 { text-align: center; margin-bottom: 20px; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    max-width: 1200px;
+    margin: auto;
+}
+
+th, td {
+    border: 2px solid rgb(36,36,36);
+    padding: 8px;
+    text-align: center;
+}
+
+th { background: #ddd; }
+
+button.stage-btn {
+    padding: 5px 10px;
+    margin: 2px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+}
+
+.stage-preparing { background: #ff4d4d; }
+.stage-dough { background: #ff9933; }
+.stage-toppings { background: #ffcc00; }
+.stage-oven { background: #33b5e5; }
+.stage-complete { background: #00c851; }
+</style>
+</head>
+<body>
+
+<h1>Henrik Pizza Admin Panel</h1>
+
+<table id="ordersTable">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Toppings</th>
+            <th>Notes</th>
+            <th>Stage</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Orders will be added here -->
+    </tbody>
+</table>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCE4Oi295CdHwl1o-GbZwSuLZN6TlbZsw4",
+    authDomain: "henrikpizza-46595.firebaseapp.com",
+    databaseURL: "https://henrikpizza-46595-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "henrikpizza-46595",
+    storageBucket: "henrikpizza-46595.firebasestorage.app",
+    messagingSenderId: "590622406769",
+    appId: "1:590622406769:web:8a0a196ba5820eedb683d0"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const ordersTableBody = document.querySelector("#ordersTable tbody");
+const stages = ["preparing", "dough", "toppings", "oven", "complete"];
+const stageNames = {
+    preparing: "Preparing Order",
+    dough: "Stretching Dough",
+    toppings: "Adding Toppings",
+    oven: "In the Oven",
+    complete: "Complete"
+};
+const stageClasses = {
+    preparing: "stage-preparing",
+    dough: "stage-dough",
+    toppings: "stage-toppings",
+    oven: "stage-oven",
+    complete: "stage-complete"
+};
+
+function renderOrders(ordersData){
+    ordersTableBody.innerHTML = "";
+    for(const id in ordersData){
+        const order = ordersData[id];
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>${order.name}</td>
+            <td>${order.toppings.join(", ")}</td>
+            <td>${order.notes || ""}</td>
+            <td class="${stageClasses[order.stage] || stageClasses.preparing}">${stageNames[order.stage] || "Preparing Order"}</td>
+            <td>
+                <button class="stage-btn stage-preparing" data-stage="preparing">Start</button>
+                <button class="stage-btn stage-dough" data-stage="dough">Stretch Dough</button>
+                <button class="stage-btn stage-toppings" data-stage="toppings">Add Toppings</button>
+                <button class="stage-btn stage-oven" data-stage="oven">In Oven</button>
+                <button class="stage-btn stage-complete" data-stage="complete">Complete</button>
+            </td>
+        `;
+
+        // Button actions
+        tr.querySelectorAll("button.stage-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const stage = btn.getAttribute("data-stage");
+                update(ref(db, "orders/" + id), { stage });
+            });
+        });
+
+        ordersTableBody.appendChild(tr);
+    }
+}
+
+// Listen for orders in real-time
+const ordersRef = ref(db, "orders");
+onValue(ordersRef, snapshot => {
+    const data = snapshot.val();
+    if(data) renderOrders(data);
+    else ordersTableBody.innerHTML = "<tr><td colspan='5'>No orders yet.</td></tr>";
+});
+</script>
+
+</body>
+</html>

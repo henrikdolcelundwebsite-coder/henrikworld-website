@@ -192,7 +192,71 @@
         return;
       }
 
-      alert("Unknown command. Use create, delete, or site/shutdown.");
+      // === GRANT GAME ACCESS ===
+      if (/admin\/games\/game=/i.test(firstLine) && lines.length >= 2) {
+        const game = firstLine.match(/game=(.*)/i)[1].trim();
+        const secondLine = lines[1].trim();
+        if (!/admin\/games\/username=/i.test(secondLine)) {
+          alert("Second line must be admin/games/username=<user or all>");
+          return;
+        }
+        const username = secondLine.match(/username=(.*)/i)[1].trim();
+        if (!game || !username) {
+          alert("Game or username missing.");
+          return;
+        }
+
+        try {
+          await addDoc(collection(db, "gameAccess"), {
+            game,
+            username,
+            grantedAt: new Date()
+          });
+          alert(`🎮 Access granted!\nGame: ${game}\nUser: ${username}`);
+          document.getElementById("codeArea").value = "";
+          updateLineNumbers();
+        } catch (e) {
+          console.error(e);
+          alert("❌ Failed to grant game access.");
+        }
+        return;
+      }
+
+      // === REVOKE GAME ACCESS ===
+      if (/admin\/games\/remove\/game=/i.test(firstLine) && lines.length >= 2) {
+        const game = firstLine.match(/game=(.*)/i)[1].trim();
+        const secondLine = lines[1].trim();
+        if (!/admin\/games\/username=/i.test(secondLine)) {
+          alert("Second line must be admin/games/username=<user or all>");
+          return;
+        }
+        const username = secondLine.match(/username=(.*)/i)[1].trim();
+        if (!game || !username) {
+          alert("Game or username missing.");
+          return;
+        }
+
+        try {
+          const q = query(collection(db, "gameAccess"), where("game", "==", game), where("username", "==", username));
+          const snapshot = await getDocs(q);
+          if (snapshot.empty) {
+            alert(`⚠️ No access found for Game: ${game}, User: ${username}`);
+            return;
+          }
+          for (const s of snapshot.docs) {
+            await deleteDoc(doc(db, "gameAccess", s.id));
+          }
+          alert(`🚫 Revoked access for Game: ${game}, User: ${username}`);
+          document.getElementById("codeArea").value = "";
+          updateLineNumbers();
+        } catch (e) {
+          console.error(e);
+          alert("❌ Failed to revoke access.");
+        }
+        return;
+      }
+
+      alert("Unknown command. Use create, delete, site/shutdown, games, or games/remove.");
     }
 
     // 🧠 Page setup
@@ -216,7 +280,16 @@ Line 2: password=PASSWORD
 Line 1: admin/account/delete/username=USERNAME
 
 Line 1: admin/site/shutdown/true
-Line 1: admin/site/shutdown/false"></textarea>
+Line 1: admin/site/shutdown/false
+
+Line 1: admin/games/game=chess
+Line 2: admin/games/username=henrik
+or
+Line 1: admin/games/game=puzzle
+Line 2: admin/games/username=all
+
+Line 1: admin/games/remove/game=chess
+Line 2: admin/games/username=henrik"></textarea>
   </div>
 
   <button id="saveBtn">Execute</button>

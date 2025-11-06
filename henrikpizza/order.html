@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Your Pizza | Henrik's Firewood Pizza</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<style>
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: 'Cinzel', serif;
+        background: #fef5e6;
+        color: rgb(36, 36, 36);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        padding: 30px;
+    }
+
+    .order-container {
+        background: white;
+        padding: 30px 40px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        max-width: 600px;
+        width: 100%;
+    }
+
+    h1 { text-align: center; font-size: 2.5rem; margin-bottom: 10px; }
+    h2 { margin-top: 30px; font-size: 1.5rem; text-decoration: underline; }
+    label { display: block; margin: 8px 0; font-size: 1rem; }
+    .required { color: red; font-weight: bold; margin-right: 4px; }
+
+    input[type="text"], textarea {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        font-size: 1rem;
+        border: 2px solid rgb(36, 36, 36);
+        border-radius: 8px;
+        font-family: 'Cinzel', serif;
+    }
+
+    textarea { height: 80px; resize: none; }
+
+    .order-button, #trackButton {
+        display: block;
+        width: 100%;
+        font-size: 1.2rem;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        margin-top: 25px;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.2s;
+        color: white;
+        font-weight: bold;
+    }
+
+    .order-button { background: rgb(36, 36, 36); }
+    .order-button:hover { background: #555; }
+    .order-button.success { background: #28a745; transform: scale(1.05); }
+    #trackButton { background: #2196f3; display: none; }
+
+    .order-button.shake { animation: shake 0.4s; }
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-6px); }
+        50% { transform: translateX(6px); }
+        75% { transform: translateX(-6px); }
+    }
+
+    ul { list-style-type: disc; margin-left: 25px; }
+    .error-message {
+        color: red;
+        text-align: center;
+        margin-top: 10px;
+        display: none;
+        font-size: 1rem;
+    }
+
+    @media (max-width: 600px) {
+        .order-container { padding: 20px; }
+        h1 { font-size: 2rem; }
+        input[type="text"], textarea { font-size: 1rem; }
+    }
+</style>
+</head>
+<body>
+
+<div class="order-container">
+    <h1>Order Your Pizza</h1>
+
+    <!-- Name -->
+    <label for="name"><span class="required">*</span>Your Name:</label>
+    <input type="text" id="name" placeholder="Enter your name">
+
+    <!-- Toppings -->
+    <h2>Toppings</h2>
+
+    <h3>Cheeses</h3>
+    <ul>
+        <li><label><input type="checkbox" class="topping"> Mozzarella</label></li>
+        <li><label><input type="checkbox" class="topping"> Cheddar</label></li>
+        <li><label><input type="checkbox" class="topping"> Parmesan</label></li>
+    </ul>
+
+    <h3>Meats</h3>
+    <ul>
+        <li><label><input type="checkbox" class="topping"> Pepperoni</label></li>
+        <li><label><input type="checkbox" class="topping"> Ham</label></li>
+        <li><label><input type="checkbox" class="topping"> Chorizo</label></li>
+        <li><label><input type="checkbox" class="topping"> Salami</label></li>
+    </ul>
+
+    <h3>Vegetables</h3>
+    <ul>
+        <li><label><input type="checkbox" class="topping"> Mushrooms</label></li>
+        <li><label><input type="checkbox" class="topping"> Olives</label></li>
+        <li><label><input type="checkbox" class="topping"> Jalapeños</label></li>
+        <li><label><input type="checkbox" class="topping"> Tomatoes</label></li>
+        <li><label><input type="checkbox" class="topping"> Basil</label></li>
+    </ul>
+
+    <h3>Extras</h3>
+    <ul>
+        <li><label><input type="checkbox" class="topping"> Extra meat (of selected)</label></li>
+        <li><label><input type="checkbox" class="topping"> Extra cheese (of selected)</label></li>
+        <li><label><input type="checkbox" class="topping"> Extra vegetables (of selected)</label></li>
+    </ul>
+
+    <!-- Notes -->
+    <h2>Notes</h2>
+    <textarea placeholder="Any extra notes or requests?"></textarea>
+
+    <!-- Error Message -->
+    <div class="error-message" id="errorMessage">Please enter your name and select at least one topping.</div>
+
+    <!-- Order Button -->
+    <button class="order-button" id="orderButton">Place Order</button>
+
+    <!-- Track Pizza Button -->
+    <button id="trackButton">Track Pizza</button>
+</div>
+
+<!-- Firebase & Confetti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCE4Oi295CdHwl1o-GbZwSuLZN6TlbZsw4",
+        authDomain: "henrikpizza-46595.firebaseapp.com",
+        databaseURL: "https://henrikpizza-46595-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "henrikpizza-46595",
+        storageBucket: "henrikpizza-46595.firebasestorage.app",
+        messagingSenderId: "590622406769",
+        appId: "1:590622406769:web:8a0a196ba5820eedb683d0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    function saveOrder(orderData) {
+        const ordersRef = ref(database, "orders");
+        const newOrderRef = push(ordersRef);
+        set(newOrderRef, orderData);
+    }
+
+    const orderButton = document.getElementById("orderButton");
+    const trackButton = document.getElementById("trackButton");
+    const errorMessage = document.getElementById("errorMessage");
+    const nameInput = document.getElementById("name");
+    const toppings = document.querySelectorAll(".topping");
+    const notesInput = document.querySelector("textarea");
+
+    orderButton.addEventListener("click", () => {
+        const name = nameInput.value.trim();
+        const selectedToppings = Array.from(toppings)
+            .filter(t => t.checked)
+            .map(t => t.parentElement.textContent.trim());
+        const notes = notesInput.value.trim();
+
+        if (!name || selectedToppings.length === 0) {
+            errorMessage.style.display = 'block';
+            orderButton.classList.add('shake');
+            setTimeout(() => orderButton.classList.remove('shake'), 400);
+            return;
+        }
+
+        errorMessage.style.display = 'none';
+
+        const order = {
+            name,
+            toppings: selectedToppings,
+            notes,
+            timestamp: new Date().toISOString(),
+            status: "pending"
+        };
+        saveOrder(order);
+
+        orderButton.classList.add('success');
+        orderButton.textContent = 'Order Placed! 🎉';
+        orderButton.disabled = true;
+
+        // Show Track Pizza button
+        trackButton.style.display = "block";
+        trackButton.onclick = () => {
+            const orderName = encodeURIComponent(name);
+            window.location.href = `track.html?name=${orderName}`;
+        };
+
+        // Confetti from button
+        const rect = orderButton.getBoundingClientRect();
+        const buttonX = (rect.left + rect.right) / 2 / window.innerWidth;
+        const buttonY = (rect.top + rect.bottom) / 2 / window.innerHeight;
+
+        confetti({
+            particleCount: 80,
+            spread: 70,
+            startVelocity: 40,
+            origin: { x: buttonX, y: buttonY },
+            colors: ['#ff3838', '#ffb400', '#00c851', '#33b5e5', '#f368e0', '#feca57']
+        });
+    });
+</script>
+
+</body>
+</html>
