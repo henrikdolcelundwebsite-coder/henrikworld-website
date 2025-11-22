@@ -1,297 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - henrikworld.com</title>
-  <style>
-    body {
-      font-family: monospace;
-      background-color: white;
-      color: black;
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      box-sizing: border-box;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Henrik Pizza Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<style>
+body {
+    font-family: 'Cinzel', serif;
+    background: #fef5e6;
+    color: rgb(36,36,36);
+    margin: 0;
+    padding: 20px;
+}
 
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
+h1 { text-align: center; margin-bottom: 20px; }
 
-    .editor-container {
-      display: flex;
-      width: 100%;
-      max-width: 800px;
-      height: 150px;
-      border: 1px solid #ccc;
-      overflow: hidden;
-    }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    max-width: 1200px;
+    margin: auto;
+}
 
-    .line-numbers {
-      background-color: #f0f0f0;
-      padding: 10px;
-      text-align: right;
-      user-select: none;
-      color: #666;
-      flex-shrink: 0;
-    }
+th, td {
+    border: 2px solid rgb(36,36,36);
+    padding: 8px;
+    text-align: center;
+}
 
-    #codeArea {
-      width: 100%;
-      border: none;
-      padding: 10px;
-      resize: none;
-      outline: none;
-      font-family: monospace;
-      font-size: 14px;
-      line-height: 1.4em;
-      white-space: pre;
-      overflow: auto;
-    }
+th { background: #ddd; }
 
-    button {
-      margin-top: 10px;
-      padding: 8px 16px;
-      font-size: 14px;
-      cursor: pointer;
-      border: 1px solid #ccc;
-      background-color: white;
-      color: black;
-    }
+button.stage-btn {
+    padding: 5px 10px;
+    margin: 2px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+}
 
-    button:hover {
-      background-color: #f5f5f5;
-    }
-
-    @media (max-width: 600px) {
-      .editor-container {
-        flex-direction: column;
-      }
-      .line-numbers {
-        text-align: left;
-        width: 100%;
-      }
-    }
-  </style>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-    import { 
-      getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc, setDoc 
-    } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
-
-    // 🔥 Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
-      authDomain: "henrikworldonline-a726f.firebaseapp.com",
-      projectId: "henrikworldonline-a726f",
-      storageBucket: "henrikworldonline-a726f.firebasestorage.app",
-      messagingSenderId: "1060990020059",
-      appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
-      measurementId: "G-VQNK4YN1C5"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // 🧾 Line numbers
-    function updateLineNumbers() {
-      const code = document.getElementById("codeArea").value;
-      const lines = code.split("\n").length;
-      let numbers = "";
-      for (let i = 1; i <= lines; i++) numbers += i + "\n";
-      document.getElementById("lineNumbers").textContent = numbers;
-    }
-
-    // ⚙️ Command processor
-    async function processAdminCommand() {
-      const code = document.getElementById("codeArea").value.trim();
-      const lines = code.split("\n");
-      if (lines.length === 0 || !lines[0].trim()) { 
-        alert("Write a command!"); 
-        return; 
-      }
-
-      const firstLine = lines[0].trim();
-
-      // === CREATE ACCOUNT ===
-      if (/admin\/account\/create\/username=/i.test(firstLine) && lines.length >= 2) {
-        const username = firstLine.match(/username=(.*)/i)[1].trim();
-        const password = lines[1].match(/password=(.*)/i)[1].trim();
-        if (!username || !password) { 
-          alert("Username or password cannot be empty."); 
-          return; 
-        }
-
-        try {
-          await addDoc(collection(db, "accounts"), { 
-            username, 
-            password, 
-            timestamp: new Date() 
-          });
-          alert(`✅ Account created!\nUsername: ${username}\nPassword: ${password}`);
-          document.getElementById("codeArea").value = "";
-          updateLineNumbers();
-        } catch(e) { 
-          console.error(e); 
-          alert("❌ Failed to create account."); 
-        }
-        return;
-      }
-
-      // === DELETE ACCOUNT ===
-      if (/admin\/account\/delete\/username=/i.test(firstLine)) {
-        const username = firstLine.match(/username=(.*)/i)[1].trim();
-        if (!username) { alert("Username cannot be empty."); return; }
-
-        try {
-          const q = query(collection(db, "accounts"), where("username", "==", username));
-          const snapshot = await getDocs(q);
-          if (snapshot.empty) {
-            alert(`⚠️ No account found with username: ${username}`);
-            return;
-          }
-          for (const s of snapshot.docs) {
-            await deleteDoc(doc(db, "accounts", s.id));
-          }
-          alert(`🗑️ Deleted account(s) with username: ${username}`);
-          document.getElementById("codeArea").value = "";
-          updateLineNumbers();
-        } catch(e) { 
-          console.error(e); 
-          alert("❌ Failed to delete account."); 
-        }
-        return;
-      }
-
-      // === SITE SHUTDOWN CONTROL ===
-      if (/admin\/site\/shutdown\//i.test(firstLine)) {
-        const match = firstLine.match(/shutdown\/(true|false)/i);
-        if (!match) { 
-          alert("Use admin/site/shutdown/true or admin/site/shutdown/false"); 
-          return; 
-        }
-
-        const shutdownState = match[1].toLowerCase() === "true";
-        try {
-          await setDoc(doc(db, "config", "siteStatus"), {
-            shutdown: shutdownState,
-            updated: new Date()
-          });
-          alert(`🚨 Site shutdown status set to: ${shutdownState}`);
-          document.getElementById("codeArea").value = "";
-          updateLineNumbers();
-        } catch (e) {
-          console.error(e);
-          alert("❌ Failed to update site shutdown status.");
-        }
-        return;
-      }
-
-      // === GRANT GAME ACCESS ===
-      if (/admin\/games\/game=/i.test(firstLine) && lines.length >= 2) {
-        const game = firstLine.match(/game=(.*)/i)[1].trim();
-        const secondLine = lines[1].trim();
-        if (!/admin\/games\/username=/i.test(secondLine)) {
-          alert("Second line must be admin/games/username=<user or all>");
-          return;
-        }
-        const username = secondLine.match(/username=(.*)/i)[1].trim();
-        if (!game || !username) {
-          alert("Game or username missing.");
-          return;
-        }
-
-        try {
-          await addDoc(collection(db, "gameAccess"), {
-            game,
-            username,
-            grantedAt: new Date()
-          });
-          alert(`🎮 Access granted!\nGame: ${game}\nUser: ${username}`);
-          document.getElementById("codeArea").value = "";
-          updateLineNumbers();
-        } catch (e) {
-          console.error(e);
-          alert("❌ Failed to grant game access.");
-        }
-        return;
-      }
-
-      // === REVOKE GAME ACCESS ===
-      if (/admin\/games\/remove\/game=/i.test(firstLine) && lines.length >= 2) {
-        const game = firstLine.match(/game=(.*)/i)[1].trim();
-        const secondLine = lines[1].trim();
-        if (!/admin\/games\/username=/i.test(secondLine)) {
-          alert("Second line must be admin/games/username=<user or all>");
-          return;
-        }
-        const username = secondLine.match(/username=(.*)/i)[1].trim();
-        if (!game || !username) {
-          alert("Game or username missing.");
-          return;
-        }
-
-        try {
-          const q = query(collection(db, "gameAccess"), where("game", "==", game), where("username", "==", username));
-          const snapshot = await getDocs(q);
-          if (snapshot.empty) {
-            alert(`⚠️ No access found for Game: ${game}, User: ${username}`);
-            return;
-          }
-          for (const s of snapshot.docs) {
-            await deleteDoc(doc(db, "gameAccess", s.id));
-          }
-          alert(`🚫 Revoked access for Game: ${game}, User: ${username}`);
-          document.getElementById("codeArea").value = "";
-          updateLineNumbers();
-        } catch (e) {
-          console.error(e);
-          alert("❌ Failed to revoke access.");
-        }
-        return;
-      }
-
-      alert("Unknown command. Use create, delete, site/shutdown, games, or games/remove.");
-    }
-
-    // 🧠 Page setup
-    window.addEventListener("DOMContentLoaded", () => {
-      const codeArea = document.getElementById("codeArea");
-      codeArea.addEventListener("input", updateLineNumbers);
-      document.getElementById("saveBtn").addEventListener("click", processAdminCommand);
-      updateLineNumbers();
-    });
-  </script>
+.stage-preparing { background: #ff4d4d; }
+.stage-dough { background: #ff9933; }
+.stage-toppings { background: #ffcc00; }
+.stage-oven { background: #33b5e5; }
+.stage-complete { background: #00c851; }
+</style>
 </head>
 <body>
-  <h1>Admin</h1>
 
-  <div class="editor-container">
-    <pre class="line-numbers" id="lineNumbers">1</pre>
-    <textarea id="codeArea" placeholder="Examples:
-Line 1: admin/account/create/username=USERNAME
-Line 2: password=PASSWORD
+<h1>Henrik Pizza Admin Panel</h1>
 
-Line 1: admin/account/delete/username=USERNAME
+<table id="ordersTable">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Toppings</th>
+            <th>Notes</th>
+            <th>Stage</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Orders will be added here -->
+    </tbody>
+</table>
 
-Line 1: admin/site/shutdown/true
-Line 1: admin/site/shutdown/false
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-Line 1: admin/games/game=chess
-Line 2: admin/games/username=henrik
-or
-Line 1: admin/games/game=puzzle
-Line 2: admin/games/username=all
+const firebaseConfig = {
+    apiKey: "AIzaSyCE4Oi295CdHwl1o-GbZwSuLZN6TlbZsw4",
+    authDomain: "henrikpizza-46595.firebaseapp.com",
+    databaseURL: "https://henrikpizza-46595-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "henrikpizza-46595",
+    storageBucket: "henrikpizza-46595.firebasestorage.app",
+    messagingSenderId: "590622406769",
+    appId: "1:590622406769:web:8a0a196ba5820eedb683d0"
+};
 
-Line 1: admin/games/remove/game=chess
-Line 2: admin/games/username=henrik"></textarea>
-  </div>
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-  <button id="saveBtn">Execute</button>
+const ordersTableBody = document.querySelector("#ordersTable tbody");
+const stages = ["preparing", "dough", "toppings", "oven", "complete"];
+const stageNames = {
+    preparing: "Preparing Order",
+    dough: "Stretching Dough",
+    toppings: "Adding Toppings",
+    oven: "In the Oven",
+    complete: "Complete"
+};
+const stageClasses = {
+    preparing: "stage-preparing",
+    dough: "stage-dough",
+    toppings: "stage-toppings",
+    oven: "stage-oven",
+    complete: "stage-complete"
+};
+
+function renderOrders(ordersData){
+    ordersTableBody.innerHTML = "";
+    for(const id in ordersData){
+        const order = ordersData[id];
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>${order.name}</td>
+            <td>${order.toppings.join(", ")}</td>
+            <td>${order.notes || ""}</td>
+            <td class="${stageClasses[order.stage] || stageClasses.preparing}">${stageNames[order.stage] || "Preparing Order"}</td>
+            <td>
+                <button class="stage-btn stage-preparing" data-stage="preparing">Start</button>
+                <button class="stage-btn stage-dough" data-stage="dough">Stretch Dough</button>
+                <button class="stage-btn stage-toppings" data-stage="toppings">Add Toppings</button>
+                <button class="stage-btn stage-oven" data-stage="oven">In Oven</button>
+                <button class="stage-btn stage-complete" data-stage="complete">Complete</button>
+            </td>
+        `;
+
+        // Button actions
+        tr.querySelectorAll("button.stage-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const stage = btn.getAttribute("data-stage");
+                update(ref(db, "orders/" + id), { stage });
+            });
+        });
+
+        ordersTableBody.appendChild(tr);
+    }
+}
+
+// Listen for orders in real-time
+const ordersRef = ref(db, "orders");
+onValue(ordersRef, snapshot => {
+    const data = snapshot.val();
+    if(data) renderOrders(data);
+    else ordersTableBody.innerHTML = "<tr><td colspan='5'>No orders yet.</td></tr>";
+});
+</script>
+
 </body>
 </html>

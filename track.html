@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Track Your Pizza | Henrik's Firewood Pizza</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<style>
+body {
+    margin: 0;
+    font-family: 'Cinzel', serif;
+    background: #fef5e6;
+    color: rgb(36,36,36);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+h1 { font-size: 2.5rem; margin-bottom: 10px; text-align: center; }
+h2 { margin: 10px 0 20px 0; font-size: 1.8rem; }
+
+#chartContainer {
+    width: 300px;
+    height: 300px;
+    margin-top: 20px;
+}
+
+#completeMessage {
+    font-size: 1.2rem;
+    margin-top: 15px;
+    display: none;
+    text-align: center;
+    color: rgb(36,36,36); /* normal text color */
+}
+
+#backHome {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: rgb(36,36,36);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+#backHome:hover { background: #555; }
+
+.review-container {
+    display: none;
+    margin-top: 25px;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    max-width: 450px;
+    width: 100%;
+}
+
+.review-container h3 {
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.star-rating {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.star {
+    font-size: 2rem;
+    cursor: pointer;
+    color: #ccc;
+    transition: color 0.2s;
+}
+
+.star.selected, .star:hover, .star:hover ~ .star {
+    color: #ffb400;
+}
+
+.review-container textarea {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid rgb(36,36,36);
+    border-radius: 12px;
+    resize: vertical;
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+    min-height: 80px;
+}
+
+.review-container button {
+    width: 100%;
+    background: rgb(36,36,36);
+    color: white;
+    font-size: 1.2rem;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.review-container button:hover {
+    background: #555;
+}
+
+@media (max-width: 500px) {
+    #chartContainer { width: 250px; height: 250px; }
+    .review-container { padding: 15px; margin-top: 20px; }
+    .review-container h3 { font-size: 1.3rem; }
+    .star { font-size: 1.8rem; }
+    .review-container textarea { font-size: 0.95rem; min-height: 70px; }
+    .review-container button { font-size: 1.1rem; padding: 10px; }
+}
+</style>
+</head>
+<body>
+
+<h1>Track Your Pizza</h1>
+<h2 id="orderNameDisplay">Order Name: N/A</h2>
+
+<div id="chartContainer">
+    <canvas id="progressChart"></canvas>
+</div>
+
+<div id="completeMessage">Your pizza will be with you shortly!</div>
+
+<a id="backHome" href="index.html">Back to Home</a>
+
+<div class="review-container" id="reviewContainer">
+    <h3>Leave a Review</h3>
+    <div class="star-rating">
+        <span class="star" data-value="1">&#9733;</span>
+        <span class="star" data-value="2">&#9733;</span>
+        <span class="star" data-value="3">&#9733;</span>
+        <span class="star" data-value="4">&#9733;</span>
+        <span class="star" data-value="5">&#9733;</span>
+    </div>
+    <textarea id="reviewText" rows="4" placeholder="Write your review here..."></textarea>
+    <button id="submitReview">Submit Review</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getDatabase, ref, query, orderByChild, equalTo, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCE4Oi295CdHwl1o-GbZwSuLZN6TlbZsw4",
+    authDomain: "henrikpizza-46595.firebaseapp.com",
+    databaseURL: "https://henrikpizza-46595-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "henrikpizza-46595",
+    storageBucket: "henrikpizza-46595.firebasestorage.app",
+    messagingSenderId: "590622406769",
+    appId: "1:590622406769:web:8a0a196ba5820eedb683d0"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const firestore = getFirestore(app);
+
+const params = new URLSearchParams(window.location.search);
+const orderName = params.get("name");
+document.getElementById("orderNameDisplay").textContent = orderName ? `Order Name: "${decodeURIComponent(orderName)}"` : "Order Name: N/A";
+
+const stages = ["preparing", "dough", "toppings", "oven", "complete"];
+const stageLabels = ["Preparing Order","Stretching Dough","Adding Toppings","In the Oven","Complete"];
+
+const ctx = document.getElementById('progressChart').getContext('2d');
+const chartData = {
+    labels: stageLabels,
+    datasets: [{
+        data: [1,1,1,1,1],
+        backgroundColor: ['#ff4d4d','#ff4d4d','#ff4d4d','#ff4d4d','#ff4d4d'],
+        borderWidth: 2
+    }]
+};
+const progressChart = new Chart(ctx, {
+    type: 'pie',
+    data: chartData,
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+});
+
+const completeMessage = document.getElementById("completeMessage");
+const reviewContainer = document.getElementById("reviewContainer");
+
+let selectedStars = 0;
+document.querySelectorAll(".star").forEach(star => {
+    star.addEventListener("click", () => {
+        selectedStars = parseInt(star.getAttribute("data-value"));
+        document.querySelectorAll(".star").forEach(s => {
+            s.classList.toggle("selected", parseInt(s.getAttribute("data-value")) <= selectedStars);
+        });
+    });
+});
+
+document.getElementById("submitReview").addEventListener("click", async () => {
+    const text = document.getElementById("reviewText").value.trim();
+    if(selectedStars === 0 || text === "") return alert("Please select stars and write a review.");
+    try {
+        await addDoc(collection(firestore, "reviews"), {
+            name: decodeURIComponent(orderName),
+            stars: selectedStars,
+            review: text,
+            timestamp: new Date().toISOString(),
+            location: "London"
+        });
+        alert("Thank you for your review!");
+        reviewContainer.style.display = "none";
+    } catch(e) {
+        console.error("Error saving review:", e);
+    }
+});
+
+const ordersRef = ref(db, "orders");
+const orderQuery = query(ordersRef, orderByChild("name"), equalTo(decodeURIComponent(orderName)));
+
+onValue(orderQuery, snapshot => {
+    const data = snapshot.val();
+    if(!data) return;
+    const lastOrderKey = Object.keys(data).pop();
+    const order = data[lastOrderKey];
+    const currentStage = order.stage || "preparing";
+
+    const stageIndex = stages.indexOf(currentStage);
+    chartData.datasets[0].backgroundColor = stages.map((s, i) => i <= stageIndex ? '#00c851' : '#ff4d4d');
+    progressChart.update();
+
+    if(currentStage === "complete"){
+        confetti({
+            particleCount: 150,
+            spread: 100,
+            startVelocity: 50,
+            colors: ['#ff3838','#ffb400','#00c851','#33b5e5','#f368e0','#feca57']
+        });
+        completeMessage.style.display = "block";
+        reviewContainer.style.display = "block";
+    }
+});
+</script>
+
+</body>
+</html>

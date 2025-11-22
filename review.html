@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reviews | Henrik's Firewood Pizza</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<style>
+body {
+    margin: 0;
+    font-family: 'Cinzel', serif;
+    background: #fef5e6;
+    color: rgb(36,36,36);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 2.5rem;
+}
+
+#backHome {
+    padding: 10px 20px;
+    background: rgb(36,36,36);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+#backHome:hover { background: #555; }
+
+.review-list {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.review-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 2px solid rgb(36,36,36); /* dark gray border */
+    transition: border-color 0.3s;
+}
+
+.review-card:hover {
+    border-color: #555; /* slightly lighter on hover */
+}
+
+.review-card h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.2rem;
+}
+
+.review-card .stars {
+    color: #ffb400;
+    margin-bottom: 10px;
+}
+
+.review-card .message {
+    font-size: 1rem;
+    margin-bottom: 8px;
+}
+
+.review-card .timestamp {
+    font-size: 0.85rem;
+    color: #555;
+    text-align: right;
+}
+
+@media (max-width: 500px) {
+    header h1 { font-size: 2rem; }
+    .review-card { padding: 15px; }
+    .review-card h3 { font-size: 1.1rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Henrik's Firewood Pizza</h1>
+    <a id="backHome" href="index.html">Back to Home</a>
+</header>
+
+<div class="review-list" id="reviewList">
+    <!-- Reviews will be appended here -->
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCE4Oi295CdHwl1o-GbZwSuLZN6TlbZsw4",
+    authDomain: "henrikpizza-46595.firebaseapp.com",
+    databaseURL: "https://henrikpizza-46595-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "henrikpizza-46595",
+    storageBucket: "henrikpizza-46595.firebasestorage.app",
+    messagingSenderId: "590622406769",
+    appId: "1:590622406769:web:8a0a196ba5820eedb683d0"
+};
+
+const app = initializeApp(firebaseConfig);
+const firestore = getFirestore(app);
+
+const reviewList = document.getElementById("reviewList");
+
+async function loadReviews() {
+    const reviewsCol = collection(firestore, "reviews");
+    const q = query(reviewsCol, orderBy("timestamp", "desc"));
+    const snapshot = await getDocs(q);
+
+    reviewList.innerHTML = ""; // Clear any existing content
+
+    if (snapshot.empty) {
+        const noReviews = document.createElement("div");
+        noReviews.style.textAlign = "center";
+        noReviews.style.fontSize = "1.1rem";
+        noReviews.style.marginTop = "20px";
+        noReviews.textContent = "There are no reviews yet. Order a pizza to leave one!";
+        reviewList.appendChild(noReviews);
+        return;
+    }
+
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        const card = document.createElement("div");
+        card.className = "review-card";
+
+        const name = document.createElement("h3");
+        name.textContent = data.name;
+
+        const stars = document.createElement("div");
+        stars.className = "stars";
+        stars.textContent = "★".repeat(data.stars) + "☆".repeat(5 - data.stars);
+
+        const message = document.createElement("div");
+        message.className = "message";
+        message.textContent = data.review;
+
+        const timestamp = document.createElement("div");
+        timestamp.className = "timestamp";
+        const date = new Date(data.timestamp);
+        timestamp.textContent = date.toLocaleString();
+
+        card.appendChild(name);
+        card.appendChild(stars);
+        card.appendChild(message);
+        card.appendChild(timestamp);
+
+        reviewList.appendChild(card);
+    });
+}
+
+
+loadReviews();
+</script>
+
+</body>
+</html>
