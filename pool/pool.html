@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pool Table</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: white;
+      margin: 0;
+      font-family: sans-serif;
+    }
+
+    .pool-table {
+      position: relative;
+      width: 800px;
+      height: 400px;
+      background-color: #006400; /* green felt */
+      border: 20px solid #654321; /* wooden border */
+      border-radius: 20px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+
+    /* Pool table pockets */
+    .pocket {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background-color: black;
+      border-radius: 50%;
+      box-shadow: inset -3px -3px 5px rgba(255,255,255,0.2),
+                  inset 3px 3px 5px rgba(0,0,0,0.5);
+    }
+
+    /* Pockets positions */
+    .pocket.top-left { top: -20px; left: -20px; }
+    .pocket.top-center { top: -20px; left: 50%; transform: translateX(-50%); }
+    .pocket.top-right { top: -20px; right: -20px; }
+    .pocket.bottom-left { bottom: -20px; left: -20px; }
+    .pocket.bottom-center { bottom: -20px; left: 50%; transform: translateX(-50%); }
+    .pocket.bottom-right { bottom: -20px; right: -20px; }
+    .pocket.middle-left { top: 50%; left: -20px; transform: translateY(-50%); }
+
+    /* Cue ball */
+    .cue-ball {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background-color: white;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: inset -2px -2px 5px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+
+    /* Cue stick */
+    .cue-stick {
+      position: absolute;
+      width: 150px; /* fixed length */
+      height: 6px;
+      background-color: #deb887;
+      border-radius: 3px;
+      transform-origin: left center;
+      pointer-events: none;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="pool-table">
+    <!-- Pockets -->
+    <div class="pocket top-left"></div>
+    <div class="pocket top-center"></div>
+    <div class="pocket top-right"></div>
+    <div class="pocket bottom-left"></div>
+    <div class="pocket bottom-center"></div>
+    <div class="pocket bottom-right"></div>
+    <div class="pocket middle-left"></div>
+
+    <!-- Cue ball -->
+    <div class="cue-ball" id="cueBall"></div>
+    <!-- Cue stick -->
+    <div class="cue-stick" id="cueStick"></div>
+  </div>
+
+  <script>
+    const cueBall = document.getElementById('cueBall');
+    const cueStick = document.getElementById('cueStick');
+    const table = document.querySelector('.pool-table');
+
+    const tableRect = table.getBoundingClientRect();
+    const ballRadius = cueBall.offsetWidth/2;
+
+    let isAiming = false;
+    let shotPower = 0;
+    const maxPower = 20;
+
+    // Ball position (middle of table)
+    let ballX = table.clientWidth / 2;
+    let ballY = table.clientHeight / 2;
+
+    let velocity = {x:0, y:0};
+
+    function startAim(e) {
+      e.preventDefault();
+      isAiming = true;
+      cueStick.style.display = 'block';
+    }
+
+    function moveAim(e) {
+      if(!isAiming) return;
+
+      const rect = table.getBoundingClientRect();
+      let mouseX, mouseY;
+      if(e.touches) {
+        mouseX = e.touches[0].clientX - rect.left;
+        mouseY = e.touches[0].clientY - rect.top;
+      } else {
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+      }
+
+      // Direction vector from ball to mouse
+      let dx = mouseX - ballX;
+      let dy = mouseY - ballY;
+      let angle = Math.atan2(dy, dx);
+
+      // Distance for power (max capped)
+      let distance = Math.min(Math.hypot(dx, dy), 100);
+      shotPower = distance / 100 * maxPower;
+
+      // Cue stick position opposite to drag (fixed length)
+      cueStick.style.left = `${ballX}px`;
+      cueStick.style.top = `${ballY}px`;
+      cueStick.style.transform = `rotate(${angle + Math.PI}rad)`; // opposite direction
+    }
+
+    function releaseAim(e) {
+      if(!isAiming) return;
+      isAiming = false;
+      cueStick.style.display = 'none';
+
+      // Shoot ball opposite to cue direction
+      const dx = Math.cos(cueStick.style.transform.replace('rotate(', '').replace('rad)','')) * shotPower;
+      const dy = Math.sin(cueStick.style.transform.replace('rotate(', '').replace('rad)','')) * shotPower;
+
+      velocity.x = dx;
+      velocity.y = dy;
+
+      requestAnimationFrame(moveBall);
+    }
+
+    function moveBall() {
+      ballX += velocity.x;
+      ballY += velocity.y;
+
+      // Friction
+      velocity.x *= 0.98;
+      velocity.y *= 0.98;
+
+      // Bounce walls
+      if(ballX - ballRadius < 0 || ballX + ballRadius > table.clientWidth) velocity.x *= -1;
+      if(ballY - ballRadius < 0 || ballY + ballRadius > table.clientHeight) velocity.y *= -1;
+
+      cueBall.style.left = `${ballX - ballRadius}px`;
+      cueBall.style.top = `${ballY - ballRadius}px`;
+
+      if(Math.abs(velocity.x) > 0.1 || Math.abs(velocity.y) > 0.1) {
+        requestAnimationFrame(moveBall);
+      }
+    }
+
+    cueBall.addEventListener('mousedown', startAim);
+    cueBall.addEventListener('touchstart', startAim);
+
+    document.addEventListener('mousemove', moveAim);
+    document.addEventListener('touchmove', moveAim);
+
+    document.addEventListener('mouseup', releaseAim);
+    document.addEventListener('touchend', releaseAim);
+  </script>
+</body>
+</html>

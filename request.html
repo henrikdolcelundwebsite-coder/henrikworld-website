@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Request Account - henrikworld.com</title>
+<link rel="icon" type="image/png" href="favicon.png" />
+<style>
+  body {
+    font-family: monospace;
+    background-color: white;
+    color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+
+  .request-container {
+    border: 1px solid #ccc;
+    padding: 20px;
+    width: 350px;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+
+  input {
+    margin-bottom: 10px;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+  }
+
+  button {
+    padding: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background-color: white;
+    color: black;
+    border-radius: 4px;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  button:hover {
+    background-color: #f5f5f5;
+  }
+
+  #backLogin {
+    font-size: 14px;
+    color: blue;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+</style>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
+  authDomain: "henrikworldonline-a726f.firebaseapp.com",
+  projectId: "henrikworldonline-a726f",
+  storageBucket: "henrikworldonline-a726f.firebasestorage.app",
+  messagingSenderId: "1060990020059",
+  appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
+  measurementId: "G-VQNK4YN1C5"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function sendRequest() {
+  const firstName = document.getElementById("firstName").value.trim();
+  const lastName = document.getElementById("lastName").value.trim();
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!firstName || !lastName || !username || !password) {
+    alert("Please fill out all fields.");
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "accountRequests"), {
+      firstName,
+      lastName,
+      username,
+      password,
+      timestamp: new Date()
+    });
+    alert("Your request has been sent!");
+    document.getElementById("firstName").value = "";
+    document.getElementById("lastName").value = "";
+    document.getElementById("username").value = "";
+    document.getElementById("password").value = "";
+  } catch (error) {
+    console.error("Error sending request:", error);
+    alert("Failed to send request.");
+  }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("sendRequestBtn").addEventListener("click", sendRequest);
+  document.getElementById("backLogin").addEventListener("click", () => {
+    window.location.href = "login.html";
+  });
+});
+</script>
+</head>
+
+<body>
+  <div class="request-container">
+    <h2>Request an Account</h2>
+    <input type="text" id="firstName" placeholder="First Name">
+    <input type="text" id="lastName" placeholder="Last Name">
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button id="sendRequestBtn">Send Request</button>
+    <div id="backLogin">Back to Login</div>
+  </div>
+</body>
+</html>

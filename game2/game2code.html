@@ -1,126 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rhombus Eater - henrikworld.com</title>
-  <link rel="icon" href="../favicon.png" type="image/png">
-  <style>
-    body {
-      margin: 0;
-      font-family: monospace;
-      background: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100vh;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rhombus Eater</title>
+<link rel="icon" href="../favicon.png" type="image/png">
 
-    /* Top bar (matches your simple layout) */
-    #topBar {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 20px;
-      border-bottom: 1px solid #ccc;
-      box-sizing: border-box;
-    }
-
-    button.top-btn {
-      padding: 6px 12px;
-      font-family: monospace;
-      font-size: 14px;
-      cursor: pointer;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background-color: white;
-      transition: background-color 0.2s ease;
-    }
-
-    button.top-btn:hover {
-      background-color: #f5f5f5;
-    }
-
-    /* Scoreboard and Reset */
-    #ui-bar {
-      display: flex;
-      gap: 20px;
-      align-items: center;
-      justify-content: center;
-      margin: 15px 0;
-    }
-
-    #scoreboard {
-      text-align: center;
-    }
-
-    #score, #highscore {
-      margin: 2px 0;
-      font-size: 16px;
-    }
-
-    button {
-      padding: 6px 12px;
-      font-family: monospace;
-      font-size: 14px;
-      cursor: pointer;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background-color: white;
-      transition: background-color 0.2s ease;
-    }
-
-    button:hover {
-      background-color: #f5f5f5;
-    }
-
-    /* Main Game Area (kept the same, just added a subtle stroke) */
-    #gameContainer {
-      position: relative;
-      width: 90vw;
-      height: 65vh;
-      max-width: 1000px;
-      max-height: 700px;
-      border: 1px solid #ccc; /* subtle stroke */
-      border-radius: 6px; /* light rounding to match style */
-      background: url("background.png") center/cover no-repeat;
-      overflow: hidden;
-      touch-action: none;
-    }
-
-    #player {
-      position: absolute;
-      width: 50px;
-      height: 50px;
-      cursor: grab;
-      user-drag: none;
-      -webkit-user-drag: none;
-      touch-action: none;
-    }
-
-    .food {
-      position: absolute;
-      width: 60px;
-      height: 60px;
-    }
-
-    .bad {
-      position: absolute;
-      width: 40px;
-      height: 40px;
-    }
-
-    @media (max-width: 600px) {
-      #gameContainer {
-        height: 60vh;
-      }
-      #player { width: 40px; height: 40px; }
-      .food { width: 45px; height: 45px; }
-      .bad { width: 30px; height: 30px; }
-      #score, #highscore { font-size: 14px; }
-    }
-  </style>
+<style>
+  body {
+    margin: 0;
+    font-family: monospace;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #topBar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    border-bottom: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+  button.top-btn {
+    padding: 6px 12px;
+    font-family: monospace;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    transition: background-color 0.2s ease;
+  }
+  button.top-btn:hover {
+    background-color: #f5f5f5;
+  }
+  #gameArea {
+    width: 800px;
+    height: 600px;
+    position: relative;
+    background: url('./assets/backgrounds/default.png') no-repeat center center;
+    background-size: cover;
+    border: 2px solid #333;
+    border-radius: 10px;
+    margin-top: 20px;
+    touch-action: none;
+    overflow: hidden;
+  }
+  .player, .food, .bad {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    user-select: none;
+    touch-action: none;
+    transform: scale(0);
+    transition: transform 0.2s ease;
+  }
+  .player {
+    background: url('./assets/skins/default.png') no-repeat center center;
+    background-size: contain;
+    z-index: 10;
+    transform: scale(1);
+  }
+  .food {
+    background: url('./assets/food/food.png') no-repeat center center;
+    background-size: contain;
+  }
+  .bad {
+    background: url('./assets/food/bad.png') no-repeat center center;
+    background-size: contain;
+  }
+  #scoreBoard {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px black;
+  }
+  #usernameDisplay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px black;
+    cursor: pointer;
+  }
+  #leaderboard {
+    margin-top: 20px;
+    width: 300px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: left;
+    font-family: monospace;
+  }
+  #leaderboard h3 {
+    margin: 0 0 10px 0;
+    text-align: center;
+  }
+</style>
 </head>
 <body>
 
@@ -129,177 +112,199 @@
   <div><strong>Rhombus Eater</strong></div>
 </div>
 
-<div id="ui-bar">
-  <div id="scoreboard">
-    <div id="score">Score: 0 KG</div>
-    <div id="highscore">High Score: 0 KG</div>
-  </div>
-  <button id="resetBtn">Reset</button>
+<div id="gameArea">
+  <div id="scoreBoard">Score: 0 kg</div>
+  <div id="usernameDisplay">Player</div>
+  <div class="player" id="player"></div>
 </div>
 
-<div id="gameContainer">
-  <img id="player" src="player.png" alt="Player">
+<div id="leaderboard">
+  <h3>Leaderboard</h3>
+  <ol id="leaderboardList">
+    <li>Loading...</li>
+  </ol>
 </div>
 
-<script>
-  const container = document.getElementById("gameContainer");
-  const player = document.getElementById("player");
-  const scoreDisplay = document.getElementById("score");
-  const highscoreDisplay = document.getElementById("highscore");
-  const resetBtn = document.getElementById("resetBtn");
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
-  let score = 0;
-  let playerSize = player.offsetWidth;
-  let isDragging = false;
-  let offsetX = 0, offsetY = 0;
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
+  authDomain: "henrikworldonline-a726f.firebaseapp.com",
+  projectId: "henrikworldonline-a726f",
+  storageBucket: "henrikworldonline-a726f.firebasestorage.app",
+  messagingSenderId: "1060990020059",
+  appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
+  measurementId: "G-VQNK4YN1C5"
+};
 
-  let highscore = parseInt(localStorage.getItem("highscore") || "0");
-  highscoreDisplay.textContent = `High Score: ${highscore} KG`;
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  const SAFE_DISTANCE = 150;
+const gameArea = document.getElementById('gameArea');
+const player = document.getElementById('player');
+const scoreBoard = document.getElementById('scoreBoard');
+const usernameDisplay = document.getElementById('usernameDisplay');
+const leaderboardList = document.getElementById('leaderboardList');
 
-  const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-  const distance = (x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+let score = 0;
+let playerScale = 1;
+const gameWidth = gameArea.clientWidth;
+const gameHeight = gameArea.clientHeight;
 
-  function spawnFood() {
-    document.querySelectorAll(".food, .bad").forEach(f => f.remove());
+// Load username
+const savedUser = JSON.parse(localStorage.getItem("user"));
+let username = "Player";
+if(savedUser && savedUser.username) username = savedUser.username;
+usernameDisplay.textContent = username;
 
-    const playerX = parseFloat(player.style.left || "0") + player.offsetWidth / 2;
-    const playerY = parseFloat(player.style.top || "0") + player.offsetHeight / 2;
+// Click to logout
+usernameDisplay.addEventListener("click", () => {
+  localStorage.removeItem("user");
+  window.location.href = "../login.html";
+});
 
-    const foodCount = randomInt(1, 5);
-    for (let i = 0; i < foodCount; i++) {
-      const food = document.createElement("img");
-      food.src = "food.png";
-      food.classList.add("food");
-      let x, y;
-      do {
-        x = randomInt(0, container.clientWidth - 60);
-        y = randomInt(0, container.clientHeight - 60);
-      } while (distance(x, y, playerX, playerY) < SAFE_DISTANCE);
-      food.style.left = x + "px";
-      food.style.top = y + "px";
-      container.appendChild(food);
-    }
+// Player start position
+player.style.left = (gameWidth/2 - 25) + 'px';
+player.style.top = (gameHeight/2 - 25) + 'px';
 
-    const bad = document.createElement("img");
-    bad.src = "bad.png";
-    bad.classList.add("bad");
-    let bx, by;
-    do {
-      bx = randomInt(0, container.clientWidth - 40);
-      by = randomInt(0, container.clientHeight - 40);
-    } while (distance(bx, by, playerX, playerY) < SAFE_DISTANCE);
-    bad.style.left = bx + "px";
-    bad.style.top = by + "px";
-    container.appendChild(bad);
+let foods = [];
+let bads = [];
+
+// Random position
+function randomPosition() {
+  return { x: Math.random() * (gameWidth - 50), y: Math.random() * (gameHeight - 50) };
+}
+
+// Spawn food
+function spawnFood() {
+  foods.forEach(f=>f.remove());
+  foods = [];
+  const count = Math.floor(Math.random()*5)+1;
+  for(let i=0;i<count;i++){
+    const f = document.createElement('div');
+    f.className = 'food';
+    const pos = randomPosition();
+    f.style.left = pos.x+'px';
+    f.style.top = pos.y+'px';
+    gameArea.appendChild(f);
+    foods.push(f);
+    requestAnimationFrame(()=>f.style.transform='scale(1)');
   }
+}
 
-  const checkCollision = (a, b) => {
-    const aRect = a.getBoundingClientRect();
-    const bRect = b.getBoundingClientRect();
-    return !(
-      aRect.right < bRect.left ||
-      aRect.left > bRect.right ||
-      aRect.bottom < bRect.top ||
-      aRect.top > bRect.bottom
-    );
-  };
+// Spawn bad
+function spawnBad(){
+  bads.forEach(b=>b.remove());
+  bads=[];
+  const b = document.createElement('div');
+  b.className='bad';
+  const pos = randomPosition();
+  b.style.left=pos.x+'px';
+  b.style.top=pos.y+'px';
+  gameArea.appendChild(b);
+  bads.push(b);
+  requestAnimationFrame(()=>b.style.transform='scale(1)');
+}
 
-  function eatFood(food) {
-    food.remove();
-    score++;
-    playerSize += 4;
-    player.style.width = playerSize + "px";
-    player.style.height = playerSize + "px";
-    scoreDisplay.textContent = `Score: ${score} KG`;
+// Collision check
+function isColliding(a,b){
+  const rectA=a.getBoundingClientRect();
+  const rectB=b.getBoundingClientRect();
+  return !(rectA.top>rectB.bottom||rectA.bottom<rectB.top||rectA.left>rectB.right||rectA.right<rectB.left);
+}
 
-    if (score > highscore) {
-      highscore = score;
-      localStorage.setItem("highscore", highscore);
-      highscoreDisplay.textContent = `High Score: ${highscore} KG`;
-    }
+// Dragging
+let dragging=false;
+let offset={x:0,y:0};
 
-    if (document.querySelectorAll(".food").length === 0) {
-      setTimeout(spawnFood, 600);
-    }
-  }
+function startDrag(e){
+  dragging=true;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  offset.x = clientX - player.offsetLeft;
+  offset.y = clientY - player.offsetTop;
+}
+function doDrag(e){
+  if(!dragging) return;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  let x = clientX - offset.x;
+  let y = clientY - offset.y;
+  x = Math.max(0, Math.min(gameWidth-50, x));
+  y = Math.max(0, Math.min(gameHeight-50, y));
+  player.style.left = x+'px';
+  player.style.top = y+'px';
+  checkCollisions();
+}
+function endDrag(){dragging=false;}
 
-  function hitBad() {
-    score = 0;
-    playerSize = 50;
-    player.style.width = playerSize + "px";
-    player.style.height = playerSize + "px";
-    scoreDisplay.textContent = `Score: ${score} KG`;
-    document.querySelectorAll(".food, .bad").forEach(f => f.remove());
-    setTimeout(spawnFood, 800);
-  }
+player.addEventListener('mousedown', startDrag);
+player.addEventListener('touchstart', startDrag);
+window.addEventListener('mousemove', doDrag);
+window.addEventListener('touchmove', doDrag);
+window.addEventListener('mouseup', endDrag);
+window.addEventListener('touchend', endDrag);
 
-  player.addEventListener("mousedown", (e) => {
-    isDragging = true;
-    offsetX = e.offsetX;
-    offsetY = e.offsetY;
-    player.style.cursor = "grabbing";
+// Leaderboard update
+async function updateLeaderboard(){
+  const q = query(collection(db,'highscores'), orderBy('score','desc'), limit(5));
+  const snapshot = await getDocs(q);
+  leaderboardList.innerHTML='';
+  snapshot.forEach(doc=>{
+    const data = doc.data();
+    const li = document.createElement('li');
+    li.textContent=`${data.username}: ${data.score} kg`;
+    leaderboardList.appendChild(li);
   });
-  window.addEventListener("mouseup", () => {
-    isDragging = false;
-    player.style.cursor = "grab";
-  });
-  window.addEventListener("mousemove", movePlayer);
+}
 
-  player.addEventListener("touchstart", (e) => {
-    isDragging = true;
-    const touch = e.touches[0];
-    const rect = player.getBoundingClientRect();
-    offsetX = touch.clientX - rect.left;
-    offsetY = touch.clientY - rect.top;
-  }, { passive: false });
-
-  window.addEventListener("touchend", () => isDragging = false);
-  window.addEventListener("touchmove", (e) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-    movePlayer(touch);
-  }, { passive: false });
-
-  function movePlayer(e) {
-    if (!isDragging) return;
-
-    const rect = container.getBoundingClientRect();
-    const clientX = e.clientX || e.pageX;
-    const clientY = e.clientY || e.pageY;
-
-    let x = clientX - rect.left - offsetX;
-    let y = clientY - rect.top - offsetY;
-
-    x = Math.max(0, Math.min(rect.width - player.offsetWidth, x));
-    y = Math.max(0, Math.min(rect.height - player.offsetHeight, y));
-
-    player.style.left = x + "px";
-    player.style.top = y + "px";
-
-    document.querySelectorAll(".food").forEach(food => {
-      if (checkCollision(player, food)) eatFood(food);
-    });
-    document.querySelectorAll(".bad").forEach(bad => {
-      if (checkCollision(player, bad)) hitBad();
-    });
+// Save high score
+async function saveHighScore(currentScore){
+  if(!username) return;
+  const docRef = doc(db,'highscores',username);
+  const docSnap = await getDoc(docRef);
+  if(!docSnap.exists() || currentScore > docSnap.data().score){
+    await setDoc(docRef,{username, score: currentScore});
   }
+  updateLeaderboard();
+}
 
-  resetBtn.addEventListener("click", () => {
-    score = 0;
-    playerSize = 50;
-    localStorage.removeItem("highscore");
-    highscore = 0;
-    scoreDisplay.textContent = `Score: ${score} KG`;
-    highscoreDisplay.textContent = `High Score: ${highscore} KG`;
+// Check collisions
+function checkCollisions(){
+  foods.forEach((f,i)=>{
+    if(isColliding(player,f)){
+      f.remove();
+      foods.splice(i,1);
+      score++;
+      playerScale+=0.05;
+      player.style.transform=`scale(${playerScale})`;
+      scoreBoard.textContent='Score: '+score+' kg';
+    }
+  });
+  if(foods.length===0){
     spawnFood();
+    spawnBad();
+  }
+  bads.forEach(b=>{
+    if(isColliding(player,b)){
+      saveHighScore(score); // pass current score explicitly
+      score=0;
+      playerScale=1;
+      player.style.transform=`scale(${playerScale})`;
+      scoreBoard.textContent='Score: '+score+' kg';
+      spawnFood();
+      spawnBad();
+    }
   });
+}
 
-  player.style.left = "45%";
-  player.style.top = "45%";
-  spawnFood();
+// Initial spawn and leaderboard
+spawnFood();
+updateLeaderboard();
 </script>
+
 </body>
 </html>
