@@ -195,15 +195,32 @@ function spawnFood() {
   }
 }
 
-// Spawn bad
-function spawnBad(){
-  bads.forEach(b=>b.remove());
-  bads=[];
+// ✅ Spawn bad *NOT on the player*
+function spawnBad() {
+  bads.forEach(b => b.remove());
+  bads = [];
+
   const b = document.createElement('div');
-  b.className='bad';
-  const pos = randomPosition();
-  b.style.left=pos.x+'px';
-  b.style.top=pos.y+'px';
+  b.className = 'bad';
+
+  let pos;
+  const playerRect = player.getBoundingClientRect();
+  const safeDistance = 120; // radius where bad cannot spawn
+
+  do {
+    pos = randomPosition();
+
+    const tooClose = Math.hypot(
+      (playerRect.left + 25) - (pos.x + 25),
+      (playerRect.top + 25) - (pos.y + 25)
+    ) < safeDistance;
+
+    if (!tooClose) break;
+
+  } while (true);
+
+  b.style.left = pos.x + 'px';
+  b.style.top = pos.y + 'px';
   gameArea.appendChild(b);
   bads.push(b);
   requestAnimationFrame(()=>b.style.transform='scale(1)');
@@ -290,7 +307,7 @@ function checkCollisions(){
   }
   bads.forEach(b=>{
     if(isColliding(player,b)){
-      saveHighScore(score); // pass current score explicitly
+      saveHighScore(score);
       score=0;
       playerScale=1;
       player.style.transform=`scale(${playerScale})`;
