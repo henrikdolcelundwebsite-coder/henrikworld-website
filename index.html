@@ -1,198 +1,78 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home - henrikworld.com</title>
-  <link rel="icon" type="image/png" href="favicon.png" />
-  <style>
-    body {
-      font-family: monospace;
-      background-color: white;
-      color: black;
-      margin: 0;
-      padding: 0;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      opacity: 0;
-      animation: fadeInBody 0.7s ease-in-out forwards;
-    }
-
-    @keyframes fadeInBody {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    #topBar {
-      position: absolute;
-      top: 10px;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      opacity: 0;
-      animation: fadeInUp 0.6s ease-out 0.3s forwards;
-    }
-
-    button.top-btn {
-      background-color: white;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 6px 12px;
-      font-family: monospace;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-
-    button.top-btn:hover {
-      background-color: #f5f5f5;
-    }
-
-    #usernameDisplay {
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      background-color: white;
-      border: 1px solid #ccc;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      opacity: 0;
-      transform: translateY(-10px);
-      animation: fadeInUp 0.6s ease-out 0.3s forwards;
-    }
-
-    #usernameDisplay:hover {
-      background-color: #f5f5f5;
-    }
-
-    #welcomeMessage {
-      font-size: 18px;
-      opacity: 0;
-      transform: translateY(10px);
-      animation: fadeInUp 0.6s ease-out 0.5s forwards;
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
-
-    // 🔥 Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
-      authDomain: "henrikworldonline-a726f.firebaseapp.com",
-      projectId: "henrikworldonline-a726f",
-      storageBucket: "henrikworldonline-a726f.firebasestorage.app",
-      messagingSenderId: "1060990020059",
-      appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
-      measurementId: "G-VQNK4YN1C5"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // 🔒 Check if the site is down before anything else
-    async function checkSiteStatus() {
-      try {
-        const ref = doc(db, "config", "siteStatus");
-        const snap = await getDoc(ref);
-        if (snap.exists() && snap.data().shutdown === true) {
-          window.location.href = "serverdown.html";
-        }
-      } catch (e) {
-        console.error("Error checking site status:", e);
-      }
-    }
-
-    // ✅ Normal login system
-    async function checkLogin() {
-      const savedUser = JSON.parse(localStorage.getItem("user"));
-      if (!savedUser || !savedUser.username || !savedUser.password) {
-        window.location.href = "login.html";
-        return;
-      }
-
-      const username = savedUser.username;
-      const password = savedUser.password;
-
-      if (username === "Admin" && password === "Admin123") {
-        displayUser(username);
-        return;
-      }
-
-      try {
-        const q = query(
-          collection(db, "accounts"),
-          where("username", "==", username),
-          where("password", "==", password)
-        );
-        const snapshot = await getDocs(q);
-        if (snapshot.empty) {
-          localStorage.removeItem("user");
-          window.location.href = "login.html";
-          return;
-        }
-
-        displayUser(username);
-      } catch (e) {
-        console.error("Error verifying user:", e);
-        localStorage.removeItem("user");
-        window.location.href = "login.html";
-      }
-    }
-
-    function displayUser(username) {
-      document.getElementById("usernameDisplay").textContent = username;
-      document.getElementById("welcomeMessage").textContent = `Welcome, ${username}!`;
-    }
-
-    function signOut() {
-      localStorage.removeItem("user");
-      window.location.href = "login.html";
-    }
-
-    function goChat() {
-      window.location.href = "chat.html";
-    }
-
-    function goFriends() {
-      window.location.href = "friends.html";
-    }
-
-    function goGames() {
-      window.location.href = "games.html";
-    }
-
-    // 🚀 On load
-    window.addEventListener("DOMContentLoaded", async () => {
-      await checkSiteStatus(); // First check if site is shut down
-      document.getElementById("usernameDisplay").addEventListener("click", signOut);
-      document.getElementById("chatBtn").addEventListener("click", goChat);
-      document.getElementById("friendsBtn").addEventListener("click", goFriends);
-      document.getElementById("gamesBtn").addEventListener("click", goGames);
-      checkLogin();
-    });
-  </script>
+    <title>Photo Upload</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        img { width: 200px; margin: 10px; border-radius: 8px; object-fit: cover; }
+        #gallery { display: flex; flex-wrap: wrap; }
+    </style>
 </head>
 <body>
-  <div id="topBar">
-    <button id="chatBtn" class="top-btn">Chat</button>
-    <button id="friendsBtn" class="top-btn">Friends</button>
-    <button id="gamesBtn" class="top-btn">Games</button>
-  </div>
 
-  <div id="usernameDisplay">Loading...</div>
-  <div id="welcomeMessage">Loading...</div>
+    <h2>Upload a Photo</h2>
+    <input type="file" id="fileInput" accept="image/*">
+    <button id="uploadBtn">Upload</button>
+
+    <h2>Gallery</h2>
+    <div id="gallery"></div>
+
+    <!-- Firebase SDK (Older Compatibility Build) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+    <script>
+        // Your Firebase config (already updated and correct!)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
+            authDomain: "henrikworldonline-a726f.firebaseapp.com",
+            databaseURL: "https://henrikworldonline-a726f-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "henrikworldonline-a726f",
+            storageBucket: "henrikworldonline-a726f.appspot.com",
+            messagingSenderId: "1060990020059",
+            appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
+            measurementId: "G-VQNK4YN1C5"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const storage = firebase.storage();
+
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const gallery = document.getElementById('gallery');
+
+        uploadBtn.addEventListener('click', () => {
+            const file = fileInput.files[0];
+            if (!file) return alert("Choose an image first!");
+
+            const fileName = Date.now() + "-" + file.name;
+            const storageRef = storage.ref('photos/' + fileName);
+
+            storageRef.put(file).then(() => {
+                alert("Uploaded!");
+                loadImages(); // refresh gallery
+            });
+        });
+
+        function loadImages() {
+            gallery.innerHTML = ""; // clear current gallery
+            const listRef = storage.ref('photos');
+
+            listRef.listAll().then((res) => {
+                res.items.forEach((itemRef) => {
+                    itemRef.getDownloadURL().then(url => {
+                        const img = document.createElement('img');
+                        img.src = url;
+                        gallery.appendChild(img);
+                    });
+                });
+            });
+        }
+
+        // Load images when page opens
+        loadImages();
+    </script>
+
 </body>
 </html>
