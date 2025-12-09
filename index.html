@@ -1,78 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Photo Upload</title>
-    <style>
-        body { font-family: Arial; padding: 20px; }
-        img { width: 200px; margin: 10px; border-radius: 8px; object-fit: cover; }
-        #gallery { display: flex; flex-wrap: wrap; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Website Down</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: Arial, Helvetica, sans-serif;
+      text-align: center;
+      font-size: 1.5rem;
+    }
+  </style>
 </head>
 <body>
-
-    <h2>Upload a Photo</h2>
-    <input type="file" id="fileInput" accept="image/*">
-    <button id="uploadBtn">Upload</button>
-
-    <h2>Gallery</h2>
-    <div id="gallery"></div>
-
-    <!-- Firebase SDK (Older Compatibility Build) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-
-    <script>
-        // Your Firebase config (already updated and correct!)
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
-            authDomain: "henrikworldonline-a726f.firebaseapp.com",
-            databaseURL: "https://henrikworldonline-a726f-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "henrikworldonline-a726f",
-            storageBucket: "henrikworldonline-a726f.appspot.com",
-            messagingSenderId: "1060990020059",
-            appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
-            measurementId: "G-VQNK4YN1C5"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const storage = firebase.storage();
-
-        const fileInput = document.getElementById('fileInput');
-        const uploadBtn = document.getElementById('uploadBtn');
-        const gallery = document.getElementById('gallery');
-
-        uploadBtn.addEventListener('click', () => {
-            const file = fileInput.files[0];
-            if (!file) return alert("Choose an image first!");
-
-            const fileName = Date.now() + "-" + file.name;
-            const storageRef = storage.ref('photos/' + fileName);
-
-            storageRef.put(file).then(() => {
-                alert("Uploaded!");
-                loadImages(); // refresh gallery
-            });
-        });
-
-        function loadImages() {
-            gallery.innerHTML = ""; // clear current gallery
-            const listRef = storage.ref('photos');
-
-            listRef.listAll().then((res) => {
-                res.items.forEach((itemRef) => {
-                    itemRef.getDownloadURL().then(url => {
-                        const img = document.createElement('img');
-                        img.src = url;
-                        gallery.appendChild(img);
-                    });
-                });
-            });
-        }
-
-        // Load images when page opens
-        loadImages();
-    </script>
-
+  <div>Sorry, this website is down and will be up soon.</div>
 </body>
 </html>
