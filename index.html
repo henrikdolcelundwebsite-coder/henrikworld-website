@@ -102,7 +102,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 🔒 Check if the site is down before anything else
     async function checkSiteStatus() {
       try {
         const ref = doc(db, "config", "siteStatus");
@@ -115,7 +114,6 @@
       }
     }
 
-    // ✅ Normal login system
     async function checkLogin() {
       const savedUser = JSON.parse(localStorage.getItem("user"));
       if (!savedUser || !savedUser.username || !savedUser.password) {
@@ -157,30 +155,20 @@
       document.getElementById("welcomeMessage").textContent = `Welcome, ${username}!`;
     }
 
-    function signOut() {
-      localStorage.removeItem("user");
-      window.location.href = "login.html";
-    }
+    function signOut() { localStorage.removeItem("user"); window.location.href = "login.html"; }
 
-    function goChat() {
-      window.location.href = "chat.html";
-    }
+    function goChat() { window.location.href = "chat.html"; }
+    function goFriends() { window.location.href = "friends.html"; }
+    function goGames() { window.location.href = "games.html"; }
+    function goAI() { window.location.href = "henrikai.html"; } // NEW AI BUTTON
 
-    function goFriends() {
-      window.location.href = "friends.html";
-    }
-
-    function goGames() {
-      window.location.href = "games.html";
-    }
-
-    // 🚀 On load
     window.addEventListener("DOMContentLoaded", async () => {
-      await checkSiteStatus(); // First check if site is shut down
+      await checkSiteStatus();
       document.getElementById("usernameDisplay").addEventListener("click", signOut);
       document.getElementById("chatBtn").addEventListener("click", goChat);
       document.getElementById("friendsBtn").addEventListener("click", goFriends);
       document.getElementById("gamesBtn").addEventListener("click", goGames);
+      document.getElementById("aiBtn").addEventListener("click", goAI); // AI button listener
       checkLogin();
     });
   </script>
@@ -190,6 +178,7 @@
     <button id="chatBtn" class="top-btn">Chat</button>
     <button id="friendsBtn" class="top-btn">Friends</button>
     <button id="gamesBtn" class="top-btn">Games</button>
+    <button id="aiBtn" class="top-btn">Henrik AI</button> <!-- NEW BUTTON -->
   </div>
 
   <div id="usernameDisplay">Loading...</div>
