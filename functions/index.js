@@ -1,23 +1,10 @@
 const functions = require("firebase-functions");
 const fetch = require("node-fetch");
+const cors = require("cors")({ origin: true }); // allow all origins or specify your domain
 require("dotenv").config();
 
-exports.henrikAI = functions
-  .runWith({
-    memory: "256MB",
-    timeoutSeconds: 30
-  })
-  .https.onRequest(async (req, res) => {
-
-    // 🔥 Fix CORS
-    res.set("Access-Control-Allow-Origin", "*");
-    res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.set("Access-Control-Allow-Headers", "Content-Type");
-
-    if (req.method === "OPTIONS") {
-      return res.status(204).send(""); // Preflight OK
-    }
-
+exports.henrikAI = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => { // wrap your code with cors
     if (req.method !== "POST") {
       return res.status(405).send("Method Not Allowed");
     }
@@ -45,3 +32,4 @@ exports.henrikAI = functions
       res.status(500).send({ error: "OpenAI request failed" });
     }
   });
+});

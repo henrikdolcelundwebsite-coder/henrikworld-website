@@ -9,7 +9,7 @@
   #topBar { display:flex; justify-content:space-between; padding:10px 15px; border-bottom:1px solid #ccc; background:white; }
   #backBtn { background:white; border:1px solid #ccc; border-radius:4px; padding:6px 12px; cursor:pointer; }
   #backBtn:hover { background:#f5f5f5; }
-  #usernameDisplay { border:1px solid #ccc; border-radius:4px; padding:6px 12px; cursor:pointer; }
+  #usernameDisplay { border:1px solid #ccc; border-radius:4px; padding:6px 12px; }
 
   #chatArea { flex:1; display:flex; flex-direction:column; padding:10px; box-sizing:border-box; overflow:hidden; }
   #messages { flex:1; overflow-y:auto; margin-bottom:10px; }
@@ -38,19 +38,18 @@
 </div>
 
 <script>
-// UI elements
 const usernameDisplay = document.getElementById("usernameDisplay");
 const messagesDiv = document.getElementById("messages");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 const backBtn = document.getElementById("backBtn");
 
-// Load the saved username
+// Load username
 let savedUser = JSON.parse(localStorage.getItem("user"));
 let currentUser = savedUser && savedUser.username ? savedUser.username : "Guest";
 usernameDisplay.textContent = currentUser;
 
-// Click username to log out
+// Logout on username click
 usernameDisplay.addEventListener("click", () => {
   localStorage.removeItem("user");
   window.location.href = "login.html";
@@ -61,57 +60,48 @@ backBtn.addEventListener("click", () => {
   window.location.href = "index.html";
 });
 
-// Firebase Function API URL
-const API_URL = "https://us-central1-henrikworldonline-a726f.cloudfunctions.net/henrikAI";
-
-// Append message to chat window
+// Append message to chat
 function appendMessage(text, sender="ai") {
   const div = document.createElement("div");
-  div.className = "message " + (sender === "user" ? "user" : "ai");
+  div.className = "message " + (sender==="user" ? "user" : "ai");
   const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  div.innerHTML = `<strong>${sender === "user" ? currentUser : "Henrik AI"}:</strong> ${text} <div class="meta">${time}</div>`;
+  div.innerHTML = `<strong>${sender==="user"?currentUser:"Henrik AI"}:</strong> ${text} <div class="meta">${time}</div>`;
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// Send message to Firebase + OpenAI
+// Send message
 async function sendMessage() {
   const prompt = messageInput.value.trim();
-  if (!prompt) return;
+  if(!prompt) return;
   appendMessage(prompt, "user");
   messageInput.value = "";
-
+  
   try {
-    const res = await fetch(API_URL, {
+    const res = await fetch("https://us-central1-henrikworldonline-a726f.cloudfunctions.net/henrikAI", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt })
     });
-
     const data = await res.json();
-    let reply = "No response";
-
-    // Handle multiple possible formats
-    if (data.output_text) reply = data.output_text;
-    else if (data.output && Array.isArray(data.output)) {
-      reply = data.output.map(o => o.content?.map(c => c.text).join(" ")).join(" ");
-    } else if (data.choices && data.choices[0].message) {
-      reply = data.choices[0].message.content;
+    let aiResponse = "";
+    if(data.output && data.output[0] && data.output[0].content) {
+      aiResponse = data.output[0].content.map(c => c.text).join(" ");
+    } else if(data.output_text) {
+      aiResponse = data.output_text;
+    } else {
+      aiResponse = "Sorry, Henrik AI couldn't answer that.";
     }
-
-    appendMessage(reply, "ai");
-
-  } catch (e) {
-    console.error(e);
+    appendMessage(aiResponse, "ai");
+  } catch(e) {
     appendMessage("Error connecting to Henrik AI.", "ai");
+    console.error(e);
   }
 }
 
-// Send on button click or ENTER
+// Event listeners
 sendBtn.addEventListener("click", sendMessage);
-messageInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") sendMessage();
-});
+messageInput.addEventListener("keydown", e => { if(e.key==="Enter") sendMessage(); });
 </script>
 
 </body>
