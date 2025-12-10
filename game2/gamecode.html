@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rhombus Eater</title>
+<style>
+  body {
+    margin: 0;
+    font-family: monospace;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #topBar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    border-bottom: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+  button.top-btn {
+    padding: 6px 12px;
+    font-family: monospace;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    transition: background-color 0.2s ease;
+  }
+  button.top-btn:hover {
+    background-color: #f5f5f5;
+  }
+  #gameArea {
+    width: 800px;
+    height: 600px;
+    position: relative;
+    background: url('./assets/backgrounds/default.png') no-repeat center center;
+    background-size: cover;
+    border: 2px solid #333;
+    border-radius: 10px;
+    margin-top: 20px;
+    touch-action: none;
+    overflow: hidden;
+  }
+  .player, .food, .bad {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    user-select: none;
+    touch-action: none;
+    transform: scale(0);
+    transition: transform 0.2s ease;
+  }
+  .player {
+    background: url('./assets/skins/default.png') no-repeat center center;
+    background-size: contain;
+    z-index: 10;
+    transform: scale(1);
+  }
+  .food {
+    background-size: contain;
+  }
+  .bad {
+    background: url('./assets/food/bad.png') no-repeat center center;
+    background-size: contain;
+  }
+  #scoreBoard {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px black;
+  }
+  #usernameDisplay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px black;
+    cursor: pointer;
+  }
+  #leaderboard {
+    margin-top: 20px;
+    width: 300px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: left;
+    font-family: monospace;
+  }
+  #leaderboard h3 {
+    margin: 0 0 10px 0;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div id="topBar">
+  <button class="top-btn" onclick="window.location.href='../index.html'">Back</button>
+  <div><strong>Rhombus Eater</strong></div>
+</div>
+
+<div id="gameArea">
+  <div id="scoreBoard">Score: 0 kg</div>
+  <div id="usernameDisplay">Player</div>
+  <div class="player" id="player"></div>
+</div>
+
+<div id="leaderboard">
+  <h3>Leaderboard</h3>
+  <ol id="leaderboardList">
+    <li>Loading...</li>
+  </ol>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
+  authDomain: "henrikworldonline-a726f.firebaseapp.com",
+  projectId: "henrikworldonline-a726f",
+  storageBucket: "henrikworldonline-a726f.firebasestorage.app",
+  messagingSenderId: "1060990020059",
+  appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
+  measurementId: "G-VQNK4YN1C5"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const gameArea = document.getElementById('gameArea');
+const player = document.getElementById('player');
+const scoreBoard = document.getElementById('scoreBoard');
+const usernameDisplay = document.getElementById('usernameDisplay');
+const leaderboardList = document.getElementById('leaderboardList');
+
+let score = 0;
+let playerScale = 1;
+const gameWidth = gameArea.clientWidth;
+const gameHeight = gameArea.clientHeight;
+
+const savedUser = JSON.parse(localStorage.getItem("user"));
+let username = savedUser?.username || "Player";
+usernameDisplay.textContent = username;
+
+usernameDisplay.addEventListener("click", () => {
+  localStorage.removeItem("user");
+  window.location.href = "../login.html";
+});
+
+player.style.left = (gameWidth/2 - 25) + 'px';
+player.style.top = (gameHeight/2 - 25) + 'px';
+
+let foods = [];
+let bads = [];
+let respawning = false;
+
+// Random position
+function randomPosition() {
+  return { x: Math.random() * (gameWidth - 50), y: Math.random() * (gameHeight - 50) };
+}
+
+// Spawn food with rare chance
+function spawnFood() {
+  foods.forEach(f=>f.remove());
+  foods = [];
+  const count = Math.floor(Math.random()*5)+1;
+  for(let i=0;i<count;i++){
+    const f = document.createElement('div');
+    f.className = 'food';
+    const pos = randomPosition();
+    f.style.left = pos.x+'px';
+    f.style.top = pos.y+'px';
+
+    // Rare food chance
+    if(Math.random() < 0.1) f.style.background = "url('./assets/food/foodrare.png') no-repeat center center";
+    else f.style.background = "url('./assets/food/food.png') no-repeat center center";
+
+    f.style.backgroundSize = "contain";
+    gameArea.appendChild(f);
+    foods.push(f);
+    requestAnimationFrame(()=>f.style.transform='scale(1)');
+  }
+}
+
+// Spawn bad without overlapping player
+function spawnBad() {
+  bads.forEach(b=>b.remove());
+  bads = [];
+
+  const b = document.createElement('div');
+  b.className = 'bad';
+
+  let pos;
+  const playerRect = player.getBoundingClientRect();
+  const safeDistance = 120;
+
+  do {
+    pos = randomPosition();
+  } while(Math.hypot((playerRect.left + 25) - (pos.x + 25), (playerRect.top + 25) - (pos.y + 25)) < safeDistance);
+
+  b.style.left = pos.x + 'px';
+  b.style.top = pos.y + 'px';
+  gameArea.appendChild(b);
+  bads.push(b);
+  requestAnimationFrame(()=>b.style.transform='scale(1)');
+}
+
+// Collision check
+function isColliding(a,b){
+  const rectA=a.getBoundingClientRect();
+  const rectB=b.getBoundingClientRect();
+  return !(rectA.top>rectB.bottom||rectA.bottom<rectB.top||rectA.left>rectB.right||rectA.right<rectB.left);
+}
+
+// Dragging for smooth movement
+let dragging=false;
+let offset={x:0,y:0};
+function startDrag(e){
+  dragging=true;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  offset.x = clientX - player.offsetLeft;
+  offset.y = clientY - player.offsetTop;
+}
+function doDrag(e){
+  if(!dragging) return;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  let x = clientX - offset.x;
+  let y = clientY - offset.y;
+  x = Math.max(0, Math.min(gameWidth-50, x));
+  y = Math.max(0, Math.min(gameHeight-50, y));
+  player.style.left = x+'px';
+  player.style.top = y+'px';
+  checkCollisions();
+}
+function endDrag(){dragging=false;}
+
+player.addEventListener('mousedown', startDrag);
+player.addEventListener('touchstart', startDrag);
+window.addEventListener('mousemove', doDrag);
+window.addEventListener('touchmove', doDrag);
+window.addEventListener('mouseup', endDrag);
+window.addEventListener('touchend', endDrag);
+
+// Leaderboard
+async function updateLeaderboard(){
+  const q = query(collection(db,'highscores'), orderBy('score','desc'), limit(5));
+  const snapshot = await getDocs(q);
+  leaderboardList.innerHTML='';
+  snapshot.forEach(doc=>{
+    const data = doc.data();
+    const li = document.createElement('li');
+    li.textContent=`${data.username}: ${data.score} kg`;
+    leaderboardList.appendChild(li);
+  });
+}
+
+// Save high score
+async function saveHighScore(currentScore){
+  if(!username) return;
+  const docRef = doc(db,'highscores',username);
+  const docSnap = await getDoc(docRef);
+  if(!docSnap.exists() || currentScore > docSnap.data().score){
+    await setDoc(docRef,{username, score: currentScore});
+  }
+  updateLeaderboard();
+}
+
+// Check collisions and respawn
+function checkCollisions(){
+  foods.forEach((f,i)=>{
+    if(isColliding(player,f)){
+      f.remove();
+      foods.splice(i,1);
+      score++;
+      playerScale+=0.05;
+      player.style.transform=`scale(${playerScale})`;
+      scoreBoard.textContent='Score: '+score+' kg';
+    }
+  });
+
+  if(foods.length===0 && !respawning){
+    respawning = true;
+    setTimeout(()=>{
+      spawnFood();
+      spawnBad();
+      respawning = false;
+    }, 500);
+  }
+
+  bads.forEach(b=>{
+    if(isColliding(player,b)){
+      saveHighScore(score);
+      score=0;
+      playerScale=1;
+      player.style.transform=`scale(${playerScale})`;
+      scoreBoard.textContent='Score: '+score+' kg';
+      spawnFood();
+      spawnBad();
+    }
+  });
+}
+
+// Initial spawn
+spawnFood();
+spawnBad();
+updateLeaderboard();
+</script>
+
+</body>
+</html>

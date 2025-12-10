@@ -21,9 +21,11 @@
 
   #messages { flex:1; overflow-y:auto; margin-bottom:10px; }
   .message { margin-bottom:6px; }
+  .message img { max-width:200px; display:block; margin-top:4px; border-radius:4px; }
   .message .meta { font-size:10px; color:#888; }
   #messageForm { display:flex; gap:5px; }
   #messageInput { flex:1; padding:8px; border:1px solid #ccc; border-radius:4px; }
+  #imageInput { padding:8px; border:1px solid #ccc; border-radius:4px; }
   #sendBtn { padding:8px 12px; border:1px solid #ccc; border-radius:4px; background:white; cursor:pointer; }
   #sendBtn:hover { background:#f5f5f5; }
 </style>
@@ -32,8 +34,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
 import {
   getFirestore, collection, query, where, getDocs,
-  addDoc, orderBy, onSnapshot, Timestamp
+  addDoc, orderBy, onSnapshot, Timestamp, doc
 } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
@@ -47,6 +50,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 let currentUser = null;
 let activeFriend = null;
@@ -73,10 +77,8 @@ async function loadFriends() {
     .filter(f => f.user1 === currentUser || f.user2 === currentUser)
     .map(f => f.user1 === currentUser ? f.user2 : f.user1);
 
-  // General Chat first, then actual friends
   friendsMap = {"General Chat": {latestMsg:"", timestamp:0}};
   friends.forEach(f => friendsMap[f] = {latestMsg:"", timestamp:0});
-
   renderFriends();
 }
 
@@ -85,10 +87,10 @@ function subscribeAllMessages() {
     snapshot.docChanges().forEach(change => {
       const m = change.doc.data();
       const friend = m.from===currentUser ? m.to : m.from;
-      if (!friendsMap[friend]) return; // ignore non-friends
+      if (!friendsMap[friend]) return;
       const time = m.timestamp?.toDate()?.getTime() || 0;
       if (time > friendsMap[friend].timestamp) {
-        friendsMap[friend].latestMsg = m.message;
+        friendsMap[friend].latestMsg = m.message || (m.imageURL ? "📷 Image" : "");
         friendsMap[friend].timestamp = time;
       }
     });
@@ -98,10 +100,8 @@ function subscribeAllMessages() {
 
 function renderFriends() {
   const friendsList = document.getElementById("friendsList");
-  const sortedFriends = Object.keys(friendsMap).sort((a,b)=>{
-    return friendsMap[b].timestamp - friendsMap[a].timestamp;
-  });
-  friendsList.innerHTML = sortedFriends.map(f=>{
+  const sortedFriends = Object.keys(friendsMap).sort((a,b)=> friendsMap[b].timestamp - friendsMap[a].timestamp);
+  friendsList.innerHTML = sortedFriends.map(f=> {
     const friend = friendsMap[f];
     return `<div onclick="selectFriend('${f}', this)">
       ${f} <span class="latestMsg">${friend.latestMsg}</span>
@@ -109,7 +109,7 @@ function renderFriends() {
   }).join("");
 }
 
-// --- Private / General Chat ---
+// --- Select chat ---
 function selectFriend(friend, el) {
   activeFriend = friend;
   Array.from(document.getElementById("friendsList").children).forEach(d=>d.classList.remove("active"));
@@ -124,6 +124,7 @@ function selectFriend(friend, el) {
   }
 }
 
+// --- Load messages ---
 function loadMessages() {
   if (!activeFriend) return;
   if (messagesListener) messagesListener();
@@ -135,49 +136,57 @@ function loadMessages() {
       const m = d.data();
       const time = m.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
       const sender = m.from===currentUser?"You":m.from;
-      return `<div class="message"><strong>${sender}:</strong> ${m.message}<div class="meta">${time}</div></div>`;
+      let content = m.message ? `<strong>${sender}:</strong> ${m.message}` : `<strong>${sender}:</strong> <img src="${m.imageURL}" />`;
+      return `<div class="message">${content}<div class="meta">${time}</div></div>`;
     }).join("");
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   });
 }
 
-// General chat listener
+// --- General chat ---
 const generalCollection = collection(db,"generalMessages");
 function loadGeneralChat() {
   const messagesDiv = document.getElementById("messages");
   if (messagesListener) messagesListener();
-  messagesListener = onSnapshot(
-    query(generalCollection, orderBy("timestamp")),
-    snapshot => {
-      messagesDiv.innerHTML = snapshot.docs.map(d=>{
-        const m = d.data();
-        const time = m.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        return `<div class="message"><strong>${m.from}:</strong> ${m.message}<div class="meta">${time}</div></div>`;
-      }).join("");
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-  );
+  messagesListener = onSnapshot(query(generalCollection, orderBy("timestamp")), snapshot => {
+    messagesDiv.innerHTML = snapshot.docs.map(d=>{
+      const m = d.data();
+      const time = m.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      let content = m.message ? `<strong>${m.from}:</strong> ${m.message}` : `<strong>${m.from}:</strong> <img src="${m.imageURL}" />`;
+      return `<div class="message">${content}<div class="meta">${time}</div></div>`;
+    }).join("");
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  });
 }
 
-// Send message (private or general)
+// --- Send message ---
 async function sendMessage() {
   const input = document.getElementById("messageInput");
-  if (!activeFriend || !input.value.trim()) return;
+  const imageInput = document.getElementById("imageInput");
+  if (!activeFriend) return;
 
-  if (activeFriend === "General Chat") {
-    await addDoc(generalCollection, {
-      from: currentUser,
-      message: input.value.trim(),
-      timestamp: Timestamp.now()
-    });
+  // Image upload
+  if (imageInput.files.length > 0) {
+    const file = imageInput.files[0];
+    const storageRef = ref(storage, `chatImages/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+
+    if (activeFriend==="General Chat") {
+      await addDoc(generalCollection, {from:currentUser, imageURL:url, timestamp:Timestamp.now()});
+    } else {
+      await addDoc(collection(db,"messages"), {chatId:activeChatId, from:currentUser, to:activeFriend, imageURL:url, timestamp:Timestamp.now()});
+    }
+    imageInput.value = "";
+    return;
+  }
+
+  if (!input.value.trim()) return;
+
+  if (activeFriend==="General Chat") {
+    await addDoc(generalCollection, {from:currentUser, message:input.value.trim(), timestamp:Timestamp.now()});
   } else {
-    await addDoc(collection(db,"messages"), {
-      chatId: activeChatId,
-      from: currentUser,
-      to: activeFriend,
-      message: input.value.trim(),
-      timestamp: Timestamp.now()
-    });
+    await addDoc(collection(db,"messages"), {chatId:activeChatId, from:currentUser, to:activeFriend, message:input.value.trim(), timestamp:Timestamp.now()});
   }
   input.value="";
 }
@@ -187,9 +196,8 @@ window.selectFriend = selectFriend;
 window.addEventListener("DOMContentLoaded",()=>{
   document.getElementById("backBtn").addEventListener("click",()=>window.location.href="index.html");
   document.getElementById("sendBtn").addEventListener("click", sendMessage);
-  document.getElementById("messageInput").addEventListener("keydown",(e)=>{
-    if(e.key==="Enter") sendMessage();
-  });
+  document.getElementById("messageInput").addEventListener("keydown",(e)=>{ if(e.key==="Enter") sendMessage(); });
+  document.getElementById("imageInput").addEventListener("change", sendMessage);
   loadUser();
 });
 </script>
@@ -206,6 +214,7 @@ window.addEventListener("DOMContentLoaded",()=>{
     <div id="messages"></div>
     <div id="messageForm">
       <input type="text" id="messageInput" placeholder="Type a message..." />
+      <input type="file" id="imageInput" accept="image/*" />
       <button id="sendBtn">Send</button>
     </div>
   </div>
