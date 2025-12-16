@@ -3,38 +3,64 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rhombus Eater</title>
+<title>Rhombus Eater - Henrik World</title>
 <style>
   body {
     margin: 0;
-    font-family: monospace;
-    background: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: white;
+    color: #111;
     display: flex;
     flex-direction: column;
     align-items: center;
+    min-height: 100vh;
   }
+
   #topBar {
     width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
-    border-bottom: 1px solid #ccc;
+    padding: 12px 20px;
+    border-bottom: 1px solid #eee;
     box-sizing: border-box;
+    background-color: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
   }
+
   button.top-btn {
-    padding: 6px 12px;
-    font-family: monospace;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 8px 16px;
     font-size: 14px;
     cursor: pointer;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: white;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
   }
+
   button.top-btn:hover {
     background-color: #f5f5f5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   }
+
+  #usernameDisplay {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 8px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+  }
+
+  #usernameDisplay:hover {
+    background-color: #f9f9f9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+
   #gameArea {
     width: 800px;
     height: 600px;
@@ -42,11 +68,12 @@
     background: url('./assets/backgrounds/default.png') no-repeat center center;
     background-size: cover;
     border: 2px solid #333;
-    border-radius: 10px;
+    border-radius: 12px;
     margin-top: 20px;
-    touch-action: none;
     overflow: hidden;
+    touch-action: none;
   }
+
   .player, .food, .bad {
     position: absolute;
     width: 50px;
@@ -56,49 +83,89 @@
     transform: scale(0);
     transition: transform 0.2s ease;
   }
+
   .player {
     background: url('./assets/skins/default.png') no-repeat center center;
     background-size: contain;
     z-index: 10;
     transform: scale(1);
   }
+
   .food {
     background-size: contain;
   }
+
   .bad {
-    background: url('./assets/food/bad.png') no-repeat center center;
+    background: url('./assets/bad.png') no-repeat center center;
     background-size: contain;
   }
+
+  .highlight-green {
+    box-shadow: 0 0 0 1000px rgba(0,255,0,0.25) inset;
+  }
+
+  .highlight-red {
+    box-shadow: 0 0 0 1000px rgba(255,0,0,0.25) inset;
+  }
+
+  .snowflake {
+    position: absolute;
+    top: -10px;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0.8;
+    pointer-events: none;
+    z-index: 20;
+  }
+
   #scoreBoard {
     position: absolute;
     top: 10px;
     left: 10px;
     font-size: 18px;
     font-weight: bold;
-    color: white;
-    text-shadow: 1px 1px 2px black;
+    color: #111;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
   }
-  #usernameDisplay {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-weight: bold;
-    color: white;
-    text-shadow: 1px 1px 2px black;
+
+  #highlightBtn {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-family: monospace;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: white;
     cursor: pointer;
+    transition: all 0.2s ease;
   }
+
+  #highlightBtn:hover {
+    background-color: #f0f0f0;
+  }
+
   #leaderboard {
     margin-top: 20px;
     width: 300px;
     border: 1px solid #ccc;
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 10px;
     text-align: left;
-    font-family: monospace;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
   }
+
   #leaderboard h3 {
     margin: 0 0 10px 0;
     text-align: center;
+  }
+
+  @media (max-width: 850px) {
+    #gameArea { width: 95%; height: 400px; }
+    #leaderboard { width: 90%; }
   }
 </style>
 </head>
@@ -106,14 +173,15 @@
 
 <div id="topBar">
   <button class="top-btn" onclick="window.location.href='../index.html'">Back</button>
-  <div><strong>Rhombus Eater</strong></div>
+  <div id="usernameDisplay">Player</div>
 </div>
 
 <div id="gameArea">
   <div id="scoreBoard">Score: 0 kg</div>
-  <div id="usernameDisplay">Player</div>
   <div class="player" id="player"></div>
 </div>
+
+<button id="highlightBtn">Highlight Foods</button>
 
 <div id="leaderboard">
   <h3>Leaderboard</h3>
@@ -144,6 +212,7 @@ const player = document.getElementById('player');
 const scoreBoard = document.getElementById('scoreBoard');
 const usernameDisplay = document.getElementById('usernameDisplay');
 const leaderboardList = document.getElementById('leaderboardList');
+const highlightBtn = document.getElementById('highlightBtn');
 
 let score = 0;
 let playerScale = 1;
@@ -166,16 +235,14 @@ let foods = [];
 let bads = [];
 let respawning = false;
 
-// Random position
-function randomPosition() {
-  return { x: Math.random() * (gameWidth - 50), y: Math.random() * (gameHeight - 50) };
-}
+function randomPosition() { return { x: Math.random()*(gameWidth-50), y: Math.random()*(gameHeight-50) }; }
 
-// Spawn food with rare chance
 function spawnFood() {
   foods.forEach(f=>f.remove());
   foods = [];
   const count = Math.floor(Math.random()*5)+1;
+  let rareSpawned = false;
+
   for(let i=0;i<count;i++){
     const f = document.createElement('div');
     f.className = 'food';
@@ -183,9 +250,12 @@ function spawnFood() {
     f.style.left = pos.x+'px';
     f.style.top = pos.y+'px';
 
-    // Rare food chance
-    if(Math.random() < 0.1) f.style.background = "url('./assets/food/foodrare.png') no-repeat center center";
-    else f.style.background = "url('./assets/food/food.png') no-repeat center center";
+    // Determine type
+    let rand = Math.random();
+    if(rand < 0.3) { f.dataset.points = "1"; f.dataset.type='1'; f.style.background="url('./assets/food/1.png') no-repeat center center"; }
+    else if(rand < 0.6) { f.dataset.points = "1"; f.dataset.type='2'; f.style.background="url('./assets/food/2.png') no-repeat center center"; }
+    else if(!rareSpawned) { f.dataset.points = "2"; f.dataset.type='3'; f.style.background="url('./assets/food/3.png') no-repeat center center"; rareSpawned=true; }
+    else { f.dataset.points = "1"; f.dataset.type='4'; f.style.background="url('./assets/food/4.png') no-repeat center center"; }
 
     f.style.backgroundSize = "contain";
     gameArea.appendChild(f);
@@ -194,59 +264,30 @@ function spawnFood() {
   }
 }
 
-// Spawn bad without overlapping player
 function spawnBad() {
   bads.forEach(b=>b.remove());
   bads = [];
-
   const b = document.createElement('div');
-  b.className = 'bad';
-
-  let pos;
-  const playerRect = player.getBoundingClientRect();
-  const safeDistance = 120;
-
-  do {
-    pos = randomPosition();
-  } while(Math.hypot((playerRect.left + 25) - (pos.x + 25), (playerRect.top + 25) - (pos.y + 25)) < safeDistance);
-
-  b.style.left = pos.x + 'px';
-  b.style.top = pos.y + 'px';
+  b.className='bad';
+  const pos = randomPosition();
+  b.style.left = pos.x+'px';
+  b.style.top = pos.y+'px';
   gameArea.appendChild(b);
   bads.push(b);
   requestAnimationFrame(()=>b.style.transform='scale(1)');
 }
 
-// Collision check
 function isColliding(a,b){
   const rectA=a.getBoundingClientRect();
   const rectB=b.getBoundingClientRect();
   return !(rectA.top>rectB.bottom||rectA.bottom<rectB.top||rectA.left>rectB.right||rectA.right<rectB.left);
 }
 
-// Dragging for smooth movement
 let dragging=false;
 let offset={x:0,y:0};
-function startDrag(e){
-  dragging=true;
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  offset.x = clientX - player.offsetLeft;
-  offset.y = clientY - player.offsetTop;
-}
-function doDrag(e){
-  if(!dragging) return;
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  let x = clientX - offset.x;
-  let y = clientY - offset.y;
-  x = Math.max(0, Math.min(gameWidth-50, x));
-  y = Math.max(0, Math.min(gameHeight-50, y));
-  player.style.left = x+'px';
-  player.style.top = y+'px';
-  checkCollisions();
-}
-function endDrag(){dragging=false;}
+function startDrag(e){ dragging=true; const clientX=e.touches?e.touches[0].clientX:e.clientX; const clientY=e.touches?e.touches[0].clientY:e.clientY; offset.x=clientX-player.offsetLeft; offset.y=clientY-player.offsetTop; }
+function doDrag(e){ if(!dragging) return; const clientX=e.touches?e.touches[0].clientX:e.clientX; const clientY=e.touches?e.touches[0].clientY:e.clientY; let x=clientX-offset.x; let y=clientY-offset.y; x=Math.max(0,Math.min(gameWidth-50,x)); y=Math.max(0,Math.min(gameHeight-50,y)); player.style.left=x+'px'; player.style.top=y+'px'; checkCollisions(); }
+function endDrag(){ dragging=false; }
 
 player.addEventListener('mousedown', startDrag);
 player.addEventListener('touchstart', startDrag);
@@ -255,51 +296,40 @@ window.addEventListener('touchmove', doDrag);
 window.addEventListener('mouseup', endDrag);
 window.addEventListener('touchend', endDrag);
 
-// Leaderboard
 async function updateLeaderboard(){
-  const q = query(collection(db,'highscores'), orderBy('score','desc'), limit(5));
-  const snapshot = await getDocs(q);
+  const q=query(collection(db,'highscores'), orderBy('score','desc'), limit(5));
+  const snapshot=await getDocs(q);
   leaderboardList.innerHTML='';
   snapshot.forEach(doc=>{
-    const data = doc.data();
-    const li = document.createElement('li');
+    const data=doc.data();
+    const li=document.createElement('li');
     li.textContent=`${data.username}: ${data.score} kg`;
     leaderboardList.appendChild(li);
   });
 }
 
-// Save high score
 async function saveHighScore(currentScore){
   if(!username) return;
-  const docRef = doc(db,'highscores',username);
-  const docSnap = await getDoc(docRef);
-  if(!docSnap.exists() || currentScore > docSnap.data().score){
-    await setDoc(docRef,{username, score: currentScore});
+  const docRef=doc(db,'highscores',username);
+  const docSnap=await getDoc(docRef);
+  if(!docSnap.exists() || currentScore>docSnap.data().score){
+    await setDoc(docRef,{username,score:currentScore});
   }
   updateLeaderboard();
 }
 
-// Check collisions and respawn
 function checkCollisions(){
   foods.forEach((f,i)=>{
     if(isColliding(player,f)){
-      f.remove();
-      foods.splice(i,1);
-      score++;
-      playerScale+=0.05;
+      const points = parseInt(f.dataset.points);
+      score += points;
+      playerScale += 0.05 * points;
       player.style.transform=`scale(${playerScale})`;
       scoreBoard.textContent='Score: '+score+' kg';
+      f.remove();
+      foods.splice(i,1);
     }
   });
-
-  if(foods.length===0 && !respawning){
-    respawning = true;
-    setTimeout(()=>{
-      spawnFood();
-      spawnBad();
-      respawning = false;
-    }, 500);
-  }
 
   bads.forEach(b=>{
     if(isColliding(player,b)){
@@ -312,12 +342,59 @@ function checkCollisions(){
       spawnBad();
     }
   });
+
+  if(foods.length===0 && !respawning){
+    respawning=true;
+    setTimeout(()=>{
+      spawnFood();
+      spawnBad();
+      respawning=false;
+    },500);
+  }
+}
+
+// Highlight button
+highlightBtn.addEventListener('click',()=>{
+  foods.forEach(f=>{
+    if(f.dataset.type==='1'||f.dataset.type==='2'||f.dataset.type==='3'||f.dataset.type==='4'){
+      f.classList.add('highlight-green');
+    } else {
+      f.classList.remove('highlight-green');
+    }
+  });
+  bads.forEach(b=>{
+    b.classList.add('highlight-red');
+  });
+});
+
+// Snow effect
+const snowCount=50;
+const snowflakes=[];
+for(let i=0;i<snowCount;i++){
+  const s=document.createElement('div');
+  s.className='snowflake';
+  s.style.left=Math.random()*gameWidth+'px';
+  s.style.top=Math.random()*gameHeight+'px';
+  s.style.width=(2+Math.random()*6)+'px';
+  s.style.height=s.style.width;
+  s.style.opacity=0.3+Math.random()*0.7;
+  gameArea.appendChild(s);
+  snowflakes.push({el:s,x:parseFloat(s.style.left),y:parseFloat(s.style.top),speed:0.5+Math.random()*1.5});
+}
+function animateSnow(){
+  snowflakes.forEach(s=>{
+    s.y+=s.speed;
+    if(s.y>gameHeight) s.y=-10;
+    s.el.style.top=s.y+'px';
+  });
+  requestAnimationFrame(animateSnow);
 }
 
 // Initial spawn
 spawnFood();
 spawnBad();
 updateLeaderboard();
+animateSnow();
 </script>
 
 </body>

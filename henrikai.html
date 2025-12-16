@@ -3,22 +3,134 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HenrikAI</title>
+<title>HenrikAI - henrikworld.com</title>
+<link rel="icon" type="image/png" href="favicon.png" />
 <style>
-  body { font-family: monospace; background: white; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
-  #topBar { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid #ddd; background: white; }
-  #backBtn { background: white; border: 1px solid #ccc; border-radius: 4px; padding: 6px 12px; cursor: pointer; }
-  #backBtn:hover { background: #f5f5f5; }
-  #usernameDisplay { font-weight: bold; }
-  #chatContainer { flex: 1; display: flex; flex-direction: column; padding: 10px; }
-  #messages { flex: 1; overflow-y: auto; padding: 10px; }
-  .msg { margin: 6px 0; }
-  .username { font-weight: bold; }
-  .ai-label { font-weight: bold; color: #444; }
-  #inputBar { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #ddd; }
-  #userInput { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-  #sendBtn { padding: 10px 15px; border: 1px solid #ccc; background: #fff; border-radius: 5px; cursor: pointer; }
-  #sendBtn:hover { background: #f5f5f5; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: white;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  #topBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    border-bottom: 1px solid #ddd;
+    background-color: white;
+  }
+
+  #backBtn {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+  }
+  #backBtn:hover {
+    background-color: #f5f5f5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+  }
+
+  #usernameDisplay {
+    font-weight: bold;
+    font-size: 16px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 8px 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+  }
+  #usernameDisplay:hover {
+    background-color: #f5f5f5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+  }
+
+  #chatContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    box-sizing: border-box;
+  }
+
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    background-color: #fafafa;
+  }
+
+  .msg {
+    margin: 8px 0;
+    line-height: 1.4;
+  }
+
+  .username {
+    font-weight: bold;
+    color: #111;
+  }
+
+  .ai-label {
+    font-weight: bold;
+    color: #0077cc;
+  }
+
+  #inputBar {
+    display: flex;
+    gap: 10px;
+  }
+
+  #userInput {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    font-size: 14px;
+    outline: none;
+    transition: border 0.2s;
+  }
+
+  #userInput:focus {
+    border-color: #0077cc;
+  }
+
+  #sendBtn {
+    padding: 12px 18px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    background-color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+  }
+
+  #sendBtn:hover {
+    background-color: #f5f5f5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+  }
+
+  @media (max-width: 500px) {
+    #topBar { flex-direction: column; gap: 10px; }
+    #backBtn, #sendBtn, #usernameDisplay { width: 100%; }
+  }
 </style>
 </head>
 <body>
@@ -40,7 +152,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
   authDomain: "henrikworldonline-a726f.firebaseapp.com",
@@ -51,29 +162,30 @@ const firebaseConfig = {
   appId: "1:1060990020059:web:35e9816d249cd32d97dffe"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
 const messagesDiv = document.getElementById("messages");
 const input = document.getElementById("userInput");
-let currentUser = "User";
 
-// Load username from localStorage
+let currentUser = "User";
 const savedUser = JSON.parse(localStorage.getItem("user"));
 if (savedUser?.username) currentUser = savedUser.username;
-document.getElementById("usernameDisplay").textContent = currentUser;
+
+const usernameDisplay = document.getElementById("usernameDisplay");
+usernameDisplay.textContent = currentUser;
+
+// Logout when clicking the username
+usernameDisplay.addEventListener("click", () => {
+  localStorage.removeItem("user");
+  window.location.href = "login.html";
+});
 
 // Conversation history
-let conversation = [
-  { role: "system", content: "You are HenrikAI, a helpful assistant." }
-];
-
-// Initial message
+let conversation = [{ role: "system", content: "You are HenrikAI, a helpful assistant." }];
 addMessage("HenrikAI", "Welcome to HenrikAI! Ask me anything.", true);
 conversation.push({ role: "assistant", content: "Welcome to HenrikAI! Ask me anything." });
 
-// Add message function
 function addMessage(username, text, isAI=false) {
   const div = document.createElement("div");
   div.className = "msg";
@@ -94,7 +206,6 @@ function addMessage(username, text, isAI=false) {
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// Typewriter effect
 function typeWriter(text, element) {
   let i = 0;
   const speed = 25;
@@ -109,39 +220,30 @@ function typeWriter(text, element) {
   type();
 }
 
-// Fetch OpenAI API key from Firebase (creates placeholder if missing)
 async function getOpenAIKey() {
   const dbRef = ref(database, "openai/apiKey");
   try {
     const snapshot = await get(dbRef);
-    if (snapshot.exists()) {
-      return snapshot.val();
-    } else {
-      // Create placeholder
-      await set(dbRef, "YOUR_API_KEY_HERE");
-      console.warn("No API key found. A placeholder has been created at 'openai/apiKey'. Please replace it in Firebase.");
-      return null;
-    }
+    if (snapshot.exists()) return snapshot.val();
+    await set(dbRef, "YOUR_API_KEY_HERE");
+    console.warn("No API key found. Placeholder created in Firebase.");
+    return null;
   } catch (err) {
-    console.error("Error accessing Firebase:", err);
+    console.error("Firebase error:", err);
     return null;
   }
 }
 
-// Send message to OpenAI
 async function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
-
   addMessage(currentUser, text);
   input.value = "";
-
   addMessage("HenrikAI", "Thinking...", true);
   const loadingEl = messagesDiv.lastChild;
 
   conversation.push({ role: "user", content: text });
 
-  // Get API key
   const OPENAI_API_KEY = await getOpenAIKey();
   if (!OPENAI_API_KEY || OPENAI_API_KEY === "YOUR_API_KEY_HERE") {
     loadingEl.remove();
@@ -152,16 +254,8 @@ async function sendMessage() {
   try {
     const result = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: conversation,
-        temperature: 0.7,
-        user: currentUser
-      })
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${OPENAI_API_KEY}` },
+      body: JSON.stringify({ model: "gpt-4o-mini", messages: conversation, temperature: 0.7, user: currentUser })
     });
 
     const data = await result.json();
@@ -171,7 +265,6 @@ async function sendMessage() {
     loadingEl.remove();
     addMessage("HenrikAI", reply, true);
     conversation.push({ role: "assistant", content: reply });
-
   } catch (err) {
     loadingEl.remove();
     addMessage("HenrikAI", "Error: Failed to fetch API.", true);
@@ -179,10 +272,9 @@ async function sendMessage() {
   }
 }
 
-// Event listeners
 document.getElementById("sendBtn").addEventListener("click", sendMessage);
-document.getElementById("backBtn").addEventListener("click", () => window.location.href = "index.html");
-input.addEventListener("keydown", e => { if(e.key === "Enter") sendMessage(); });
+document.getElementById("backBtn").addEventListener("click", () => window.location.href="index.html");
+input.addEventListener("keydown", e => { if(e.key==="Enter") sendMessage(); });
 </script>
 
 </body>

@@ -7,88 +7,129 @@
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
     body {
-      font-family: monospace;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: white;
-      color: black;
+      color: #111;
       margin: 0;
-      padding: 0;
-      height: 100vh;
       display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    #contentWrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       text-align: center;
-      opacity: 0;
-      animation: fadeInBody 0.7s ease-in-out forwards;
+      padding: 30px 20px;
     }
 
-    @keyframes fadeInBody {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    #siteTitle {
+      font-size: 36px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 20px;
+    }
+
+    #version {
+      font-size: 16px;
+      font-weight: 500;
+      color: #555;
+      margin-left: 8px;
     }
 
     #topBar {
-      position: absolute;
-      top: 10px;
       width: 100%;
       display: flex;
       justify-content: center;
-      gap: 10px;
-      opacity: 0;
-      animation: fadeInUp 0.6s ease-out 0.3s forwards;
+      gap: 15px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
     }
 
     button.top-btn {
-      background-color: white;
+      background-color: #fff;
       border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 6px 12px;
-      font-family: monospace;
-      font-size: 14px;
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-size: 15px;
       cursor: pointer;
-      transition: background-color 0.2s ease;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }
 
     button.top-btn:hover {
       background-color: #f5f5f5;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.12);
     }
 
     #usernameDisplay {
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      background-color: white;
-      border: 1px solid #ccc;
-      padding: 6px 10px;
-      border-radius: 4px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      padding: 10px 16px;
+      border-radius: 12px;
       cursor: pointer;
-      font-size: 14px;
-      opacity: 0;
-      transform: translateY(-10px);
-      animation: fadeInUp 0.6s ease-out 0.3s forwards;
+      font-size: 17px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      transition: all 0.2s ease;
     }
 
     #usernameDisplay:hover {
-      background-color: #f5f5f5;
+      background-color: #f9f9f9;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
     #welcomeMessage {
-      font-size: 18px;
-      opacity: 0;
-      transform: translateY(10px);
-      animation: fadeInUp 0.6s ease-out 0.5s forwards;
+      font-size: 20px;
+      margin-bottom: 18px;
+      font-weight: 500;
     }
 
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); }
+    #christmasBanner {
+      background: linear-gradient(135deg, #ffefef, #ffe8e8);
+      color: #d60000;
+      border: 1px solid #d60000;
+      padding: 12px 18px;
+      border-radius: 14px;
+      margin-bottom: 30px;
+      font-weight: bold;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 6px rgba(214, 0, 0, 0.15);
+    }
+
+    #christmasBanner::before {
+      content: '🎄';
+      font-size: 18px;
+    }
+
+    #copyright {
+      text-align: center;
+      padding: 14px;
+      font-size: 12px;
+      color: #888;
+      border-top: 1px solid #eee;
+      margin-top: auto;
+      background-color: white;
+      width: 100%;
+    }
+
+    @media (max-width: 500px) {
+      #topBar { flex-direction: column; gap: 10px; }
+      button.top-btn { width: 80%; }
     }
   </style>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
     import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
-    // 🔥 Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
       authDomain: "henrikworldonline-a726f.firebaseapp.com",
@@ -104,14 +145,12 @@
 
     async function checkSiteStatus() {
       try {
-        const ref = doc(db, "config", "siteStatus");
-        const snap = await getDoc(ref);
+        const refDoc = doc(db, "config", "siteStatus");
+        const snap = await getDoc(refDoc);
         if (snap.exists() && snap.data().shutdown === true) {
           window.location.href = "serverdown.html";
         }
-      } catch (e) {
-        console.error("Error checking site status:", e);
-      }
+      } catch (e) { console.error(e); }
     }
 
     async function checkLogin() {
@@ -130,11 +169,7 @@
       }
 
       try {
-        const q = query(
-          collection(db, "accounts"),
-          where("username", "==", username),
-          where("password", "==", password)
-        );
+        const q = query(collection(db, "accounts"), where("username", "==", username), where("password", "==", password));
         const snapshot = await getDocs(q);
         if (snapshot.empty) {
           localStorage.removeItem("user");
@@ -143,45 +178,62 @@
         }
 
         displayUser(username);
-      } catch (e) {
-        console.error("Error verifying user:", e);
-        localStorage.removeItem("user");
-        window.location.href = "login.html";
-      }
+      } catch (e) { console.error(e); localStorage.removeItem("user"); window.location.href = "login.html"; }
     }
 
     function displayUser(username) {
-      document.getElementById("usernameDisplay").textContent = username;
       document.getElementById("welcomeMessage").textContent = `Welcome, ${username}!`;
     }
 
     function signOut() { localStorage.removeItem("user"); window.location.href = "login.html"; }
-
     function goChat() { window.location.href = "chat.html"; }
     function goFriends() { window.location.href = "friends.html"; }
     function goGames() { window.location.href = "games.html"; }
-    function goAI() { window.location.href = "henrikai.html"; } // NEW AI BUTTON
+    function goAI() { window.location.href = "henrikai.html"; }
+
+    function updateChristmasBanner() {
+      const banner = document.getElementById("christmasBanner");
+      const now = new Date();
+      const endDate = new Date(Date.UTC(2025,11,31,0,0,0)); // Dec 31, 2025 00:00 GMT
+      if (now < endDate) {
+        const diff = endDate - now;
+        const days = Math.floor(diff / (1000*60*60*24));
+        banner.textContent = `Christmas Update! Ends in ${days} day${days!==1?'s':''}`;
+      } else {
+        banner.style.display = "none";
+      }
+    }
 
     window.addEventListener("DOMContentLoaded", async () => {
       await checkSiteStatus();
+      checkLogin();
       document.getElementById("usernameDisplay").addEventListener("click", signOut);
       document.getElementById("chatBtn").addEventListener("click", goChat);
       document.getElementById("friendsBtn").addEventListener("click", goFriends);
       document.getElementById("gamesBtn").addEventListener("click", goGames);
-      document.getElementById("aiBtn").addEventListener("click", goAI); // AI button listener
-      checkLogin();
+      document.getElementById("aiBtn").addEventListener("click", goAI);
+      updateChristmasBanner();
     });
   </script>
 </head>
 <body>
-  <div id="topBar">
-    <button id="chatBtn" class="top-btn">Chat</button>
-    <button id="friendsBtn" class="top-btn">Friends</button>
-    <button id="gamesBtn" class="top-btn">Games</button>
-    <button id="aiBtn" class="top-btn">Henrik AI</button> <!-- NEW BUTTON -->
+  <div id="contentWrapper">
+    <div id="siteTitle">
+      🌍 Henrik World <span id="version">v4.0</span>
+    </div>
+
+    <div id="topBar">
+      <button id="chatBtn" class="top-btn">Chat</button>
+      <button id="friendsBtn" class="top-btn">Friends</button>
+      <button id="gamesBtn" class="top-btn">Games</button>
+      <button id="aiBtn" class="top-btn">Henrik AI</button>
+    </div>
+
+    <div id="usernameDisplay">Log out</div>
+    <div id="welcomeMessage">Loading...</div>
+    <div id="christmasBanner"></div>
   </div>
 
-  <div id="usernameDisplay">Loading...</div>
-  <div id="welcomeMessage">Loading...</div>
+  <div id="copyright">© 2025 Henrik World. All rights reserved.</div>
 </body>
 </html>

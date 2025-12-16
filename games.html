@@ -3,67 +3,102 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Games - henrikworld.com</title>
+<title>Games - Henrik World</title>
+<link rel="icon" type="image/png" href="favicon.png" />
 <style>
-body {
-  background: white;
-  font-family: monospace;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 0;
-  padding: 0;
-  height: 100vh;
-}
-#topBar {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 20px;
-  border-bottom: 1px solid #ccc;
-  box-sizing: border-box;
-}
-button.top-btn {
-  padding: 6px 12px;
-  font-family: monospace;
-  font-size: 14px;
-  cursor: pointer;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: white;
-  transition: background-color 0.2s ease;
-}
-button.top-btn:hover {
-  background-color: #f5f5f5;
-}
-#usernameDisplay {
-  font-weight: bold;
-  cursor: pointer;
-}
-#content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  gap: 20px;
-}
-.game-btn {
-  padding: 10px 20px;
-  font-family: monospace;
-  font-size: 16px;
-  cursor: pointer;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: white;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-}
-.game-btn:hover {
-  background-color: #f0f0f0;
-  transform: scale(1.05);
-}
+  body {
+    background: white;
+    font-family: monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+
+  #contentWrapper {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  #pageTitle {
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    margin-bottom: 15px;
+  }
+
+  #topBar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  button.top-btn {
+    padding: 8px 16px;
+    font-family: monospace;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: white;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+  }
+  button.top-btn:hover {
+    background-color: #f5f5f5;
+    transform: scale(1.05);
+  }
+
+  #usernameDisplay {
+    font-weight: bold;
+    cursor: pointer;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+  }
+
+  #content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    gap: 15px;
+  }
+
+  .game-btn {
+    padding: 12px 24px;
+    font-family: monospace;
+    font-size: 16px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: white;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    width: 200px;
+    text-align: center;
+  }
+  .game-btn:hover {
+    background-color: #f0f0f0;
+    transform: scale(1.05);
+  }
+
+  @media (max-width: 600px) {
+    .game-btn {
+      width: 100%;
+    }
+  }
 </style>
 <script>
 function goBack() {
@@ -88,7 +123,6 @@ function loadGames() {
   const content = document.getElementById("content");
   content.innerHTML = "";
 
-  // Only Rhombus Eater
   const games = [
     { label: "Rhombus Eater", path: "game2/gamecode.html" }
   ];
@@ -106,13 +140,17 @@ window.addEventListener("DOMContentLoaded", loadGames);
 </script>
 </head>
 <body>
-<div id="topBar">
-  <button class="top-btn" onclick="goBack()">Back</button>
-  <div id="usernameDisplay">Loading...</div>
-</div>
+<div id="contentWrapper">
+  <div id="pageTitle">Games <span style="font-size:14px; font-weight:normal;">v4.0</span></div>
 
-<div id="content">
-  <p>Loading games...</p>
+  <div id="topBar">
+    <button class="top-btn" onclick="goBack()">Back</button>
+    <div id="usernameDisplay">Loading...</div>
+  </div>
+
+  <div id="content">
+    <p>Loading games...</p>
+  </div>
 </div>
 </body>
 </html>
