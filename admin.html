@@ -4,107 +4,107 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin - henrikworld.com</title>
+
 <style>
-  body {
-    font-family: monospace;
-    background-color: white;
-    color: black;
-    margin: 0;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-sizing: border-box;
-  }
+body {
+  font-family: monospace;
+  background-color: white;
+  color: black;
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
 
-  h1, h2 {
-    text-align: center;
-    margin-bottom: 20px;
-  }
+h1, h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
 
-  .editor-container {
-    display: flex;
-    width: 100%;
-    max-width: 800px;
-    height: 150px;
-    border: 1px solid #ccc;
-    overflow: hidden;
-    margin-bottom: 30px;
-  }
+.editor-container {
+  display: flex;
+  width: 100%;
+  max-width: 800px;
+  height: 150px;
+  border: 1px solid #ccc;
+  overflow: hidden;
+  margin-bottom: 30px;
+}
 
-  .line-numbers {
-    background-color: #f0f0f0;
-    padding: 10px;
-    text-align: right;
-    user-select: none;
-    color: #666;
-    flex-shrink: 0;
-  }
+.line-numbers {
+  background-color: #f0f0f0;
+  padding: 10px;
+  text-align: right;
+  user-select: none;
+  color: #666;
+  flex-shrink: 0;
+}
 
-  #codeArea {
-    width: 100%;
-    border: none;
-    padding: 10px;
-    resize: none;
-    outline: none;
-    font-family: monospace;
-    font-size: 14px;
-    line-height: 1.4em;
-    white-space: pre;
-    overflow: auto;
-  }
+#codeArea {
+  width: 100%;
+  border: none;
+  padding: 10px;
+  resize: none;
+  outline: none;
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.4em;
+  white-space: pre;
+  overflow: auto;
+}
 
-  button {
-    margin-top: 10px;
-    padding: 8px 16px;
-    font-size: 14px;
-    cursor: pointer;
-    border: 1px solid #ccc;
-    background-color: white;
-    color: black;
-  }
+button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background-color: white;
+  color: black;
+}
 
-  button:hover {
-    background-color: #f5f5f5;
-  }
+button:hover {
+  background-color: #f5f5f5;
+}
 
-  #requestsContainer {
-    width: 100%;
-    max-width: 800px;
-    border: 1px solid #ccc;
-    padding: 10px;
-    border-radius: 6px;
-    margin-top: 20px;
-  }
+#requestsContainer {
+  width: 100%;
+  max-width: 800px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 20px;
+}
 
-  .requestItem {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    padding: 5px;
-    border-bottom: 1px solid #eee;
-  }
+.requestItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 5px;
+  border-bottom: 1px solid #eee;
+}
 
-  .requestItem span {
-    font-weight: bold;
-  }
+.requestItem span {
+  font-weight: bold;
+}
 
-  .requestItem button {
-    margin-left: 5px;
-    padding: 4px 8px;
-    font-size: 12px;
-  }
-
+.requestItem button {
+  margin-left: 5px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
 </style>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
 import { 
-  getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc, setDoc 
+  getFirestore, collection, addDoc, query, getDocs,
+  deleteDoc, doc, setDoc 
 } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
   authDomain: "henrikworldonline-a726f.firebaseapp.com",
@@ -118,7 +118,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// === Line Numbers for code editor ===
 function updateLineNumbers() {
   const code = document.getElementById("codeArea").value;
   const lines = code.split("\n").length;
@@ -127,108 +126,42 @@ function updateLineNumbers() {
   document.getElementById("lineNumbers").textContent = numbers;
 }
 
-// === Admin command processor (original commands restored) ===
 async function processAdminCommand() {
   const code = document.getElementById("codeArea").value.trim();
-  const lines = code.split("\n");
-  if (!lines[0].trim()) { alert("Write a command!"); return; }
+  const firstLine = code.split("\n")[0];
 
-  const firstLine = lines[0].trim();
+  if (!firstLine) return alert("Write a command!");
 
-  // === CREATE ACCOUNT ===
-  if (/admin\/account\/create\/username=/i.test(firstLine) && lines.length >= 2) {
+  // === GRANT VIP ===
+  if (/admin\/vip\/grant\/username=/i.test(firstLine)) {
     const username = firstLine.match(/username=(.*)/i)[1].trim();
-    const password = lines[1].match(/password=(.*)/i)[1].trim();
-    if (!username || !password) { alert("Username or password cannot be empty."); return; }
-
     try {
-      await addDoc(collection(db, "accounts"), { 
-        username, 
-        password, 
-        timestamp: new Date() 
+      await setDoc(doc(db, "vipUsers", username), {
+        username,
+        grantedAt: new Date()
       });
-      alert(`✅ Account created!\nUsername: ${username}\nPassword: ${password}`);
+      alert(`🌟 VIP Granted: ${username}`);
       document.getElementById("codeArea").value = "";
       updateLineNumbers();
-    } catch(e) { console.error(e); alert("❌ Failed to create account."); }
+    } catch (e) { alert("Failed to grant VIP"); }
     return;
   }
 
-  // === DELETE ACCOUNT ===
-  if (/admin\/account\/delete\/username=/i.test(firstLine)) {
+  // === REMOVE VIP ===
+  if (/admin\/vip\/remove\/username=/i.test(firstLine)) {
     const username = firstLine.match(/username=(.*)/i)[1].trim();
-    if (!username) { alert("Username cannot be empty."); return; }
-
     try {
-      const q = query(collection(db, "accounts"), where("username", "==", username));
-      const snapshot = await getDocs(q);
-      if (snapshot.empty) { alert(`⚠️ No account found with username: ${username}`); return; }
-      for (const s of snapshot.docs) { await deleteDoc(doc(db, "accounts", s.id)); }
-      alert(`🗑️ Deleted account(s) with username: ${username}`);
+      await deleteDoc(doc(db, "vipUsers", username));
+      alert(`🚫 VIP Removed: ${username}`);
       document.getElementById("codeArea").value = "";
       updateLineNumbers();
-    } catch(e) { console.error(e); alert("❌ Failed to delete account."); }
+    } catch (e) { alert("Failed to remove VIP"); }
     return;
   }
 
-  // === SITE SHUTDOWN CONTROL ===
-  if (/admin\/site\/shutdown\//i.test(firstLine)) {
-    const match = firstLine.match(/shutdown\/(true|false)/i);
-    if (!match) { alert("Use admin/site/shutdown/true or admin/site/shutdown/false"); return; }
-    const shutdownState = match[1].toLowerCase() === "true";
-    try {
-      await setDoc(doc(db, "config", "siteStatus"), {
-        shutdown: shutdownState,
-        updated: new Date()
-      });
-      alert(`🚨 Site shutdown status set to: ${shutdownState}`);
-      document.getElementById("codeArea").value = "";
-      updateLineNumbers();
-    } catch (e) { console.error(e); alert("❌ Failed to update site shutdown status."); }
-    return;
-  }
-
-  // === GRANT GAME ACCESS ===
-  if (/admin\/games\/game=/i.test(firstLine) && lines.length >= 2) {
-    const game = firstLine.match(/game=(.*)/i)[1].trim();
-    const secondLine = lines[1].trim();
-    if (!/admin\/games\/username=/i.test(secondLine)) { alert("Second line must be admin/games/username=<user or all>"); return; }
-    const username = secondLine.match(/username=(.*)/i)[1].trim();
-    if (!game || !username) { alert("Game or username missing."); return; }
-
-    try {
-      await addDoc(collection(db, "gameAccess"), { game, username, grantedAt: new Date() });
-      alert(`🎮 Access granted!\nGame: ${game}\nUser: ${username}`);
-      document.getElementById("codeArea").value = "";
-      updateLineNumbers();
-    } catch (e) { console.error(e); alert("❌ Failed to grant game access."); }
-    return;
-  }
-
-  // === REVOKE GAME ACCESS ===
-  if (/admin\/games\/remove\/game=/i.test(firstLine) && lines.length >= 2) {
-    const game = firstLine.match(/game=(.*)/i)[1].trim();
-    const secondLine = lines[1].trim();
-    if (!/admin\/games\/username=/i.test(secondLine)) { alert("Second line must be admin/games/username=<user or all>"); return; }
-    const username = secondLine.match(/username=(.*)/i)[1].trim();
-    if (!game || !username) { alert("Game or username missing."); return; }
-
-    try {
-      const q = query(collection(db, "gameAccess"), where("game", "==", game), where("username", "==", username));
-      const snapshot = await getDocs(q);
-      if (snapshot.empty) { alert(`⚠️ No access found for Game: ${game}, User: ${username}`); return; }
-      for (const s of snapshot.docs) { await deleteDoc(doc(db, "gameAccess", s.id)); }
-      alert(`🚫 Revoked access for Game: ${game}, User: ${username}`);
-      document.getElementById("codeArea").value = "";
-      updateLineNumbers();
-    } catch (e) { console.error(e); alert("❌ Failed to revoke access."); }
-    return;
-  }
-
-  alert("Unknown command. Use create, delete, site/shutdown, games, or games/remove.");
+  alert("Unknown command.");
 }
 
-// === Account Requests Handling ===
 async function loadAccountRequests() {
   const container = document.getElementById("requestsList");
   container.innerHTML = "<p>Loading...</p>";
@@ -237,10 +170,7 @@ async function loadAccountRequests() {
   const snapshot = await getDocs(q);
 
   container.innerHTML = "";
-  if (snapshot.empty) {
-    container.innerHTML = "<p>No pending requests.</p>";
-    return;
-  }
+  if (snapshot.empty) return container.innerHTML = "<p>No pending requests.</p>";
 
   snapshot.forEach(docSnap => {
     const data = docSnap.data();
@@ -257,53 +187,46 @@ async function loadAccountRequests() {
     `;
     container.appendChild(div);
 
-    // Accept account
-    div.querySelector(".acceptBtn").addEventListener("click", async () => {
-      try {
-        await addDoc(collection(db, "accounts"), {
-          username: data.username,
-          password: data.password,
-          timestamp: new Date()
-        });
-        await deleteDoc(doc(db, "accountRequests", id));
-        loadAccountRequests();
-        alert(`✅ Account accepted: ${data.username}`);
-      } catch(e) { console.error(e); alert("Failed to accept account."); }
-    });
+    div.querySelector(".acceptBtn").onclick = async () => {
+      await addDoc(collection(db, "accounts"), {
+        username: data.username,
+        password: data.password,
+        timestamp: new Date()
+      });
+      await deleteDoc(doc(db, "accountRequests", id));
+      loadAccountRequests();
+      alert(`Accepted ${data.username}`);
+    };
 
-    // Reject account
-    div.querySelector(".rejectBtn").addEventListener("click", async () => {
-      try {
-        await deleteDoc(doc(db, "accountRequests", id));
-        loadAccountRequests();
-        alert(`❌ Account rejected: ${data.username}`);
-      } catch(e) { console.error(e); alert("Failed to reject account."); }
-    });
+    div.querySelector(".rejectBtn").onclick = async () => {
+      await deleteDoc(doc(db, "accountRequests", id));
+      loadAccountRequests();
+      alert(`Rejected ${data.username}`);
+    };
   });
 }
 
-// === Page setup ===
 window.addEventListener("DOMContentLoaded", () => {
-  const codeArea = document.getElementById("codeArea");
-  codeArea.addEventListener("input", updateLineNumbers);
+  document.getElementById("codeArea").addEventListener("input", updateLineNumbers);
   document.getElementById("saveBtn").addEventListener("click", processAdminCommand);
   updateLineNumbers();
   loadAccountRequests();
 });
 </script>
 </head>
+
 <body>
 <h1>Admin Panel</h1>
 
-<!-- Editor for commands -->
 <div class="editor-container">
   <pre class="line-numbers" id="lineNumbers">1</pre>
   <textarea id="codeArea" placeholder="Write admin commands here..."></textarea>
 </div>
+
 <button id="saveBtn">Execute Command</button>
 
-<!-- Account Requests -->
 <h2>Pending Account Requests</h2>
+
 <div id="requestsContainer">
   <div id="requestsList"></div>
 </div>

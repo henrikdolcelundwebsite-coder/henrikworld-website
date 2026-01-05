@@ -5,132 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HenrikAI - henrikworld.com</title>
 <link rel="icon" type="image/png" href="favicon.png" />
+
+<!-- Prism.js for code highlighting -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-python.min.js"></script>
+
 <style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: white;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-  }
-
-  #topBar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 20px;
-    border-bottom: 1px solid #ddd;
-    background-color: white;
-  }
-
-  #backBtn {
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    padding: 8px 16px;
-    cursor: pointer;
-    font-size: 14px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    transition: all 0.2s ease;
-  }
-  #backBtn:hover {
-    background-color: #f5f5f5;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
-  }
-
-  #usernameDisplay {
-    font-weight: bold;
-    font-size: 16px;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    padding: 8px 16px;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    transition: all 0.2s ease;
-  }
-  #usernameDisplay:hover {
-    background-color: #f5f5f5;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
-  }
-
-  #chatContainer {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 15px;
-    box-sizing: border-box;
-  }
-
-  #messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
-    border: 1px solid #eee;
-    border-radius: 12px;
-    margin-bottom: 12px;
-    background-color: #fafafa;
-  }
-
-  .msg {
-    margin: 8px 0;
-    line-height: 1.4;
-  }
-
-  .username {
-    font-weight: bold;
-    color: #111;
-  }
-
-  .ai-label {
-    font-weight: bold;
-    color: #0077cc;
-  }
-
-  #inputBar {
-    display: flex;
-    gap: 10px;
-  }
-
-  #userInput {
-    flex: 1;
-    padding: 12px 14px;
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    font-size: 14px;
-    outline: none;
-    transition: border 0.2s;
-  }
-
-  #userInput:focus {
-    border-color: #0077cc;
-  }
-
-  #sendBtn {
-    padding: 12px 18px;
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    background-color: #fff;
-    cursor: pointer;
-    font-size: 14px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    transition: all 0.2s ease;
-  }
-
-  #sendBtn:hover {
-    background-color: #f5f5f5;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
-  }
-
-  @media (max-width: 500px) {
-    #topBar { flex-direction: column; gap: 10px; }
-    #backBtn, #sendBtn, #usernameDisplay { width: 100%; }
-  }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: white; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
+#topBar { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid #ddd; background-color: white; }
+#backBtn, #sendBtn, #usernameDisplay { border-radius: 12px; padding: 8px 16px; cursor: pointer; transition: all 0.2s ease; }
+#backBtn, #sendBtn { border: 1px solid #ccc; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+#backBtn:hover, #sendBtn:hover, #usernameDisplay:hover { background-color: #f5f5f5; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.12); }
+#usernameDisplay { font-weight: bold; font-size: 16px; border: 1px solid #ddd; padding: 8px 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+#chatContainer { flex: 1; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; }
+#messages { flex: 1; overflow-y: auto; padding: 10px; border: 1px solid #eee; border-radius: 12px; margin-bottom: 12px; background-color: #fafafa; }
+.msg { margin: 8px 0; line-height: 1.4; }
+.username { font-weight: bold; color: #111; }
+.ai-label { font-weight: bold; color: #0077cc; }
+#inputBar { display: flex; gap: 10px; }
+#userInput { flex: 1; padding: 12px 14px; border: 1px solid #ccc; border-radius: 12px; font-size: 14px; outline: none; transition: border 0.2s; }
+#userInput:focus { border-color: #0077cc; }
+pre { background: #2d2d2d; color: #f8f8f2; padding: 10px; border-radius: 12px; overflow-x: auto; position: relative; }
+button.copy-btn { position: absolute; top: 8px; right: 8px; padding: 4px 8px; font-size: 12px; cursor: pointer; border-radius: 6px; border: 1px solid #ccc; background: #fff; }
+button.copy-btn:hover { background: #f5f5f5; }
+@media (max-width: 500px) { #topBar { flex-direction: column; gap: 10px; } #backBtn, #sendBtn, #usernameDisplay { width: 100%; } }
 </style>
 </head>
 <body>
@@ -171,53 +71,54 @@ const input = document.getElementById("userInput");
 let currentUser = "User";
 const savedUser = JSON.parse(localStorage.getItem("user"));
 if (savedUser?.username) currentUser = savedUser.username;
+document.getElementById("usernameDisplay").textContent = currentUser;
 
-const usernameDisplay = document.getElementById("usernameDisplay");
-usernameDisplay.textContent = currentUser;
-
-// Logout when clicking the username
-usernameDisplay.addEventListener("click", () => {
+document.getElementById("usernameDisplay").addEventListener("click", () => {
   localStorage.removeItem("user");
   window.location.href = "login.html";
 });
 
-// Conversation history
-let conversation = [{ role: "system", content: "You are HenrikAI, a helpful assistant." }];
-addMessage("HenrikAI", "Welcome to HenrikAI! Ask me anything.", true);
-conversation.push({ role: "assistant", content: "Welcome to HenrikAI! Ask me anything." });
+let conversation = [{ role: "system", content: `
+You are HenrikAI, a smart coding assistant.
+- Always format code in triple backticks with language.
+- Provide comments and explanations.
+- Make code ready to copy and paste.
+`}];
 
-function addMessage(username, text, isAI=false) {
+addMessage("HenrikAI", "Welcome to HenrikAI! Ask me anything.", true);
+
+function addMessage(username, text, isAI=false, isCode=false) {
   const div = document.createElement("div");
   div.className = "msg";
+
   const label = document.createElement("span");
   label.className = isAI ? "ai-label" : "username";
   label.textContent = (isAI ? "HenrikAI" : username) + ": ";
   div.appendChild(label);
 
-  if (isAI) {
-    const contentSpan = document.createElement("span");
-    div.appendChild(contentSpan);
-    typeWriter(text, contentSpan);
+  if (isCode) {
+    const pre = document.createElement("pre");
+    const codeEl = document.createElement("code");
+    codeEl.textContent = text;
+    pre.appendChild(codeEl);
+
+    const copyBtn = document.createElement("button");
+    copyBtn.textContent = "Copy";
+    copyBtn.className = "copy-btn";
+    copyBtn.onclick = () => navigator.clipboard.writeText(text);
+    pre.appendChild(copyBtn);
+
+    div.appendChild(pre);
+    messagesDiv.appendChild(div);
+    Prism.highlightAll();
   } else {
-    div.appendChild(document.createTextNode(text));
+    const span = document.createElement("span");
+    span.textContent = text;
+    div.appendChild(span);
+    messagesDiv.appendChild(div);
   }
 
-  messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
-}
-
-function typeWriter(text, element) {
-  let i = 0;
-  const speed = 25;
-  function type() {
-    if (i < text.length) {
-      element.textContent += text.charAt(i);
-      i++;
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      requestAnimationFrame(type);
-    }
-  }
-  type();
 }
 
 async function getOpenAIKey() {
@@ -239,6 +140,7 @@ async function sendMessage() {
   if (!text) return;
   addMessage(currentUser, text);
   input.value = "";
+
   addMessage("HenrikAI", "Thinking...", true);
   const loadingEl = messagesDiv.lastChild;
 
@@ -263,7 +165,22 @@ async function sendMessage() {
     reply = reply.replace(/Chat ?GPT/gi, "HenrikAI");
 
     loadingEl.remove();
-    addMessage("HenrikAI", reply, true);
+
+    // Split multiple code blocks if any
+    const codeRegex = /```(\w+)?\n([\s\S]*?)```/g;
+    let lastIndex = 0;
+    let match;
+    while ((match = codeRegex.exec(reply)) !== null) {
+      const beforeText = reply.substring(lastIndex, match.index).trim();
+      if (beforeText) addMessage("HenrikAI", beforeText, true);
+
+      addMessage("HenrikAI", match[2], true, true);
+      lastIndex = codeRegex.lastIndex;
+    }
+
+    const remainingText = reply.substring(lastIndex).trim();
+    if (remainingText) addMessage("HenrikAI", remainingText, true);
+
     conversation.push({ role: "assistant", content: reply });
   } catch (err) {
     loadingEl.remove();

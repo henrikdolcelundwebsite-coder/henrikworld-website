@@ -1,484 +1,153 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chess - henrikworld.com</title>
-<link rel="icon" href="../favicon.png" type="image/png">
+<title>Chess Board</title>
 <style>
-body {
-  margin: 0;
-  background-color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  font-family: Arial, sans-serif;
-}
+  body{
+    margin:0;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    background:white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
 
-.chess-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+  .board-container{
+    position: relative;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  }
 
-#gameStatus {
-  margin-bottom: 10px;
-  font-weight: bold;
-  text-align: center;
-  min-height: 24px;
-}
+  .board{
+    display:grid;
+    grid-template-columns:repeat(8,70px);
+    grid-template-rows:repeat(8,70px);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 20px 40px rgba(0,0,0,0.2);
+  }
 
-.controls {
-  margin-bottom: 10px;
-  display: flex;
-  gap: 10px;
-}
+  .light{ background:#f0d9b5; }
+  .dark{ background:#b58863; }
 
-.chess-container {
-  display: flex;
-  flex-direction: row;
-  position: relative;
-}
+  .square{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    transition: background 0.2s ease;
+  }
 
-.numbers {
-  display: flex;
-  flex-direction: column-reverse;
-  margin-right: 5px;
-}
+  .square img{
+    width:90%;
+    height:90%;
+    object-fit:contain;
+    user-select:none;
+    pointer-events:none;
+  }
 
-.numbers div {
-  width: 20px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 18px;
-}
+  .square.selected{
+    background:rgba(0,120,255,0.6) !important;
+  }
 
-.letters {
-  display: grid;
-  grid-template-columns: repeat(8, 60px);
-  margin-top: 5px;
-}
+  .player-name{
+    position:absolute;
+    left:-10px;
+    font-weight:bold;
+  }
 
-.letters div {
-  text-align: center;
-  font-weight: bold;
-  font-size: 18px;
-}
+  .player-top{
+    top:-25px;
+  }
 
-.chess-board {
-  display: grid;
-  grid-template-columns: repeat(8, 60px);
-  grid-template-rows: repeat(8, 60px);
-  border: 3px solid #333;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-  overflow: hidden;
-  position: relative;
-}
-
-.square {
-  width: 60px;
-  height: 60px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-}
-
-.square img {
-  width: 50px;
-  height: 50px;
-  cursor: pointer;
-  user-select: none;
-  transition: transform 0.3s ease;
-  pointer-events: none;
-  position: relative;
-  z-index: 2;
-}
-
-.selected {
-  background-color: #4a90e2 !important;
-}
-
-#promotionOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.6);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-}
-
-#promotionChoices {
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  display: flex;
-  gap: 10px;
-}
-
-#promotionChoices img {
-  width: 60px;
-  height: 60px;
-  cursor: pointer;
-  border-radius: 5px;
-  border: 2px solid #333;
-  transition: transform 0.2s;
-}
-
-#promotionChoices img:hover {
-  transform: scale(1.1);
-  border-color: #4a90e2;
-}
-
-button {
-  padding: 5px 10px;
-  font-size: 14px;
-  cursor: pointer;
-  border-radius: 5px;
-}
+  .player-bottom{
+    bottom:-25px;
+  }
 </style>
 </head>
 <body>
-<div class="chess-wrapper">
-  <div class="controls">
-    <button id="startBtn">Start Game</button>
-    <button id="resignBtn">Resign</button>
-    <button id="drawBtn">Draw</button>
-    <select id="difficultySelect">
-      <option value="easy">Easy</option>
-      <option value="medium">Medium</option>
-      <option value="hard">Hard</option>
-    </select>
-  </div>
-  <div id="gameStatus">Press Start</div>
-  <div class="chess-container">
-    <div class="numbers" id="numbers"></div>
-    <div class="chess-board" id="chessBoard"></div>
-  </div>
-  <div class="letters" id="letters"></div>
-</div>
 
-<div id="promotionOverlay">
-  <div id="promotionChoices"></div>
+<div class="board-container">
+  <div class="player-name player-top">Player 2</div>
+  <div class="player-name player-bottom">Player 1</div>
+  <div class="board" id="board"></div>
 </div>
 
 <script>
-const lightBrown = '#f0d9b5';
-const darkBrown = '#b58863';
-const board = document.getElementById('chessBoard');
-const squares = [];
-let boardState = Array.from({length:8}, ()=>Array(8).fill(null));
-let selectedSquare = null;
-let currentTurn = 'white';
-let promotionData = null;
-let gameActive = false;
-let botDifficulty = 'medium';
-let playerColor = 'white';
-let botColor = 'black';
-const statusDiv = document.getElementById('gameStatus');
+const board = document.getElementById("board");
 
-// Create board numbers and letters
-const numbersDiv = document.getElementById('numbers');
-for(let i=1;i<=8;i++){
-  const num=document.createElement('div'); num.textContent=i; numbersDiv.appendChild(num);
-}
-const lettersDiv = document.getElementById('letters');
-const letters=['a','b','c','d','e','f','g','h'];
-letters.forEach(letter=>{
-  const lDiv=document.createElement('div'); lDiv.textContent=letter; lettersDiv.appendChild(lDiv);
-});
+// Default player color
+let playerColor = "white";
 
-// Create squares
-for(let row=0;row<8;row++){
-  for(let col=0;col<8;col++){
-    const square=document.createElement('div');
-    square.classList.add('square');
-    square.dataset.row=row;
-    square.dataset.col=col;
-    square.style.backgroundColor=(row+col)%2===0?lightBrown:darkBrown;
-    board.appendChild(square);
-    squares.push(square);
-  }
-}
+const pieceOrder = ["rook","knight","bishop","queen","king","bishop","knight","rook"];
+const pawns = ["pawn","pawn","pawn","pawn","pawn","pawn","pawn","pawn"];
 
-// Set piece
-function setPiece(row,col,type,color,fileName){
-  const index=row*8+col;
-  const img=document.createElement('img');
-  img.src=`images/${fileName}`;
-  boardState[row][col] = {type,color,img,hasMoved:false};
-  squares[index].appendChild(img);
-}
+// Create board
+function createBoard(){
+  board.innerHTML = "";
+  const colors = playerColor === "white" ? ["black","white"] : ["white","black"];
 
-// Initialize pieces
-function initPieces(){
-  const whitePieces = ['rook','knight','bishop','queen','king','bishop','knight','rook'];
-  const blackPieces = ['rook','knight','bishop','queen','king','bishop','knight','rook'];
-  for(let i=0;i<8;i++) setPiece(7,i,whitePieces[i],'white',`white-${whitePieces[i]}.png`);
-  for(let i=0;i<8;i++) setPiece(6,i,'pawn','white','white-pawn.png');
-  for(let i=0;i<8;i++) setPiece(0,i,blackPieces[i],'black',`black-${blackPieces[i]}.png`);
-  for(let i=0;i<8;i++) setPiece(1,i,'pawn','black','black-pawn.png');
-}
+  for(let row=0; row<8; row++){
+    for(let col=0; col<8; col++){
+      const square = document.createElement("div");
+      const isLight = (row+col)%2 === 0;
+      square.className = "square " + (isLight ? "light" : "dark");
 
-// Utilities
-function inBounds(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
-function findKing(color){
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++){
-    const piece=boardState[r][c];
-    if(piece && piece.type==='king' && piece.color===color) return [r,c];
-  }
-  return null;
-}
-function isCheck(color){
-  const k=findKing(color); if(!k) return false;
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++){
-    const p=boardState[r][c]; if(p && p.color!==color){
-      if(getLegalMoves(r,c,true).some(rc=>rc[0]===k[0]&&rc[1]===k[1])) return true;
+      let pieceColor = null;
+      let pieceType = null;
+
+      if(row === 0){
+        pieceColor = colors[0];
+        pieceType = pieceOrder[col];
+      } else if(row === 1){
+        pieceColor = colors[0];
+        pieceType = pawns[col];
+      } else if(row === 6){
+        pieceColor = colors[1];
+        pieceType = pawns[col];
+      } else if(row === 7){
+        pieceColor = colors[1];
+        pieceType = pieceOrder[col];
+      }
+
+      if(pieceColor && pieceType){
+        const img = document.createElement("img");
+        img.src = `images/${pieceColor}-${pieceType}.png`;
+        square.appendChild(img);
+      }
+
+      board.appendChild(square);
     }
   }
-  return false;
+
+  addSelectionLogic();
 }
-function hasAnyLegalMoves(color){
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++){
-    const p=boardState[r][c]; if(p && p.color===color){
-      if(getLegalMoves(r,c).length>0) return true;
+
+// Selection logic
+function addSelectionLogic(){
+  const squares = document.querySelectorAll(".square");
+  squares.forEach(square=>{
+    square.onclick = () => {
+      const img = square.querySelector("img");
+      if(!img) return;
+      if(!img.src.includes(playerColor)) return;
+
+      if(square.classList.contains("selected")){
+        square.classList.remove("selected");
+      } else {
+        squares.forEach(s=>s.classList.remove("selected"));
+        square.classList.add("selected");
+      }
     }
-  }
-  return false;
-}
-function isCheckmate(color){ return isCheck(color) && !hasAnyLegalMoves(color); }
-
-// --- MOVE LOGIC ---
-function getLegalMoves(row,col,ignoreCheck=false){
-  const piece = boardState[row][col];
-  if(!piece) return [];
-  const moves = [];
-  const dir = piece.color==='white'? -1:1;
-  const opponent = piece.color==='white'?'black':'white';
-
-  switch(piece.type){
-    case 'pawn':
-      if(inBounds(row+dir,col) && !boardState[row+dir][col]) moves.push([row+dir,col]);
-      if((row===6 && piece.color==='white')||(row===1 && piece.color==='black')){
-        if(!boardState[row+dir*2][col] && !boardState[row+dir][col]) moves.push([row+dir*2,col]);
-      }
-      [[dir,-1],[dir,1]].forEach(d=>{
-        const r=row+d[0], c=col+d[1];
-        if(inBounds(r,c) && boardState[r][c] && boardState[r][c].color===opponent) moves.push([r,c]);
-      });
-      break;
-    case 'rook': [[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{
-      for(let i=1;i<8;i++){
-        const r=row+d[0]*i,c=col+d[1]*i;
-        if(!inBounds(r,c)) break;
-        if(!boardState[r][c]) moves.push([r,c]);
-        else { if(boardState[r][c].color===opponent) moves.push([r,c]); break; }
-      }
-    }); break;
-    case 'bishop': [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(d=>{
-      for(let i=1;i<8;i++){
-        const r=row+d[0]*i,c=col+d[1]*i;
-        if(!inBounds(r,c)) break;
-        if(!boardState[r][c]) moves.push([r,c]);
-        else { if(boardState[r][c].color===opponent) moves.push([r,c]); break; }
-      }
-    }); break;
-    case 'queen': [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(d=>{
-      for(let i=1;i<8;i++){
-        const r=row+d[0]*i,c=col+d[1]*i;
-        if(!inBounds(r,c)) break;
-        if(!boardState[r][c]) moves.push([r,c]);
-        else { if(boardState[r][c].color===opponent) moves.push([r,c]); break; }
-      }
-    }); break;
-    case 'king': [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(d=>{
-      const r=row+d[0], c=col+d[1];
-      if(inBounds(r,c) && (!boardState[r][c] || boardState[r][c].color===opponent)) moves.push([r,c]);
-    });
-    if(!piece.hasMoved){
-      if(boardState[row][7] && boardState[row][7].type==='rook' && !boardState[row][7].hasMoved && !boardState[row][5] && !boardState[row][6]) moves.push([row,6]);
-      if(boardState[row][0] && boardState[row][0].type==='rook' && !boardState[row][0].hasMoved && !boardState[row][1]&&!boardState[row][2]&&!boardState[row][3]) moves.push([row,2]);
-    }
-    break;
-    case 'knight': [[-2,-1],[-2,1],[2,-1],[2,1],[-1,-2],[1,-2],[-1,2],[1,2]].forEach(d=>{
-      const r=row+d[0], c=col+d[1];
-      if(inBounds(r,c) && (!boardState[r][c] || boardState[r][c].color===opponent)) moves.push([r,c]);
-    }); break;
-  }
-
-  if(!ignoreCheck){
-    return moves.filter(([toR,toC])=>{
-      const temp = boardState[toR][toC];
-      boardState[toR][toC]=piece; boardState[row][col]=null;
-      const legal=!isCheck(piece.color);
-      boardState[row][col]=piece; boardState[toR][toC]=temp;
-      return legal;
-    });
-  }
-
-  return moves;
-}
-
-// Selection & movement with deselect logic
-function selectSquare(square){
-  const r=parseInt(square.dataset.row), c=parseInt(square.dataset.col);
-  const piece=boardState[r][c];
-  if(!piece || piece.color!==currentTurn) return;
-
-  if(selectedSquare === square){ 
-    // Deselect if clicking same square
-    square.classList.remove('selected');
-    selectedSquare = null;
-    return;
-  }
-
-  if(selectedSquare) selectedSquare.classList.remove('selected');
-  selectedSquare = square;
-  square.classList.add('selected');
-}
-
-function movePiece(toSquare){
-  if(!selectedSquare || !gameActive) return;
-  const fromR=parseInt(selectedSquare.dataset.row), fromC=parseInt(selectedSquare.dataset.col);
-  const toR=parseInt(toSquare.dataset.row), toC=parseInt(toSquare.dataset.col);
-  const piece=boardState[fromR][fromC]; if(!piece) return;
-  const legal = getLegalMoves(fromR,fromC);
-  if(!legal.some(([r,c])=>r===toR&&c===toC)) return;
-
-  // Castling
-  if(piece.type==='king' && Math.abs(toC-fromC)===2){
-    const rookCol = toC>fromC?7:0; const newRookCol = toC>fromC?5:3;
-    const rook=boardState[fromR][rookCol];
-    const rookImg=rook.img;
-    squares[fromR*8+newRookCol].appendChild(rookImg);
-    boardState[fromR][newRookCol]=rook; boardState[fromR][rookCol]=null; rook.hasMoved=true;
-  }
-
-  if(boardState[toR][toC]) boardState[toR][toC].img.remove(); // capture
-  squares[toR*8+toC].appendChild(piece.img);
-  boardState[toR][toC]=piece; boardState[fromR][fromC]=null; piece.hasMoved=true;
-
-  selectedSquare.classList.remove('selected'); selectedSquare=null;
-
-  // Promotion
-  if(piece.type==='pawn' && (toR===0 || toR===7)) showPromotion(toR,toC,piece.color);
-
-  // Update turn
-  currentTurn = currentTurn==='white'?'black':'white';
-
-  if(isCheckmate(currentTurn)) { statusDiv.textContent = `${currentTurn==='white'?'White':'Black'} is checkmated!`; gameActive=false; return; }
-  else if(isCheck(currentTurn)) statusDiv.textContent = `${currentTurn==='white'?'White':'Black'} is in check!`;
-  else statusDiv.textContent = `${currentTurn==='white'?'White':'Black'}'s Turn`;
-
-  if(gameActive && currentTurn===botColor) setTimeout(botMove, 400);
-}
-
-// Promotion
-function showPromotion(row,col,color){
-  promotionData={row,col,color};
-  const overlay=document.getElementById('promotionOverlay');
-  const choicesDiv=document.getElementById('promotionChoices');
-  choicesDiv.innerHTML='';
-  const pieces=['queen','rook','bishop','knight'];
-  pieces.forEach(p=>{
-    const img=document.createElement('img'); img.src=`images/${color}-${p}.png`;
-    img.addEventListener('click',()=>{
-      const old=boardState[row][col].img; old.remove();
-      setPiece(row,col,p,color,`${color}-${p}.png`);
-      overlay.style.display='none';
-      promotionData=null;
-    });
-    choicesDiv.appendChild(img);
   });
-  overlay.style.display='flex';
 }
 
-// Reset board
-function resetBoard(){
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++){
-    if(boardState[r][c]?.img) boardState[r][c].img.remove();
-    boardState[r][c]=null;
-  }
-  currentTurn='white'; selectedSquare=null; gameActive=true;
-  statusDiv.textContent="White's Turn"; initPieces();
-}
-
-// Bot logic
-function botMove(){
-  if(!gameActive) return;
-  const moves=[];
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++){
-    const p=boardState[r][c];
-    if(p && p.color===botColor){
-      getLegalMoves(r,c).forEach(([tr,tc])=>moves.push({from:[r,c],to:[tr,tc]}));
-    }
-  }
-  if(moves.length===0) return;
-
-  let move;
-  if(botDifficulty==='easy'){ move=moves[Math.floor(Math.random()*moves.length)]; }
-  else if(botDifficulty==='medium'){
-    const safeMoves = moves.filter(m=>{
-      const piece=boardState[m.from[0]][m.from[1]]; const target=boardState[m.to[0]][m.to[1]];
-      boardState[m.to[0]][m.to[1]]=piece; boardState[m.from[0]][m.from[1]]=null;
-      const safe=!isCheck(botColor);
-      boardState[m.from[0]][m.from[1]]=piece; boardState[m.to[0]][m.to[1]]=target;
-      return safe;
-    });
-    const captureMoves = safeMoves.filter(m=>boardState[m.to[0]][m.to[1]]);
-    move=captureMoves.length>0?captureMoves[Math.floor(Math.random()*captureMoves.length)]
-                              :safeMoves[Math.floor(Math.random()*safeMoves.length)];
-  } else { // hard
-    let bestScore=-Infinity;
-    moves.forEach(m=>{const score=evaluateMove(m); if(score>bestScore){bestScore=score; move=m;}}); 
-  }
-
-  const fromSquare = squares[move.from[0]*8+move.from[1]];
-  const toSquare = squares[move.to[0]*8+move.to[1]];
-  selectedSquare=fromSquare;
-  movePiece(toSquare);
-}
-
-function evaluateMove(move){
-  const piece = boardState[move.from[0]][move.from[1]];
-  const targetPiece = boardState[move.to[0]][move.to[1]];
-  boardState[move.to[0]][move.to[1]]=piece; boardState[move.from[0]][move.from[1]]=null;
-  let score=0;
-  if(targetPiece){ const values={pawn:10,knight:30,bishop:30,rook:50,queen:90,king:900}; score+=values[targetPiece.type]||0; }
-  if(isCheck(playerColor)) score+=50;
-  if(isCheck(botColor)) score-=1000;
-  boardState[move.from[0]][move.from[1]]=piece; boardState[move.to[0]][move.to[1]]=targetPiece;
-  return score;
-}
-
-// Click handlers
-squares.forEach(square=>{
-  square.addEventListener('click',()=>{
-    if(selectedSquare && square!==selectedSquare) movePiece(square);
-    else selectSquare(square);
-  });
-});
-
-// Controls
-document.getElementById('startBtn').addEventListener('click',resetBoard);
-document.getElementById('resignBtn').addEventListener('click',()=>{
-  if(!gameActive) return;
-  gameActive=false; statusDiv.textContent = playerColor==='white'?'You Resigned. Bot Wins!':'You Resigned. You Win!';
-});
-document.getElementById('drawBtn').addEventListener('click',()=>{
-  if(!gameActive) return;
-  gameActive=false; statusDiv.textContent='Draw!';
-});
-document.getElementById('difficultySelect').addEventListener('change',e=>{botDifficulty=e.target.value;});
+// Initial board
+createBoard();
 </script>
+
 </body>
 </html>
