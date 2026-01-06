@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Multiplayer Lobby + Chat (Mobile Friendly, Responsive)</title>
+<style>
+  body { margin:0; overflow:hidden; cursor:grab; font-family: sans-serif; }
+  canvas { display:block; }
+
+  /* Chat panel */
+  #chatPanel {
+    position: absolute;
+    top: 10px; left: 10px;
+    width: 300px; max-height: 300px;
+    background: rgba(0,0,0,0.5); color: #fff;
+    padding: 5px; border-radius: 5px;
+    overflow-y: auto; font-size: 14px;
+  }
+  #chatInput {
+    width: 100%; box-sizing: border-box;
+    margin-top: 5px; padding: 5px; border-radius: 3px; border: none;
+  }
+
+  /* Mobile Controls */
+  #mobileControls {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    display: grid;
+    grid-template-areas:
+      ". up ."
+      "left . right"
+      ". down .";
+    grid-gap: 10px;
+  }
+  #mobileControls button {
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+    font-size: 24px;
+    opacity: 0.6;
+    background: #000;
+    color: #fff;
+    border: none;
+    touch-action: none;
+  }
+  #up { grid-area: up; }
+  #down { grid-area: down; }
+  #left { grid-area: left; }
+  #right { grid-area: right; }
+</style>
+</head>
+<body>
+
+<div id="chatPanel">
+  <div id="chatMessages"></div>
+  <input type="text" id="chatInput" placeholder="Type message..."/>
+  
+</div>
+
+
+<div id="mobileControls">
+  <button id="up">▲</button>
+  <button id="left">◀</button>
+  <button id="down">▼</button>
+  <button id="right">▶</button>
+</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics.js";
+import { getDatabase, ref, set, push, onValue, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+
+// ===== Firebase Setup =====
+const firebaseConfig = {
+  apiKey: "AIzaSyAQnIe1Z-CMgyYOhKmfKVbLSall-R7frws",
+  authDomain: "henrikworldonline-a726f.firebaseapp.com",
+  databaseURL: "https://henrikworldonline-a726f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "henrikworldonline-a726f",
+  storageBucket: "henrikworldonline-a726f.firebasestorage.app",
+  messagingSenderId: "1060990020059",
+  appId: "1:1060990020059:web:35e9816d249cd32d97dffe",
+  measurementId: "G-VQNK4YN1C5"
+};
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getDatabase(app);
+
+// ===== Chat =====
+const chatInput = document.getElementById("chatInput");
+const chatMessages = document.getElementById("chatMessages");
+const chatRef = ref(db, "chat");
+
+
+// ===== Username =====
+const savedUser = JSON.parse(localStorage.getItem("user"));
+const username = savedUser?.username || "Player";
+
+// ===== Scene Setup =====
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+
+const cameraDistance = 7; // distance from player's head
+const cameraHeight = 1.5; // vertical offset (around head)
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff,0.5));
+const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+dirLight.position.set(20, 30, 10);
+dirLight.castShadow = true;
+
+dirLight.shadow.mapSize.width = 2048;
+dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.camera.near = 1;
+dirLight.shadow.camera.far = 100;
+dirLight.shadow.camera.left = -50;
+dirLight.shadow.camera.right = 50;
+dirLight.shadow.camera.top = 50;
+dirLight.shadow.camera.bottom = -50;
+dirLight.castShadow = true;
+
+dirLight.shadow.mapSize.width = 2048;
+dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.camera.near = 1;
+dirLight.shadow.camera.far = 100;
+dirLight.shadow.camera.left = -50;
+dirLight.shadow.camera.right = 50;
+dirLight.shadow.camera.top = 50;
+dirLight.shadow.camera.bottom = -50;
+
+scene.add(dirLight);
+
+// ===== Clouds Setup =====
+const clouds = new THREE.Group();
+scene.add(clouds);
+
+for(let i=0;i<20;i++){
+    const cloudGeom = new THREE.SphereGeometry(1 + Math.random()*2, 8, 8);
+    const cloudMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    emissive: 0xffffff,   // makes it brighter
+    emissiveIntensity: 0.8,
+    transparent: true,
+    opacity: 0.9,          // nearly fully opaque
+    roughness: 0.9,        // soft look
+    metalness: 0
+});
+
+    const cloud = new THREE.Mesh(cloudGeom, cloudMat);
+    cloud.position.set(
+        (Math.random()-0.5)*100,   // x
+        10 + Math.random()*100,      // y (height)
+        (Math.random()-0.5)*100    // z
+    );
+    cloud.scale.setScalar(1 + Math.random()*2);
+    clouds.add(cloud);
+}
+
+// Move clouds slowly in the animation loop
+function updateClouds() {
+    clouds.children.forEach(cloud=>{
+        cloud.position.x += 0.01;  // move slowly
+        if(cloud.position.x > 50) cloud.position.x = -50; // wrap around
+    });
+}
+
+
+// Floor (bigger and green)
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(200, 200),
+  new THREE.MeshStandardMaterial({color:0x00cc66})
+);
+floor.rotation.x = -Math.PI/2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+// ===== Player Setup =====
+const player = new THREE.Group();
+const playerColor = Math.random()*0xffffff;
+const bodyMat = new THREE.MeshStandardMaterial({color: playerColor});
+
+// Legs
+const legGeom = new THREE.BoxGeometry(0.4,1.5,0.4); legGeom.translate(0,-0.75,0);
+const leftLeg = new THREE.Mesh(legGeom, bodyMat); leftLeg.position.set(-0.3,0.75,0);
+const rightLeg = new THREE.Mesh(legGeom, bodyMat); rightLeg.position.set(0.3,0.75,0);
+
+// Body
+const body = new THREE.Mesh(new THREE.BoxGeometry(1,2,0.5), bodyMat); body.position.y = 1.75;
+
+// Head
+const head = new THREE.Mesh(new THREE.BoxGeometry(0.8,0.8,0.8), bodyMat); head.position.y = 3.35;
+
+// Arms
+const armGeom = new THREE.BoxGeometry(0.3,1.5,0.3); armGeom.translate(0,-0.75,0);
+const leftArm = new THREE.Mesh(armGeom, bodyMat); leftArm.position.set(-0.65,2.75,0);
+const rightArm = new THREE.Mesh(armGeom, bodyMat); rightArm.position.set(0.65,2.75,0);
+
+// ✅ Shadows for local player
+[leftLeg, rightLeg, body, head, leftArm, rightArm].forEach(m => {
+    m.castShadow = true;
+    m.receiveShadow = true;
+});
+
+player.add(body, head, leftArm, rightArm, leftLeg, rightLeg);
+scene.add(player);
+
+const localNameTag = createNameTag(username);
+localNameTag.position.set(0, 4.6, 0);
+player.add(localNameTag);
+
+
+
+// ===== Movement =====
+const keys = { w:false, a:false, s:false, d:false };
+
+let typingInChat = false;
+
+document.addEventListener('keydown', e=>{ if(keys[e.key.toLowerCase()]!==undefined) keys[e.key.toLowerCase()] = true; });
+document.addEventListener('keyup', e=>{ if(keys[e.key.toLowerCase()]!==undefined) keys[e.key.toLowerCase()] = false; });
+
+
+// Jump with spacebar
+document.addEventListener('keydown', e => {
+  if(e.key === ' ' && !isJumping) {  // spacebar triggers jump
+    isJumping = true;
+    jumpVelocity = jumpStrength;
+  }
+});
+
+
+const targetPos = new THREE.Vector3(); targetPos.copy(player.position);
+const baseSpeed = 0.08;
+
+// Detect mobile
+const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+const rotationSpeed = isMobile ? 0.007 : 0.002; // higher for mobile
+const movementMultiplier = isMobile ? 2 : 1;
+
+// ===== Mouse / Touch look =====
+let isMouseDown=false, yaw=0, pitch=0;
+
+// Mouse
+document.addEventListener('mousedown', e=>{
+  if(document.activeElement===chatInput) return;
+  isMouseDown=true; document.body.style.cursor='grabbing';
+});
+document.addEventListener('mouseup', ()=>{ isMouseDown=false; document.body.style.cursor='grab'; });
+const minPitch = -15 * Math.PI / 180; // 20 degrees down
+const maxPitch = 45 * Math.PI / 180;  // 45 degrees up
+
+
+document.addEventListener('mousemove', e=>{
+  if (typingInChat) return;
+  if(!isMouseDown) return;
+  if(document.activeElement===chatInput) return;
+  yaw -= (e.movementX||0)*rotationSpeed;
+  pitch -= (e.movementY||0)*rotationSpeed;
+  // ⚡ Clamp pitch here
+  pitch = Math.max(minPitch, Math.min(maxPitch, pitch));
+});
+
+
+// Touch
+let lastTouchX=0, lastTouchY=0;
+document.addEventListener('touchstart', e=>{
+  if (typingInChat) return;
+  if(document.activeElement===chatInput) return;
+  isMouseDown=true;
+  const touch = e.touches[0];
+  lastTouchX = touch.clientX;
+  lastTouchY = touch.clientY;
+});
+document.addEventListener('touchmove', e=>{
+  if (typingInChat) return;
+  if(!isMouseDown) return;
+  if(document.activeElement===chatInput) return;
+  const touch = e.touches[0];
+  const deltaX = touch.clientX - lastTouchX;
+  const deltaY = touch.clientY - lastTouchY;
+  yaw -= deltaX * rotationSpeed;
+  pitch -= deltaY * rotationSpeed;
+  // ⚡ Clamp pitch here
+  pitch = Math.max(minPitch, Math.min(maxPitch, pitch));
+  lastTouchX = touch.clientX;
+  lastTouchY = touch.clientY;
+});
+
+// ===== Jump variables =====
+let isJumping = false;
+let jumpVelocity = 0;
+const jumpStrength = 0.25; // how high you jump
+const gravity = 0.015;     // gravity pulling you down
+
+
+// ===== Mobile Buttons =====
+['up','down','left','right'].forEach(dir => {
+  const btn = document.getElementById(dir);
+  btn.addEventListener('touchstart', e=>{
+    e.preventDefault();
+    if(dir==='up') keys.w=true;
+    if(dir==='down') keys.s=true;
+    if(dir==='left') keys.a=true;
+    if(dir==='right') keys.d=true;
+  });
+  btn.addEventListener('touchend', e=>{
+    e.preventDefault();
+    if(dir==='up') keys.w=false;
+    if(dir==='down') keys.s=false;
+    if(dir==='left') keys.a=false;
+    if(dir==='right') keys.d=false;
+  });
+});
+
+// ===== Multiplayer Setup =====
+const playerId = Math.random().toString(36).substr(2,9);
+const playerRef = ref(db,'players/'+playerId);
+onDisconnect(playerRef).remove();
+const otherPlayers = {};
+const playerMessages = {};
+const lastMsgIdPerPlayer = {};
+
+function createNameTag(text) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 64;
+
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "white";
+  ctx.font = "28px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(2.5, 0.6, 1);
+
+  return sprite;
+}
+
+function sendChatMessage(text) {
+  push(chatRef, {
+    username: username,
+    text: text,
+    time: serverTimestamp()
+  });
+}
+
+chatInput.addEventListener("keydown", e => {
+  if (e.key === "Enter" && chatInput.value.trim()) {
+    e.preventDefault();
+    sendChatMessage(chatInput.value.trim());
+    chatInput.value = "";
+  }
+});
+
+onValue(chatRef, snapshot => {
+  chatMessages.innerHTML = "";
+  const data = snapshot.val() || {};
+  for (const id in data) {
+    const msg = data[id];
+    const div = document.createElement("div");
+    div.innerHTML = `<b>${msg.username}:</b> ${msg.text}`;
+    chatMessages.appendChild(div);
+  }
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+});
+
+
+
+
+// Create player mesh function (stores references for easy animation)
+function createPlayerMesh(color){
+  const group = new THREE.Group();
+  group.position.y = 0.75;
+
+  const mat = new THREE.MeshStandardMaterial({color});
+
+  // Legs
+  const legGeom = new THREE.BoxGeometry(0.4,1.5,0.4); legGeom.translate(0,-0.75,0);
+  const ll = new THREE.Mesh(legGeom, mat); ll.position.set(-0.3,0.75,0);
+  const rl = new THREE.Mesh(legGeom, mat); rl.position.set(0.3,0.75,0);
+
+  // Body & head
+  const b = new THREE.Mesh(new THREE.BoxGeometry(1,2,0.5), mat); b.position.y = 1.75;
+  const h = new THREE.Mesh(new THREE.BoxGeometry(0.8,0.8,0.8), mat); h.position.y = 3.35;
+
+  // Arms
+  const armGeom = new THREE.BoxGeometry(0.3,1.5,0.3); armGeom.translate(0,-0.75,0);
+  const la = new THREE.Mesh(armGeom, mat); la.position.set(-0.65,2.75,0);
+  const ra = new THREE.Mesh(armGeom, mat); ra.position.set(0.65,2.75,0);
+
+  // Cast & receive shadows
+  [ll, rl, b, h, la, ra].forEach(m=>{
+    m.castShadow = true;
+    m.receiveShadow = true;
+  });
+
+  // ---- Name tag ----
+const nameTag = createNameTag("Player");
+nameTag.position.set(0, 4.6, 0);
+group.add(nameTag);
+group.userData.nameTag = nameTag;
+
+
+  group.add(b,h,la,ra,ll,rl);
+
+  // Store references for animation
+  group.userData.meshRefs = { ll, rl, la, ra };
+
+  return group;
+}
+
+// ===== Update Other Players =====
+onValue(ref(db,'players'), snapshot=>{
+  const data = snapshot.val() || {};
+
+
+  // Update or create other players
+  for(const id in data){
+    if(id === playerId) continue;
+
+    if(!otherPlayers[id]){
+      const np = createPlayerMesh(data[id].color);
+      scene.add(np);
+      otherPlayers[id] = np;
+    }
+
+    const tag = otherPlayers[id].userData.nameTag;
+if (tag && data[id].username) {
+  const ctx = tag.material.map.image.getContext("2d");
+  ctx.clearRect(0, 0, 256, 64);
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  ctx.fillRect(0, 0, 256, 64);
+  ctx.fillStyle = "white";
+  ctx.font = "28px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(data[id].username, 128, 32);
+  tag.material.map.needsUpdate = true;
+}
+
+
+
+    const op = otherPlayers[id];
+    const { ll, rl, la, ra } = op.userData.meshRefs;
+
+    // Smooth position & rotation
+    op.position.x = THREE.MathUtils.lerp(op.position.x, data[id].x, 0.1);
+    op.position.z = THREE.MathUtils.lerp(op.position.z, data[id].z, 0.1);
+    op.rotation.y = data[id].rotationY;
+    op.position.y = THREE.MathUtils.lerp(op.position.y, data[id].jumpY || 0.75, 0.1);
+
+    // Animation
+    if(data[id].isJumping){
+      ll.rotation.x = 0.5;
+      rl.rotation.x = 0.5;
+      la.rotation.x = -0.3;
+      ra.rotation.x = -0.3;
+    } else {
+      const swing = Math.sin(data[id].walkCycle || 0) * (data[id].moving ? 0.5 : 0.05);
+      ll.rotation.x = swing;
+      rl.rotation.x = -swing;
+      la.rotation.x = -swing;
+      ra.rotation.x = swing;
+    }
+  }
+
+  // Remove disconnected players
+  for(const id in otherPlayers){
+    if(!data[id]){
+      scene.remove(otherPlayers[id]);
+      delete otherPlayers[id];
+    }
+  }
+});
+
+
+// ===== Foot Dust Particles =====
+const dustParticles = [];
+const dustMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa });
+
+function spawnDust(x, z) {
+  const geom = new THREE.SphereGeometry(0.1 + Math.random() * 0.1, 6, 6);
+  const dust = new THREE.Mesh(geom, dustMaterial);
+  dust.position.set(x, 0.1, z);
+  dust.castShadow = false;
+  dust.receiveShadow = true;
+  scene.add(dust);
+  dustParticles.push({ mesh: dust, life: 60 });
+}
+
+function updateDust() {
+  for (let i = dustParticles.length - 1; i >= 0; i--) {
+    const p = dustParticles[i];
+    p.mesh.material.opacity = Math.max(0, (p.life / 60));
+    p.mesh.material.transparent = true;
+    p.life--;
+    if (p.life <= 0) {
+      scene.remove(p.mesh);
+      dustParticles.splice(i, 1);
+    }
+  }
+}
+
+// ===== Animation Loop =====
+let walkCycle = 0;
+function animate() {
+  requestAnimationFrame(animate);
+
+  updateClouds();
+
+  const sphereCenter = player.position.clone().add(new THREE.Vector3(0, cameraHeight, 0));
+
+  // Camera
+  const camX = sphereCenter.x + cameraDistance * Math.sin(yaw) * Math.cos(pitch);
+  const camY = sphereCenter.y + cameraDistance * Math.sin(pitch);
+  const camZ = sphereCenter.z + cameraDistance * Math.cos(yaw) * Math.cos(pitch);
+  camera.position.set(camX, camY, camZ);
+  camera.lookAt(sphereCenter);
+
+  // ===== Movement =====
+  const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+  const right = new THREE.Vector3(Math.sin(yaw + Math.PI / 2), 0, Math.cos(yaw + Math.PI / 2));
+  let moving = false;
+  let moveDir = new THREE.Vector3();
+
+  if (keys.w) { targetPos.addScaledVector(forward, -baseSpeed * movementMultiplier); moveDir.add(forward.clone().negate()); moving = true; }
+  if (keys.s) { targetPos.addScaledVector(forward, baseSpeed * movementMultiplier); moveDir.add(forward); moving = true; }
+  if (keys.a) { targetPos.addScaledVector(right, -baseSpeed * movementMultiplier); moveDir.add(right.clone().negate()); moving = true; }
+  if (keys.d) { targetPos.addScaledVector(right, baseSpeed * movementMultiplier); moveDir.add(right); moving = true; }
+
+  player.position.x = THREE.MathUtils.lerp(player.position.x, targetPos.x, 0.2);
+  player.position.z = THREE.MathUtils.lerp(player.position.z, targetPos.z, 0.2);
+
+  // ===== Jump physics =====
+  if (isJumping) {
+    player.position.y += jumpVelocity;
+    jumpVelocity -= gravity;
+
+    if (player.position.y <= 0.75) {
+      player.position.y = 0.75;
+      isJumping = false;
+      jumpVelocity = 0;
+      spawnDust(player.position.x, player.position.z);
+    }
+  } else {
+    player.position.y = 0.75;
+  }
+
+  if (moving && moveDir.length() > 0) player.rotation.y = Math.atan2(moveDir.x, moveDir.z);
+
+  // ===== Local player animation =====
+  walkCycle += moving ? 0.1 : 0.02;
+
+  if (isJumping) {
+    leftLeg.rotation.x = 0.5;
+    rightLeg.rotation.x = 0.5;
+    leftArm.rotation.x = -0.3;
+    rightArm.rotation.x = -0.3;
+  } else {
+    const swing = Math.sin(walkCycle) * (moving ? 0.5 : 0.05);
+    leftLeg.rotation.x = swing;
+    rightLeg.rotation.x = -swing;
+    leftArm.rotation.x = -swing;
+    rightArm.rotation.x = swing;
+  }
+
+  if (moving) {
+    spawnDust(player.position.x + (Math.random() - 0.5) * 0.5,
+              player.position.z + (Math.random() - 0.5) * 0.5);
+  }
+
+  updateDust();
+
+  // ===== Update Firebase =====
+  set(playerRef, {
+    x: player.position.x,
+    z: player.position.z,
+    rotationY: player.rotation.y,
+    color: playerColor,
+    walkCycle: walkCycle,
+    moving: moving,
+    isJumping: isJumping,
+    jumpY: player.position.y,
+    username: username,
+  });
+
+  // ===== Update chat sprites =====
+  Object.keys(playerMessages).forEach(id => {
+    const entry = playerMessages[id];
+    if (!entry) return;
+    const targetPlayer = id === playerId ? player : otherPlayers[id];
+    if (!targetPlayer) return;
+    entry.sprite.position.set(targetPlayer.position.x, 5.2, targetPlayer.position.z);
+  });
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+</script>
+</body>
+</html>
